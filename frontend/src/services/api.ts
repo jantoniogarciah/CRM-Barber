@@ -2,7 +2,7 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { User, Client, Service, Appointment, Notification } from '../types';
 
 const baseQuery = fetchBaseQuery({
-  baseUrl: process.env.REACT_APP_API_URL || 'http://localhost:3000/api',
+  baseUrl: process.env.REACT_APP_API_URL || 'http://localhost:3001/api',
   prepareHeaders: (headers, { getState }) => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -24,7 +24,10 @@ export const api = createApi({
         body: credentials,
       }),
     }),
-    register: builder.mutation<{ user: User; token: string }, { email: string; password: string; name: string; phone: string }>({
+    register: builder.mutation<
+      { user: User; token: string },
+      { email: string; password: string; name: string; phone: string }
+    >({
       query: (userData) => ({
         url: '/auth/register',
         method: 'POST',
@@ -78,7 +81,13 @@ export const api = createApi({
     // Service endpoints
     getServices: builder.query<Service[], void>({
       query: () => '/services',
-      providesTags: ['Service'],
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({ type: 'Service' as const, id })),
+              { type: 'Service', id: 'LIST' },
+            ]
+          : [{ type: 'Service', id: 'LIST' }],
     }),
     getService: builder.query<Service, string>({
       query: (id) => `/services/${id}`,
@@ -90,7 +99,7 @@ export const api = createApi({
         method: 'POST',
         body: service,
       }),
-      invalidatesTags: ['Service'],
+      invalidatesTags: [{ type: 'Service', id: 'LIST' }],
     }),
     updateService: builder.mutation<Service, { id: string; service: Partial<Service> }>({
       query: ({ id, service }) => ({
@@ -98,14 +107,17 @@ export const api = createApi({
         method: 'PUT',
         body: service,
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: 'Service', id }],
+      invalidatesTags: (result, error, { id }) => [
+        { type: 'Service', id },
+        { type: 'Service', id: 'LIST' },
+      ],
     }),
     deleteService: builder.mutation<void, string>({
       query: (id) => ({
         url: `/services/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: ['Service'],
+      invalidatesTags: [{ type: 'Service', id: 'LIST' }],
     }),
 
     // Appointment endpoints
@@ -125,7 +137,10 @@ export const api = createApi({
       }),
       invalidatesTags: ['Appointment'],
     }),
-    updateAppointment: builder.mutation<Appointment, { id: string; appointment: Partial<Appointment> }>({
+    updateAppointment: builder.mutation<
+      Appointment,
+      { id: string; appointment: Partial<Appointment> }
+    >({
       query: ({ id, appointment }) => ({
         url: `/appointments/${id}`,
         method: 'PUT',

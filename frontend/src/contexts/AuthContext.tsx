@@ -46,13 +46,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const handleLogout = async () => {
     try {
-      await logoutMutation().unwrap();
+      // Try to call the logout endpoint
+      try {
+        await logoutMutation().unwrap();
+      } catch (error) {
+        console.warn('Logout endpoint error:', error);
+        // Continue with local cleanup even if the server request fails
+      }
+      
+      // Always perform local cleanup
       localStorage.removeItem('token');
       dispatch(clearCredentials());
       navigate('/login');
     } catch (error) {
       console.error('Logout error:', error);
-      throw error;
+      // Even if there's an error, try to clean up locally
+      localStorage.removeItem('token');
+      dispatch(clearCredentials());
+      navigate('/login');
     }
   };
 
