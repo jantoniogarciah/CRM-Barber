@@ -6,10 +6,7 @@ interface ThemeContextType {
   toggleColorMode: () => void;
 }
 
-const ThemeContext = createContext<ThemeContextType>({
-  mode: 'light',
-  toggleColorMode: () => {},
-});
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined); // ✅ Modificado
 
 export const useTheme = () => {
   const context = useContext(ThemeContext);
@@ -25,25 +22,20 @@ interface ThemeProviderProps {
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [mode, setMode] = useState<PaletteMode>(() => {
-    // Get initial theme from localStorage or system preference
     const savedMode = localStorage.getItem('themeMode') as PaletteMode;
     if (savedMode) return savedMode;
-
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
 
   useEffect(() => {
-    // Save theme preference to localStorage
     localStorage.setItem('themeMode', mode);
   }, [mode]);
 
   useEffect(() => {
-    // Listen for system theme changes
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = (e: MediaQueryListEvent) => {
       setMode(e.matches ? 'dark' : 'light');
     };
-
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
@@ -52,7 +44,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     setMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
   };
 
-  const value = {
+  const value: ThemeContextType = {
+    // ✅ Definimos el tipo aquí
     mode,
     toggleColorMode,
   };
