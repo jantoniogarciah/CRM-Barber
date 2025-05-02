@@ -1,9 +1,5 @@
 import { api } from './api';
-import {
-  Service as ServiceType,
-  ApiResponse,
-  PaginatedResponse,
-} from './types';
+import { Service as ServiceType, ApiResponse, PaginatedResponse } from './types';
 import axios from 'axios';
 import { EndpointBuilder } from '@reduxjs/toolkit/dist/query/endpointDefinitions';
 
@@ -14,13 +10,17 @@ export type Service = ServiceType;
 export interface CreateServiceData {
   name: string;
   description: string;
-  duration: number;
   price: number;
+  duration: number;
   categoryId: number;
 }
 
-export interface UpdateServiceData extends Partial<CreateServiceData> {
-  active?: boolean;
+export interface UpdateServiceData {
+  name?: string;
+  description?: string;
+  price?: number;
+  duration?: number;
+  categoryId?: number;
 }
 
 export interface CreateServiceDto {
@@ -43,51 +43,54 @@ type BuilderType = EndpointBuilder<any, any, any>;
 
 export const serviceApi = api.injectEndpoints({
   endpoints: (builder: BuilderType) => ({
-    getServices: builder.query<Service[], void>({
-      query: () => '/services',
+    getServices: builder.query<PaginatedResponse<Service>, void>({
+      query: () => `${API_URL}/services`,
       providesTags: ['Service'],
     }),
 
     getService: builder.query<Service, number>({
-      query: (id: number) => `/services/${id}`,
-      providesTags: (
-        _result: Service | undefined,
-        _error: unknown,
-        id: number
-      ) => [{ type: 'Service', id }],
+      query: (id: number) => `${API_URL}/services/${id}`,
+      providesTags: (_result: Service | undefined, _error: unknown, id: number) => [
+        { type: 'Service', id },
+      ],
     }),
 
-    createService: builder.mutation<Service, CreateServiceDto>({
-      query: (service: CreateServiceDto) => ({
-        url: '/services',
+    createService: builder.mutation<Service, CreateServiceData>({
+      query: (data: CreateServiceData) => ({
+        url: `${API_URL}/services`,
         method: 'POST',
-        body: service,
+        data,
       }),
       invalidatesTags: ['Service'],
     }),
 
-    updateService: builder.mutation<
-      Service,
-      { id: number; service: UpdateServiceDto }
-    >({
-      query: ({ id, service }: { id: number; service: UpdateServiceDto }) => ({
-        url: `/services/${id}`,
+    updateService: builder.mutation<Service, { id: number; service: UpdateServiceData }>({
+      query: ({ id, service }) => ({
+        url: `${API_URL}/services/${id}`,
         method: 'PUT',
-        body: service,
+        data: service,
       }),
-      invalidatesTags: (
-        _result: Service | undefined,
-        _error: unknown,
-        { id }: { id: number }
-      ) => [{ type: 'Service', id }],
+      invalidatesTags: (_result: Service | undefined, _error: unknown, { id }: { id: number }) => [
+        { type: 'Service', id },
+      ],
     }),
 
     deleteService: builder.mutation<void, number>({
       query: (id: number) => ({
-        url: `/services/${id}`,
+        url: `${API_URL}/services/${id}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['Service'],
+    }),
+
+    getServicesByCategory: builder.query<Service[], number>({
+      query: (categoryId: number) => `${API_URL}/services/category/${categoryId}`,
+      providesTags: ['Service'],
+    }),
+
+    getActiveServices: builder.query<Service[], void>({
+      query: () => `${API_URL}/services/active`,
+      providesTags: ['Service'],
     }),
   }),
 });
@@ -98,40 +101,27 @@ export const {
   useCreateServiceMutation,
   useUpdateServiceMutation,
   useDeleteServiceMutation,
+  useGetServicesByCategoryQuery,
+  useGetActiveServicesQuery,
 } = serviceApi;
 
-export const getServices = async (): Promise<PaginatedResponse<Service>> => {
-  const response = await axios.get<PaginatedResponse<Service>>(
-    `${API_URL}/services`
-  );
-  return response.data;
+export const getServices = async (): Promise<Service[]> => {
+  const response = await axios.get<ApiResponse<Service[]>>(`${API_URL}/services`);
+  return response.data.data;
 };
 
 export const getService = async (id: number): Promise<Service> => {
-  const response = await axios.get<ApiResponse<Service>>(
-    `${API_URL}/services/${id}`
-  );
+  const response = await axios.get<ApiResponse<Service>>(`${API_URL}/services/${id}`);
   return response.data.data;
 };
 
-export const createService = async (
-  data: CreateServiceData
-): Promise<Service> => {
-  const response = await axios.post<ApiResponse<Service>>(
-    `${API_URL}/services`,
-    data
-  );
+export const createService = async (service: Omit<Service, 'id'>): Promise<Service> => {
+  const response = await axios.post<ApiResponse<Service>>(`${API_URL}/services`, service);
   return response.data.data;
 };
 
-export const updateService = async (
-  id: number,
-  data: UpdateServiceData
-): Promise<Service> => {
-  const response = await axios.patch<ApiResponse<Service>>(
-    `${API_URL}/services/${id}`,
-    data
-  );
+export const updateService = async (id: number, service: Partial<Service>): Promise<Service> => {
+  const response = await axios.put<ApiResponse<Service>>(`${API_URL}/services/${id}`, service);
   return response.data.data;
 };
 
@@ -139,9 +129,7 @@ export const deleteService = async (id: number): Promise<void> => {
   await axios.delete(`${API_URL}/services/${id}`);
 };
 
-export const getServicesByCategory = async (
-  categoryId: number
-): Promise<Service[]> => {
+export const getServicesByCategory = async (categoryId: number): Promise<Service[]> => {
   const response = await axios.get<ApiResponse<Service[]>>(
     `${API_URL}/services/category/${categoryId}`
   );
@@ -149,8 +137,6 @@ export const getServicesByCategory = async (
 };
 
 export const getActiveServices = async (): Promise<Service[]> => {
-  const response = await axios.get<ApiResponse<Service[]>>(
-    `${API_URL}/services/active`
-  );
+  const response = await axios.get<ApiResponse<Service[]>>(`${API_URL}/services/active`);
   return response.data.data;
 };

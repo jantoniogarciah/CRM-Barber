@@ -2,14 +2,18 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import { io } from 'socket.io-client';
 
-const NotificationContext = createContext();
+const NotificationContext = createContext(null);
+
+if (!NotificationContext) {
+  throw new Error('useNotifications must be used within a NotificationProvider');
+}
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 export const useNotifications = () => {
   const context = useContext(NotificationContext);
   if (!context) {
-    throw new Error(
-      'useNotifications must be used within a NotificationProvider'
-    );
+    throw new Error('useNotifications must be used within a NotificationProvider');
   }
   return context;
 };
@@ -18,49 +22,44 @@ export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [socket, setSocket] = useState(null);
 
-  // Initialize socket connection
   useEffect(() => {
-    const newSocket = io(
-      process.env.REACT_APP_API_URL || 'http://localhost:3001',
-      {
-        transports: ['websocket'],
-        autoConnect: true,
-      }
-    );
+    const token = localStorage.getItem('token');
+    if (!token) return;
 
-    newSocket.on('connect', () => {
-      console.log('Connected to notification socket');
+    const newSocket = io(API_URL, {
+      transports: ['websocket'],
+      autoConnect: true,
+      auth: {
+        token: token,
+      },
     });
 
     newSocket.on('notification', (notification) => {
       setNotifications((prev) => [notification, ...prev]);
     });
 
-    newSocket.on('disconnect', () => {
-      console.log('Disconnected from notification socket');
-    });
-
-    setSocket(newSocket);
-
     return () => {
       newSocket.close();
     };
   }, []);
 
-  // Fetch initial notifications
   useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
     const fetchNotifications = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('/api/notifications');
+        const response = await axios.get('/api/notifications', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         setNotifications(response.data);
         setError(null);
       } catch (err) {
-        setError(
-          err.response?.data?.message || 'Failed to fetch notifications'
-        );
+        setError(err.response?.data?.message || 'Failed to fetch notifications');
       } finally {
         setLoading(false);
       }
@@ -70,42 +69,52 @@ export const NotificationProvider = ({ children }) => {
   }, []);
 
   const markAsRead = async (id) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
     try {
-      await axios.put(`/api/notifications/${id}/read`);
+      await axios.put(`/api/notifications/${id}/read`, null, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       setNotifications((prev) =>
         prev.map((notification) =>
-          notification.id === id
-            ? { ...notification, isRead: true }
-            : notification
+          notification.id === id ? { ...notification, isRead: true } : notification
         )
       );
     } catch (err) {
-      setError(
-        err.response?.data?.message || 'Failed to mark notification as read'
-      );
+      setError(err.response?.data?.message || 'Failed to mark notification as read');
     }
   };
 
   const markAllAsRead = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
     try {
-      await axios.put('/api/notifications/read-all');
-      setNotifications((prev) =>
-        prev.map((notification) => ({ ...notification, isRead: true }))
-      );
+      await axios.put('/api/notifications/read-all', null, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setNotifications((prev) => prev.map((notification) => ({ ...notification, isRead: true })));
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          'Failed to mark all notifications as read'
-      );
+      setError(err.response?.data?.message || 'Failed to mark all notifications as read');
     }
   };
 
   const deleteNotification = async (id) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
     try {
-      await axios.delete(`/api/notifications/${id}`);
-      setNotifications((prev) =>
-        prev.filter((notification) => notification.id !== id)
-      );
+      await axios.delete(`/api/notifications/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setNotifications((prev) => prev.filter((notification) => notification.id !== id));
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to delete notification');
     }
@@ -120,11 +129,7 @@ export const NotificationProvider = ({ children }) => {
     deleteNotification,
   };
 
-  return (
-    <NotificationContext.Provider value={value}>
-      {children}
-    </NotificationContext.Provider>
-  );
+  return <NotificationContext.Provider value={value}>{children}</NotificationContext.Provider>;
 };
 
 export default NotificationContext;

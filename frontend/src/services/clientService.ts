@@ -1,6 +1,6 @@
-import { api } from './api';
-import { Client as ClientType } from './types';
+import { Client as ClientType, ApiResponse } from '../types';
 import { EndpointBuilder } from '@reduxjs/toolkit/dist/query/endpointDefinitions';
+import { api } from './api';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
@@ -27,22 +27,18 @@ type BuilderType = EndpointBuilder<any, any, any>;
 
 export const clientApi = api.injectEndpoints({
   endpoints: (builder: BuilderType) => ({
-    getClients: builder.query<Client[], void>({
+    getClients: builder.query<ClientType[], void>({
       query: () => '/clients',
       providesTags: ['Client'],
     }),
 
-    getClient: builder.query<Client, number>({
-      query: (id: number) => `/clients/${id}`,
-      providesTags: (
-        _result: Client | undefined,
-        _error: unknown,
-        id: number
-      ) => [{ type: 'Client', id }],
+    getClient: builder.query<ClientType, number>({
+      query: (id) => `/clients/${id}`,
+      providesTags: (result, error, id) => [{ type: 'Client', id }],
     }),
 
-    createClient: builder.mutation<Client, CreateClientData>({
-      query: (client: CreateClientData) => ({
+    createClient: builder.mutation<ClientType, Partial<ClientType>>({
+      query: (client) => ({
         url: '/clients',
         method: 'POST',
         body: client,
@@ -50,24 +46,17 @@ export const clientApi = api.injectEndpoints({
       invalidatesTags: ['Client'],
     }),
 
-    updateClient: builder.mutation<
-      Client,
-      { id: number; client: UpdateClientData }
-    >({
-      query: ({ id, client }: { id: number; client: UpdateClientData }) => ({
+    updateClient: builder.mutation<ClientType, { id: number; data: Partial<ClientType> }>({
+      query: ({ id, data }) => ({
         url: `/clients/${id}`,
         method: 'PUT',
-        body: client,
+        body: data,
       }),
-      invalidatesTags: (
-        _result: Client | undefined,
-        _error: unknown,
-        { id }: { id: number }
-      ) => [{ type: 'Client', id }],
+      invalidatesTags: (result, error, { id }) => [{ type: 'Client', id }],
     }),
 
     deleteClient: builder.mutation<void, number>({
-      query: (id: number) => ({
+      query: (id) => ({
         url: `/clients/${id}`,
         method: 'DELETE',
       }),
@@ -83,3 +72,40 @@ export const {
   useUpdateClientMutation,
   useDeleteClientMutation,
 } = clientApi;
+
+// These functions are kept for backward compatibility but should be replaced with RTK Query hooks
+export const getClients = async (): Promise<ClientType[]> => {
+  const response = await fetch(`${API_URL}/clients`);
+  const data: ApiResponse<ClientType[]> = await response.json();
+  return data.data;
+};
+
+export const createClient = async (client: Partial<ClientType>): Promise<ClientType> => {
+  const response = await fetch(`${API_URL}/clients`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(client),
+  });
+  const data: ApiResponse<ClientType> = await response.json();
+  return data.data;
+};
+
+export const updateClient = async (id: number, client: Partial<ClientType>): Promise<ClientType> => {
+  const response = await fetch(`${API_URL}/clients/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(client),
+  });
+  const data: ApiResponse<ClientType> = await response.json();
+  return data.data;
+};
+
+export const deleteClient = async (id: number): Promise<void> => {
+  await fetch(`${API_URL}/clients/${id}`, {
+    method: 'DELETE',
+  });
+};

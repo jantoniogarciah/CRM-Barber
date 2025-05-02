@@ -1,6 +1,8 @@
+import { Notification, ApiResponse } from '../types';
 import { api } from './api';
-import { Notification } from './types';
 import { EndpointBuilder } from '@reduxjs/toolkit/dist/query/endpointDefinitions';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
 type BuilderType = EndpointBuilder<any, any, any>;
 
@@ -14,7 +16,7 @@ export interface UpdateNotificationDto {
   isRead?: boolean;
 }
 
-const notificationApi = api.injectEndpoints({
+export const notificationApi = api.injectEndpoints({
   endpoints: (builder: BuilderType) => ({
     getNotifications: builder.query<Notification[], void>({
       query: () => '/notifications',
@@ -59,10 +61,7 @@ const notificationApi = api.injectEndpoints({
       invalidatesTags: ['Notification'],
     }),
 
-    createBulkNotifications: builder.mutation<
-      Notification[],
-      CreateNotificationDto[]
-    >({
+    createBulkNotifications: builder.mutation<Notification[], CreateNotificationDto[]>({
       query: (notifications) => ({
         url: '/notifications/bulk',
         method: 'POST',
@@ -73,4 +72,27 @@ const notificationApi = api.injectEndpoints({
   }),
 });
 
+export const {
+  useGetNotificationsQuery,
+  useGetUnreadCountQuery,
+  useMarkAsReadMutation,
+  useMarkAllAsReadMutation,
+  useDeleteNotificationMutation,
+  useCreateNotificationMutation,
+  useCreateBulkNotificationsMutation,
+} = notificationApi;
+
 export default notificationApi;
+
+// These functions are kept for backward compatibility but should be replaced with RTK Query hooks
+export const getNotifications = async (): Promise<Notification[]> => {
+  const response = await fetch(`${API_URL}/notifications`);
+  const data: ApiResponse<Notification[]> = await response.json();
+  return data.data;
+};
+
+export const markNotificationAsRead = async (id: number): Promise<void> => {
+  await fetch(`${API_URL}/notifications/${id}/read`, {
+    method: 'PATCH',
+  });
+};

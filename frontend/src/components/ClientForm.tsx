@@ -1,31 +1,19 @@
 import React from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import {
-  TextField,
-  Button,
-  Grid,
-  Box,
-  Typography,
-  CircularProgress,
-} from '@mui/material';
-import {
-  CreateClientData,
-  UpdateClientData,
-  useCreateClientMutation,
-  useUpdateClientMutation,
-} from '../services/clientService';
+import { TextField, Button, Grid, Box, Typography, CircularProgress } from '@mui/material';
+import { useCreateClientMutation, useUpdateClientMutation } from '../services/api';
+import { Client } from '../types';
 
 interface ClientFormProps {
-  client?: UpdateClientData & { id?: number };
+  client?: Client;
   isEditing?: boolean;
   onSuccess?: () => void;
 }
 
 const validationSchema = Yup.object({
   email: Yup.string().email('Invalid email address').required('Required'),
-  firstName: Yup.string().required('Required'),
-  lastName: Yup.string().required('Required'),
+  name: Yup.string().required('Required'),
   phone: Yup.string().required('Required'),
   password: Yup.string().when('isEditing', {
     is: (isEditing: boolean) => !isEditing,
@@ -34,19 +22,14 @@ const validationSchema = Yup.object({
   }),
 });
 
-const ClientForm: React.FC<ClientFormProps> = ({
-  client,
-  isEditing = false,
-  onSuccess,
-}) => {
+const ClientForm: React.FC<ClientFormProps> = ({ client, isEditing = false, onSuccess }) => {
   const [createClient] = useCreateClientMutation();
   const [updateClient] = useUpdateClientMutation();
 
   const formik = useFormik({
     initialValues: {
       email: client?.email || '',
-      firstName: client?.firstName || '',
-      lastName: client?.lastName || '',
+      name: client?.name || '',
       phone: client?.phone || '',
       password: '',
     },
@@ -54,7 +37,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
     onSubmit: async (values) => {
       try {
         if (isEditing && client?.id) {
-          await updateClient({ id: client.id, client: values });
+          await updateClient({ id: client.id.toString(), client: values });
         } else {
           await createClient(values);
         }
@@ -71,28 +54,16 @@ const ClientForm: React.FC<ClientFormProps> = ({
         {isEditing ? 'Edit Client' : 'Add New Client'}
       </Typography>
       <Grid container spacing={2}>
-        <Grid item xs={12} sm={6}>
+        <Grid item xs={12}>
           <TextField
             fullWidth
-            id="firstName"
-            name="firstName"
-            label="First Name"
-            value={formik.values.firstName}
+            id="name"
+            name="name"
+            label="Name"
+            value={formik.values.name}
             onChange={formik.handleChange}
-            error={formik.touched.firstName && Boolean(formik.errors.firstName)}
-            helperText={formik.touched.firstName && formik.errors.firstName}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <TextField
-            fullWidth
-            id="lastName"
-            name="lastName"
-            label="Last Name"
-            value={formik.values.lastName}
-            onChange={formik.handleChange}
-            error={formik.touched.lastName && Boolean(formik.errors.lastName)}
-            helperText={formik.touched.lastName && formik.errors.lastName}
+            error={formik.touched.name && Boolean(formik.errors.name)}
+            helperText={formik.touched.name && formik.errors.name}
           />
         </Grid>
         <Grid item xs={12}>
@@ -135,21 +106,17 @@ const ClientForm: React.FC<ClientFormProps> = ({
           </Grid>
         )}
       </Grid>
-      <Button
-        type="submit"
-        fullWidth
-        variant="contained"
-        sx={{ mt: 3, mb: 2 }}
-        disabled={formik.isSubmitting}
-      >
-        {formik.isSubmitting ? (
-          <CircularProgress size={24} />
-        ) : isEditing ? (
-          'Update Client'
-        ) : (
-          'Add Client'
-        )}
-      </Button>
+      <Grid item xs={12}>
+        <Button
+          type="submit"
+          fullWidth
+          variant="contained"
+          color="primary"
+          disabled={formik.isSubmitting}
+        >
+          {formik.isSubmitting ? <CircularProgress size={24} /> : isEditing ? 'Update' : 'Create'}
+        </Button>
+      </Grid>
     </Box>
   );
 };

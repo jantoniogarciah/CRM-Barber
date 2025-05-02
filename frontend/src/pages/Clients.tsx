@@ -1,73 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
-import {
-  Box,
-  Typography,
-  Button,
-  Grid,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  IconButton,
-  Dialog,
-} from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import { RootState } from '../store';
+import React from 'react';
+import { Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
+import { useAppSelector } from '../store/hooks';
+import { useGetClientsQuery } from '../services/api';
 import ClientForm from '../components/ClientForm';
-import { Client } from '../services/clientService';
 
 const Clients: React.FC = () => {
-  const [clients, setClients] = useState<Client[]>([]);
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const { user } = useSelector((state: RootState) => state.auth);
+  const { data: clients = [], isLoading } = useGetClientsQuery();
+  const { user } = useAppSelector((state) => state.auth);
 
-  useEffect(() => {
-    // TODO: Fetch clients from API
-    // This will be implemented when we set up the API integration
-  }, []);
-
-  const handleEdit = (client: Client) => {
-    setSelectedClient(client);
-    setIsFormOpen(true);
-  };
-
-  const handleDelete = async (clientId: number) => {
-    // TODO: Implement delete functionality
-  };
-
-  const handleFormClose = () => {
-    setSelectedClient(null);
-    setIsFormOpen(false);
-  };
-
-  const handleFormSuccess = () => {
-    handleFormClose();
-    // TODO: Refresh clients list
-  };
+  if (isLoading) {
+    return <Typography>Loading...</Typography>;
+  }
 
   return (
-    <Box p={3}>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={3}
-      >
-        <Typography variant="h4">Clients</Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => setIsFormOpen(true)}
-        >
-          Add Client
-        </Button>
-      </Box>
-
+    <Box>
+      <Typography variant="h4" gutterBottom>
+        Clients
+      </Typography>
+      <ClientForm />
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -75,46 +25,19 @@ const Clients: React.FC = () => {
               <TableCell>Name</TableCell>
               <TableCell>Email</TableCell>
               <TableCell>Phone</TableCell>
-              <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {clients.map((client) => (
               <TableRow key={client.id}>
-                <TableCell>{`${client.firstName} ${client.lastName}`}</TableCell>
+                <TableCell>{client.name}</TableCell>
                 <TableCell>{client.email}</TableCell>
                 <TableCell>{client.phone}</TableCell>
-                <TableCell>
-                  <IconButton onClick={() => handleEdit(client)}>
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton onClick={() => handleDelete(client.id)}>
-                    <DeleteIcon />
-                  </IconButton>
-                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </TableContainer>
-
-      <Dialog
-        open={isFormOpen}
-        onClose={handleFormClose}
-        maxWidth="sm"
-        fullWidth
-      >
-        <Box p={3}>
-          <Typography variant="h5" mb={3}>
-            {selectedClient ? 'Edit Client' : 'Add Client'}
-          </Typography>
-          <ClientForm
-            client={selectedClient || undefined}
-            isEditing={!!selectedClient}
-            onSuccess={handleFormSuccess}
-          />
-        </Box>
-      </Dialog>
     </Box>
   );
 };

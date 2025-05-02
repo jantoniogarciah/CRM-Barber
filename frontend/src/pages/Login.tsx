@@ -11,8 +11,14 @@ import {
   Paper,
   Alert,
   CircularProgress,
+  Link,
 } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
+
+interface LoginFormValues {
+  email: string;
+  password: string;
+}
 
 const validationSchema = Yup.object({
   email: Yup.string().email('Invalid email address').required('Required'),
@@ -21,9 +27,10 @@ const validationSchema = Yup.object({
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { login, error } = useAuth();
+  const { login, isLoading } = useAuth();
+  const [error, setError] = React.useState<string | null>(null);
 
-  const formik = useFormik({
+  const formik = useFormik<LoginFormValues>({
     initialValues: {
       email: '',
       password: '',
@@ -34,7 +41,8 @@ const Login: React.FC = () => {
         await login(values.email, values.password);
         navigate('/');
       } catch (err) {
-        // Error is handled by the context
+        setError('Invalid email or password');
+        console.error('Login error:', err);
       }
     },
   });
@@ -70,11 +78,7 @@ const Login: React.FC = () => {
               {error}
             </Alert>
           )}
-          <Box
-            component="form"
-            onSubmit={formik.handleSubmit}
-            sx={{ mt: 3, width: '100%' }}
-          >
+          <Box component="form" onSubmit={formik.handleSubmit} sx={{ mt: 3, width: '100%' }}>
             <TextField
               fullWidth
               id="email"
@@ -85,6 +89,8 @@ const Login: React.FC = () => {
               error={formik.touched.email && Boolean(formik.errors.email)}
               helperText={formik.touched.email && formik.errors.email}
               margin="normal"
+              autoComplete="email"
+              autoFocus
             />
             <TextField
               fullWidth
@@ -97,16 +103,25 @@ const Login: React.FC = () => {
               error={formik.touched.password && Boolean(formik.errors.password)}
               helperText={formik.touched.password && formik.errors.password}
               margin="normal"
+              autoComplete="current-password"
             />
             <Button
               type="submit"
               fullWidth
               variant="contained"
               sx={{ mt: 3, mb: 2 }}
-              disabled={formik.isSubmitting}
+              disabled={isLoading}
             >
-              {formik.isSubmitting ? <CircularProgress size={24} /> : 'Login'}
+              {isLoading ? <CircularProgress size={24} /> : 'Login'}
             </Button>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Link href="/forgot-password" variant="body2">
+                Forgot password?
+              </Link>
+              <Link href="/register" variant="body2">
+                Don't have an account? Sign up
+              </Link>
+            </Box>
           </Box>
         </Paper>
       </Box>

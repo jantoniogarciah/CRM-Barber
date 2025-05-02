@@ -1,117 +1,80 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
-import { User } from '../services/types';
-
-interface LoginResponse {
-  token: string;
-  user: User;
-}
+import React, { createContext, useContext, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { setCredentials, clearCredentials, selectUser, selectLoading } from '../store/slices/authSlice';
+import { useLoginMutation, useLogoutMutation, useGetCurrentUserQuery } from '../services/api';
+import { User } from '../types';
 
 interface AuthContextType {
-  user: User | null;
-  loading: boolean;
-  error: string | null;
-  login: (email: string, password: string) => Promise<User>;
-  logout: () => void;
-  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   isAuthenticated: boolean;
+  isLoading: boolean;
+  user: User | null;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-interface AuthProviderProps {
-  children: React.ReactNode;
-}
-
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const user = useAppSelector(selectUser);
+  const isLoading = useAppSelector(selectLoading);
+  const [loginMutation] = useLoginMutation();
+  const [logoutMutation] = useLogoutMutation();
+  const { data: currentUser } = useGetCurrentUserQuery(undefined, {
+    skip: !localStorage.getItem('token'),
+  });
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      fetchUserProfile();
-    } else {
-      setLoading(false);
+    if (currentUser) {
+      dispatch(setCredentials({ user: currentUser, token: localStorage.getItem('token') || '' }));
     }
-  }, []);
+  }, [currentUser, dispatch]);
 
-  const fetchUserProfile = async () => {
+  const login = async (email: string, password: string) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get<User>('/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setUser(response.data);
+      const result = await loginMutation({ email, password }).unwrap();
+      localStorage.setItem('token', result.token);
+      dispatch(setCredentials({ user: result.user, token: result.token }));
+      navigate('/');
     } catch (error) {
-      console.error('Error fetching user profile:', error);
+      console.error('Login error:', error);
+      throw error;
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logoutMutation().unwrap();
       localStorage.removeItem('token');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const login = async (email: string, password: string): Promise<User> => {
-    try {
-      setError(null);
-      const response = await axios.post<LoginResponse>('/api/auth/login', { email, password });
-      const { token, user } = response.data;
-      localStorage.setItem('token', token);
-      setUser(user);
-      return user;
-    } catch (error: any) {
-      setError(
-        error?.response?.data?.message || 'An error occurred during login'
-      );
+      dispatch(clearCredentials());
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
       throw error;
     }
-  };
-
-  const logout = () => {
-    localStorage.removeItem('token');
-    setUser(null);
-  };
-
-  const changePassword = async (currentPassword: string, newPassword: string) => {
-    try {
-      setError(null);
-      const token = localStorage.getItem('token');
-      await axios.post(
-        '/api/auth/change-password',
-        { currentPassword, newPassword },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-    } catch (error: any) {
-      setError(
-        error?.response?.data?.message ||
-          'An error occurred while changing password'
-      );
-      throw error;
-    }
-  };
-
-  const value = {
-    user,
-    loading,
-    error,
-    login,
-    logout,
-    changePassword,
-    isAuthenticated: !!user,
   };
 
   return (
-    <AuthContext.Provider value={value}>
-      {!loading && children}
+    <AuthContext.Provider
+      value={{
+        isAuthenticated: !!user,
+        isLoading,
+        user,
+        login,
+        logout: handleLogout,
+      }}
+    >
+      {children}
     </AuthContext.Provider>
   );
 };
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}; 
+};

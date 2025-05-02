@@ -74,9 +74,7 @@ export const appointmentApi = api.injectEndpoints({
         method: 'PUT',
         body: appointment,
       }),
-      invalidatesTags: (_result, _error, { id }) => [
-        { type: 'Appointment', id },
-      ],
+      invalidatesTags: (_result, _error, { id }) => [{ type: 'Appointment', id }],
     }),
 
     deleteAppointment: builder.mutation<void, number>({

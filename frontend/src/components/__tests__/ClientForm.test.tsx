@@ -140,17 +140,13 @@ describe('ClientForm Component', () => {
 
     // Check if a success message is displayed
     await waitFor(() => {
-      expect(
-        screen.getByText(/client created successfully/i)
-      ).toBeInTheDocument();
+      expect(screen.getByText(/client created successfully/i)).toBeInTheDocument();
     });
   });
 
   it('displays an error message when submission fails', async () => {
     // Mock the createClient function to throw an error
-    (createClient as jest.Mock).mockRejectedValueOnce(
-      new Error('Failed to create client')
-    );
+    (createClient as jest.Mock).mockRejectedValueOnce(new Error('Failed to create client'));
 
     renderComponent();
 

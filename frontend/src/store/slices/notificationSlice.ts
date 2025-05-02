@@ -1,15 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { RootState } from '../index';
-
-export interface Notification {
-  id: number;
-  userId: number;
-  type: 'info' | 'success' | 'warning' | 'error';
-  message: string;
-  isRead: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+import { Notification } from '../../types';
+import { api } from '../../services/api';
 
 interface NotificationState {
   notifications: Notification[];
@@ -25,24 +17,56 @@ const initialState: NotificationState = {
   error: null,
 };
 
+// Extend the API with notification endpoints
+export const notificationApi = api.injectEndpoints({
+  endpoints: (builder) => ({
+    getNotifications: builder.query<Notification[], void>({
+      query: () => '/notifications',
+      providesTags: ['Notification'],
+    }),
+    getUnreadCount: builder.query<number, void>({
+      query: () => '/notifications/unread/count',
+      providesTags: ['Notification'],
+    }),
+    markAsRead: builder.mutation<void, number>({
+      query: (id) => ({
+        url: `/notifications/${id}/read`,
+        method: 'PUT',
+      }),
+      invalidatesTags: ['Notification'],
+    }),
+    markAllAsRead: builder.mutation<void, void>({
+      query: () => ({
+        url: '/notifications/read-all',
+        method: 'PUT',
+      }),
+      invalidatesTags: ['Notification'],
+    }),
+    deleteNotification: builder.mutation<void, number>({
+      query: (id) => ({
+        url: `/notifications/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Notification'],
+    }),
+  }),
+});
+
+export const {
+  useGetNotificationsQuery,
+  useGetUnreadCountQuery,
+  useMarkAsReadMutation,
+  useMarkAllAsReadMutation,
+  useDeleteNotificationMutation,
+} = notificationApi;
+
 const notificationSlice = createSlice({
-  name: 'notifications',
+  name: 'notification',
   initialState,
   reducers: {
     setNotifications: (state, action: PayloadAction<Notification[]>) => {
       state.notifications = action.payload;
-      state.unreadCount = action.payload.filter(
-        (notification) => !notification.isRead
-      ).length;
-      state.loading = false;
-      state.error = null;
-    },
-    setLoading: (state, action: PayloadAction<boolean>) => {
-      state.loading = action.payload;
-    },
-    setError: (state, action: PayloadAction<string | null>) => {
-      state.error = action.payload;
-      state.loading = false;
+      state.unreadCount = action.payload.filter((n) => !n.isRead).length;
     },
     addNotification: (state, action: PayloadAction<Notification>) => {
       state.notifications.unshift(action.payload);
@@ -51,53 +75,46 @@ const notificationSlice = createSlice({
       }
     },
     markAsRead: (state, action: PayloadAction<number>) => {
-      const notification = state.notifications.find(
-        (n) => n.id === action.payload
-      );
+      const notification = state.notifications.find((n) => n.id === action.payload);
       if (notification && !notification.isRead) {
         notification.isRead = true;
         state.unreadCount -= 1;
       }
     },
     markAllAsRead: (state) => {
-      state.notifications.forEach((notification) => {
-        notification.isRead = true;
-      });
+      state.notifications.forEach((n) => (n.isRead = true));
       state.unreadCount = 0;
     },
     deleteNotification: (state, action: PayloadAction<number>) => {
-      const notification = state.notifications.find(
-        (n) => n.id === action.payload
-      );
+      const notification = state.notifications.find((n) => n.id === action.payload);
       if (notification && !notification.isRead) {
         state.unreadCount -= 1;
       }
-      state.notifications = state.notifications.filter(
-        (n) => n.id !== action.payload
-      );
+      state.notifications = state.notifications.filter((n) => n.id !== action.payload);
+    },
+    setLoading: (state, action: PayloadAction<boolean>) => {
+      state.loading = action.payload;
+    },
+    setError: (state, action: PayloadAction<string>) => {
+      state.error = action.payload;
+      state.loading = false;
     },
   },
 });
 
-// Actions
 export const {
   setNotifications,
-  setLoading,
-  setError,
   addNotification,
   markAsRead,
   markAllAsRead,
   deleteNotification,
+  setLoading,
+  setError,
 } = notificationSlice.actions;
 
-// Selectors
-export const selectNotifications = (state: RootState) =>
-  state.notifications.notifications;
-export const selectUnreadCount = (state: RootState) =>
-  state.notifications.unreadCount;
-export const selectNotificationsLoading = (state: RootState) =>
-  state.notifications.loading;
-export const selectNotificationsError = (state: RootState) =>
-  state.notifications.error;
+export const selectNotifications = (state: RootState) => state.notification.notifications;
+export const selectUnreadCount = (state: RootState) => state.notification.unreadCount;
+export const selectLoading = (state: RootState) => state.notification.loading;
+export const selectError = (state: RootState) => state.notification.error;
 
 export default notificationSlice.reducer;

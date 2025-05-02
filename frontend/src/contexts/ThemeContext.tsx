@@ -29,9 +29,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     const savedMode = localStorage.getItem('themeMode') as PaletteMode;
     if (savedMode) return savedMode;
 
-    return window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? 'dark'
-      : 'light';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
 
   useEffect(() => {
@@ -59,9 +57,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     toggleColorMode,
   };
 
-  return (
-    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 };
 
 export default ThemeContext;

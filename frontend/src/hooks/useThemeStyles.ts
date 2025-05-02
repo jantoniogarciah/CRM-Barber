@@ -17,9 +17,7 @@ export const useThemeStyles = (): ThemeStyles => {
     paper: {
       p: 3,
       borderRadius: 2,
-      boxShadow: isDark
-        ? '0 4px 6px rgba(0, 0, 0, 0.3)'
-        : '0 4px 6px rgba(0, 0, 0, 0.1)',
+      boxShadow: isDark ? '0 4px 6px rgba(0, 0, 0, 0.3)' : '0 4px 6px rgba(0, 0, 0, 0.1)',
       backgroundColor: theme.palette.background.paper,
     },
     card: {
@@ -48,14 +46,10 @@ export const useThemeStyles = (): ThemeStyles => {
     },
     table: {
       '& .MuiTableCell-root': {
-        borderBottom: `1px solid ${
-          isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)'
-        }`,
+        borderBottom: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)'}`,
       },
       '& .MuiTableRow-root:hover': {
-        backgroundColor: isDark
-          ? 'rgba(255, 255, 255, 0.04)'
-          : 'rgba(0, 0, 0, 0.04)',
+        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.04)',
       },
     },
   };

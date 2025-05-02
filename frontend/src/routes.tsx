@@ -1,9 +1,9 @@
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { PrivateRoute } from './components/PrivateRoute';
 import { AdminRoute } from './components/AdminRoute';
 import { BarberRoute } from './components/BarberRoute';
-import Layout from './components/Layout';
+import { useAuth } from './contexts/AuthContext';
 
 // Pages
 import Login from './pages/Login';
@@ -15,16 +15,16 @@ import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
 
 const AppRoutes: React.FC = () => {
+  const { isAuthenticated } = useAuth();
+
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
+      <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} />
       <Route
         path="/"
         element={
           <PrivateRoute>
-            <Layout>
-              <Dashboard />
-            </Layout>
+            <Dashboard />
           </PrivateRoute>
         }
       />
@@ -32,9 +32,7 @@ const AppRoutes: React.FC = () => {
         path="/clients"
         element={
           <PrivateRoute>
-            <Layout>
-              <Clients />
-            </Layout>
+            <Clients />
           </PrivateRoute>
         }
       />
@@ -42,9 +40,7 @@ const AppRoutes: React.FC = () => {
         path="/appointments"
         element={
           <PrivateRoute>
-            <Layout>
-              <Appointments />
-            </Layout>
+            <Appointments />
           </PrivateRoute>
         }
       />
@@ -52,9 +48,7 @@ const AppRoutes: React.FC = () => {
         path="/services"
         element={
           <AdminRoute>
-            <Layout>
-              <Services />
-            </Layout>
+            <Services />
           </AdminRoute>
         }
       />
@@ -62,9 +56,7 @@ const AppRoutes: React.FC = () => {
         path="/profile"
         element={
           <PrivateRoute>
-            <Layout>
-              <Profile />
-            </Layout>
+            <Profile />
           </PrivateRoute>
         }
       />

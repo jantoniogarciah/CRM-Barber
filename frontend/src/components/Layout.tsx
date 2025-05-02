@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import {
   AppBar,
   Box,
@@ -28,9 +28,9 @@ import {
   Notifications,
   AccountCircle,
 } from '@mui/icons-material';
-import { AppDispatch, RootState } from '../store';
-import { logout } from '../store/slices/authSlice';
-import notificationApi from '../services/notificationService';
+import { RootState } from '../store';
+import { useAuth } from '../contexts/AuthContext';
+import { useGetNotificationsQuery } from '../services/api';
 
 const drawerWidth = 240;
 
@@ -42,10 +42,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
-  const dispatch = useDispatch<AppDispatch>();
-  const { user } = useSelector((state: RootState) => state.auth);
-  const { data: unreadCount = 0 } =
-    notificationApi.endpoints.getUnreadCount.useQuery();
+  const { logout, user } = useAuth();
+  const { data: notifications = [] } = useGetNotificationsQuery();
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -61,7 +60,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const handleLogout = async () => {
     handleClose();
-    await dispatch(logout());
+    await logout();
     navigate('/login');
   };
 
@@ -116,11 +115,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             {user?.firstName} {user?.lastName}
           </Typography>
-          <IconButton
-            size="large"
-            color="inherit"
-            onClick={() => navigate('/notifications')}
-          >
+          <IconButton size="large" color="inherit" onClick={() => navigate('/notifications')}>
             <Badge badgeContent={unreadCount} color="error">
               <Notifications />
             </Badge>
@@ -162,10 +157,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </Menu>
         </Toolbar>
       </AppBar>
-      <Box
-        component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
-      >
+      <Box component="nav" sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}>
         <Drawer
           variant="temporary"
           open={mobileOpen}

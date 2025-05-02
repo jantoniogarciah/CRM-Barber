@@ -1,4 +1,27 @@
+import axios from 'axios';
 import { io } from 'socket.io-client';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+const socket = io(API_URL);
+
+export const getNotifications = async () => {
+  const response = await axios.get(`${API_URL}/notifications`);
+  return response.data;
+};
+
+export const markNotificationAsRead = async (id) => {
+  await axios.put(`${API_URL}/notifications/${id}/read`);
+};
+
+export const subscribeToNotifications = (callback) => {
+  socket.on('notification', (notification) => {
+    callback(notification);
+  });
+};
+
+export const unsubscribeFromNotifications = () => {
+  socket.off('notification');
+};
 
 class NotificationService {
   constructor() {

@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  Card,
-  CardContent,
-  CardActions,
-  Typography,
-  Button,
-  Box,
-} from '@mui/material';
+import { Card, CardContent, CardActions, Typography, Button, Box } from '@mui/material';
 import useThemeStyles from '../hooks/useThemeStyles';
 
 interface ExampleCardProps {
@@ -15,11 +8,7 @@ interface ExampleCardProps {
   onAction: () => void;
 }
 
-const ExampleCard: React.FC<ExampleCardProps> = ({
-  title,
-  description,
-  onAction,
-}) => {
+const ExampleCard: React.FC<ExampleCardProps> = ({ title, description, onAction }) => {
   const styles = useThemeStyles();
 
   return (
@@ -34,12 +23,7 @@ const ExampleCard: React.FC<ExampleCardProps> = ({
       </CardContent>
       <CardActions>
         <Box sx={{ p: 2, width: '100%' }}>
-          <Button
-            variant="contained"
-            fullWidth
-            onClick={onAction}
-            sx={styles.button}
-          >
+          <Button variant="contained" fullWidth onClick={onAction} sx={styles.button}>
             Take Action
           </Button>
         </Box>
