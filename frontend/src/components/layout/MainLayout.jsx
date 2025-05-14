@@ -33,6 +33,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { NotificationProvider } from '../../contexts/NotificationContext';
 import NotificationCenter from '../notifications/NotificationCenter';
 import NotificationToast from '../notifications/NotificationToast';
+import logo from '../../assets/clippercut-logo.png';
 
 const drawerWidth = 240;
 
@@ -122,11 +123,10 @@ const MainLayout = ({ children }) => {
 
   return (
     <NotificationProvider>
-      <Box
-        sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}
-      >
+      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         <AppBar position="static">
           <Toolbar>
+            <img src={logo} alt="Clipper Cut Logo" style={{ height: 40, marginRight: 16 }} />
             <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
               Barber Shop CRM
             </Typography>
@@ -145,28 +145,14 @@ const MainLayout = ({ children }) => {
               >
                 <MenuIcon />
               </IconButton>
-              <Typography
-                variant="h6"
-                noWrap
-                component="div"
-                sx={{ flexGrow: 1 }}
-              >
+              <img src={logo} alt="Clipper Cut Logo" style={{ height: 40, marginRight: 16 }} />
+              <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
                 Barber Shop CRM
               </Typography>
-              <IconButton
-                color="inherit"
-                onClick={handleMenuOpen}
-                sx={{ ml: 2 }}
-              >
-                <Avatar sx={{ width: 32, height: 32 }}>
-                  {user?.firstName?.[0]}
-                </Avatar>
+              <IconButton color="inherit" onClick={handleMenuOpen} sx={{ ml: 2 }}>
+                <Avatar sx={{ width: 32, height: 32 }}>{user?.firstName?.[0]}</Avatar>
               </IconButton>
-              <Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={handleMenuClose}
-              >
+              <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
                 <MenuItem
                   onClick={() => {
                     handleMenuClose();
@@ -205,11 +191,7 @@ const MainLayout = ({ children }) => {
             <Divider />
             <List>
               {menuItems.map((item) => (
-                <ListItem
-                  button
-                  key={item.text}
-                  onClick={() => navigate(item.path)}
-                >
+                <ListItem button key={item.text} onClick={() => navigate(item.path)}>
                   <ListItemIcon>{item.icon}</ListItemIcon>
                   <ListItemText primary={item.text} />
                 </ListItem>

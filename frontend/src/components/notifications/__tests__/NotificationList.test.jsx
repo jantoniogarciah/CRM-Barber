@@ -56,10 +56,7 @@ describe('NotificationList', () => {
 
   it('shows loading state', () => {
     jest
-      .spyOn(
-        require('../../../contexts/NotificationContext'),
-        'useNotifications'
-      )
+      .spyOn(require('../../../contexts/NotificationContext'), 'useNotifications')
       .mockImplementation(() => ({
         notifications: [],
         loading: true,
@@ -80,10 +77,7 @@ describe('NotificationList', () => {
   it('shows error state', () => {
     const errorMessage = 'Failed to load notifications';
     jest
-      .spyOn(
-        require('../../../contexts/NotificationContext'),
-        'useNotifications'
-      )
+      .spyOn(require('../../../contexts/NotificationContext'), 'useNotifications')
       .mockImplementation(() => ({
         notifications: [],
         loading: false,
@@ -103,10 +97,7 @@ describe('NotificationList', () => {
 
   it('shows empty state when no notifications', () => {
     jest
-      .spyOn(
-        require('../../../contexts/NotificationContext'),
-        'useNotifications'
-      )
+      .spyOn(require('../../../contexts/NotificationContext'), 'useNotifications')
       .mockImplementation(() => ({
         notifications: [],
         loading: false,
@@ -140,10 +131,7 @@ describe('NotificationList', () => {
   it('handles mark all as read', () => {
     const markAllAsRead = jest.fn();
     jest
-      .spyOn(
-        require('../../../contexts/NotificationContext'),
-        'useNotifications'
-      )
+      .spyOn(require('../../../contexts/NotificationContext'), 'useNotifications')
       .mockImplementation(() => ({
         notifications: [
           {

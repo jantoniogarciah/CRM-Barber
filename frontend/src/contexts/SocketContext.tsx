@@ -99,4 +99,4 @@ export const useSocketNotification = (callback: (notification: Notification) => 
       socket.off('notification', callback);
     };
   }, [socket, isConnected, callback]);
-}; 
+};

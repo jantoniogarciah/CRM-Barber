@@ -59,11 +59,7 @@ const Appointments: React.FC = () => {
           New Appointment
         </Button>
       </Box>
-      <AppointmentForm
-        open={open}
-        onClose={handleClose}
-        appointment={selectedAppointment}
-      />
+      <AppointmentForm open={open} onClose={handleClose} appointment={selectedAppointment} />
       <TableContainer component={Paper}>
         <Table>
           <TableHead>

@@ -52,4 +52,4 @@ export const SocketStatus: React.FC = () => {
       </Typography>
     </Box>
   );
-}; 
+};

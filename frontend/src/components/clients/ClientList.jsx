@@ -60,10 +60,7 @@ const ClientList = () => {
       setClients(response.data.clients);
       setTotalCount(response.data.total);
     } catch (error) {
-      setError(
-        error.response?.data?.message ||
-          'An error occurred while fetching clients'
-      );
+      setError(error.response?.data?.message || 'An error occurred while fetching clients');
     } finally {
       setLoading(false);
     }
@@ -113,10 +110,7 @@ const ClientList = () => {
         });
         fetchClients();
       } catch (error) {
-        setError(
-          error.response?.data?.message ||
-            'An error occurred while deleting the client'
-        );
+        setError(error.response?.data?.message || 'An error occurred while deleting the client');
       }
     }
   };
@@ -165,11 +159,7 @@ const ClientList = () => {
           }}
           sx={{ width: 300 }}
         />
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleAddClick}
-        >
+        <Button variant="contained" startIcon={<AddIcon />} onClick={handleAddClick}>
           Add Client
         </Button>
       </Box>
@@ -208,9 +198,7 @@ const ClientList = () => {
                   <TableCell>{client.phone}</TableCell>
                   <TableCell>{client.email || '-'}</TableCell>
                   <TableCell>
-                    {client.lastVisit
-                      ? format(new Date(client.lastVisit), 'MMM d, yyyy')
-                      : '-'}
+                    {client.lastVisit ? format(new Date(client.lastVisit), 'MMM d, yyyy') : '-'}
                   </TableCell>
                   <TableCell>
                     <Chip
@@ -267,12 +255,7 @@ const ClientList = () => {
         />
       </Dialog>
 
-      <Dialog
-        open={openDetails}
-        onClose={handleDetailsClose}
-        maxWidth="lg"
-        fullWidth
-      >
+      <Dialog open={openDetails} onClose={handleDetailsClose} maxWidth="lg" fullWidth>
         <ClientDetails
           client={selectedClient}
           onClose={handleDetailsClose}

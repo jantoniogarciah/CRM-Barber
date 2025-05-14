@@ -15,11 +15,16 @@ import {
   Alert,
   Snackbar,
   CircularProgress,
-  Chip,
+  Switch,
+  FormControlLabel,
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { useAppSelector } from '../store/hooks';
-import { useGetServicesQuery, useDeleteServiceMutation } from '../services/api';
+import {
+  useGetServicesQuery,
+  useDeleteServiceMutation,
+  useUpdateServiceMutation,
+} from '../services/api';
 import ServiceForm from '../components/ServiceForm';
 import { Service } from '../types';
 
@@ -29,8 +34,10 @@ const formatPrice = (price: number | string): string => {
 };
 
 const Services: React.FC = () => {
-  const { data: services = [], isLoading, error } = useGetServicesQuery();
+  const [showInactive, setShowInactive] = useState(false);
+  const { data: services = [], isLoading, error } = useGetServicesQuery({ showInactive });
   const [deleteService] = useDeleteServiceMutation();
+  const [updateService] = useUpdateServiceMutation();
   const { user } = useAppSelector((state) => state.auth);
   const [openForm, setOpenForm] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | undefined>();
@@ -42,14 +49,30 @@ const Services: React.FC = () => {
     setOpenForm(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: number) => {
     if (window.confirm('¿Estás seguro de que quieres eliminar este servicio?')) {
       try {
-        await deleteService(id);
+        await deleteService(id.toString());
         setSuccessMessage('Servicio eliminado exitosamente');
       } catch (error) {
         setErrorMessage('Error al eliminar el servicio');
       }
+    }
+  };
+
+  const handleToggleStatus = async (service: Service) => {
+    try {
+      const result = await updateService({
+        id: service.id.toString(),
+        service: {
+          active: !service.active,
+        },
+      }).unwrap();
+
+      setSuccessMessage(`Servicio ${!service.active ? 'activado' : 'desactivado'} exitosamente`);
+    } catch (error) {
+      console.error('Error updating service status:', error);
+      setErrorMessage('Error al actualizar el estado del servicio');
     }
   };
 
@@ -64,7 +87,7 @@ const Services: React.FC = () => {
   if (error) {
     return (
       <Alert severity="error" sx={{ mb: 2 }}>
-        Error al cargar los servicios: {error.message}
+        Error al cargar los servicios
       </Alert>
     );
   }
@@ -75,14 +98,26 @@ const Services: React.FC = () => {
         <Typography variant="h4" component="h1">
           Servicios
         </Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<AddIcon />}
-          onClick={() => setOpenForm(true)}
-        >
-          Nuevo Servicio
-        </Button>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={showInactive}
+                onChange={(e) => setShowInactive(e.target.checked)}
+                color="primary"
+              />
+            }
+            label="Mostrar servicios inactivos"
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<AddIcon />}
+            onClick={() => setOpenForm(true)}
+          >
+            Nuevo Servicio
+          </Button>
+        </Box>
       </Box>
 
       <Paper sx={{ width: '100%', mb: 2 }}>
@@ -108,25 +143,18 @@ const Services: React.FC = () => {
                   <TableCell>{formatPrice(service.price)}</TableCell>
                   <TableCell>{service.duration}</TableCell>
                   <TableCell>
-                    <Chip
-                      label={service.active ? 'Activo' : 'Inactivo'}
-                      color={service.active ? 'success' : 'error'}
+                    <Switch
+                      checked={service.active}
+                      onChange={() => handleToggleStatus(service)}
+                      color="primary"
                       size="small"
                     />
                   </TableCell>
                   <TableCell>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleEdit(service)}
-                      color="primary"
-                    >
+                    <IconButton size="small" onClick={() => handleEdit(service)} color="primary">
                       <EditIcon />
                     </IconButton>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleDelete(service.id)}
-                      color="error"
-                    >
+                    <IconButton size="small" onClick={() => handleDelete(service.id)} color="error">
                       <DeleteIcon />
                     </IconButton>
                   </TableCell>
@@ -159,11 +187,7 @@ const Services: React.FC = () => {
         </Alert>
       </Snackbar>
 
-      <Snackbar
-        open={!!errorMessage}
-        autoHideDuration={6000}
-        onClose={() => setErrorMessage('')}
-      >
+      <Snackbar open={!!errorMessage} autoHideDuration={6000} onClose={() => setErrorMessage('')}>
         <Alert onClose={() => setErrorMessage('')} severity="error" sx={{ width: '100%' }}>
           {errorMessage}
         </Alert>

@@ -19,16 +19,19 @@ The notification system provides real-time notifications to users in the Barber 
 ### Frontend Components
 
 1. **NotificationContext** (`frontend/src/contexts/NotificationContext.jsx`)
+
    - Manages notification state
    - Handles WebSocket connection
    - Provides notification actions (mark as read, delete, etc.)
 
 2. **NotificationList** (`frontend/src/components/notifications/NotificationList.jsx`)
+
    - Displays all notifications
    - Supports selection and bulk actions
    - Shows loading and error states
 
 3. **NotificationToast** (`frontend/src/components/notifications/NotificationToast.jsx`)
+
    - Shows real-time notifications as toasts
    - Auto-dismisses after a configurable duration
    - Supports different notification types
@@ -41,6 +44,7 @@ The notification system provides real-time notifications to users in the Barber 
 ### Backend Components
 
 1. **Notification Routes** (`backend/src/routes/notificationRoutes.js`)
+
    - GET `/`: Fetch all notifications
    - PUT `/:id/read`: Mark as read
    - PUT `/read-all`: Mark all as read
@@ -79,37 +83,41 @@ CREATE TABLE notifications (
 const createAppointmentNotification = async (userId, appointment) => {
   const notification = {
     user_id: userId,
-    title: 'New Appointment Scheduled',
-    message: `Appointment scheduled for ${format(appointment.date, 'PPp')}`,
-    type: 'appointment',
+    title: "New Appointment Scheduled",
+    message: `Appointment scheduled for ${format(appointment.date, "PPp")}`,
+    type: "appointment",
     data: {
       appointmentId: appointment.id,
       clientName: appointment.client_name,
       date: appointment.date,
-      service: appointment.service_name
-    }
+      service: appointment.service_name,
+    },
   };
 
-  const [created] = await db('notifications').insert(notification).returning('*');
-  io.to(`user_${userId}`).emit('notification', created);
+  const [created] = await db("notifications")
+    .insert(notification)
+    .returning("*");
+  io.to(`user_${userId}`).emit("notification", created);
 };
 
 // Creating a notification for client updates
 const createClientUpdateNotification = async (userId, client, field) => {
   const notification = {
     user_id: userId,
-    title: 'Client Information Updated',
+    title: "Client Information Updated",
     message: `Client ${client.first_name} ${client.last_name}'s ${field} has been updated`,
-    type: 'client',
+    type: "client",
     data: {
       clientId: client.id,
       field,
-      updatedAt: new Date()
-    }
+      updatedAt: new Date(),
+    },
   };
 
-  const [created] = await db('notifications').insert(notification).returning('*');
-  io.to(`user_${userId}`).emit('notification', created);
+  const [created] = await db("notifications")
+    .insert(notification)
+    .returning("*");
+  io.to(`user_${userId}`).emit("notification", created);
 };
 ```
 
@@ -142,8 +150,8 @@ function AppointmentForm({ onSubmit }) {
 #### Notification List Example
 
 ```javascript
-import { useNotifications } from '../contexts/NotificationContext';
-import { NotificationList } from '../components/notifications';
+import { useNotifications } from "../contexts/NotificationContext";
+import { NotificationList } from "../components/notifications";
 
 function NotificationsPage() {
   const { notifications, loading, error } = useNotifications();
@@ -163,7 +171,7 @@ function NotificationsPage() {
 #### Toast Notification Example
 
 ```javascript
-import { NotificationToast } from '../components/notifications';
+import { NotificationToast } from "../components/notifications";
 
 function App() {
   return (
@@ -185,7 +193,7 @@ function NotificationActions({ notification }) {
     try {
       await markAsRead(notification.id);
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      console.error("Error marking notification as read:", error);
     }
   };
 
@@ -193,16 +201,14 @@ function NotificationActions({ notification }) {
     try {
       await deleteNotification(notification.id);
     } catch (error) {
-      console.error('Error deleting notification:', error);
+      console.error("Error deleting notification:", error);
     }
   };
 
   return (
     <Box>
       {!notification.is_read && (
-        <Button onClick={handleMarkAsRead}>
-          Mark as Read
-        </Button>
+        <Button onClick={handleMarkAsRead}>Mark as Read</Button>
       )}
       <Button onClick={handleDelete} color="error">
         Delete
@@ -219,20 +225,20 @@ function NotificationActions({ notification }) {
 useEffect(() => {
   const socket = io(process.env.REACT_APP_WS_URL, {
     auth: {
-      token: localStorage.getItem('token')
-    }
+      token: localStorage.getItem("token"),
+    },
   });
 
-  socket.on('notification', (newNotification) => {
-    setNotifications(prev => [newNotification, ...prev]);
+  socket.on("notification", (newNotification) => {
+    setNotifications((prev) => [newNotification, ...prev]);
   });
 
-  socket.on('connect', () => {
-    console.log('Connected to notification service');
+  socket.on("connect", () => {
+    console.log("Connected to notification service");
   });
 
-  socket.on('disconnect', () => {
-    console.log('Disconnected from notification service');
+  socket.on("disconnect", () => {
+    console.log("Disconnected from notification service");
   });
 
   return () => {
@@ -250,6 +256,7 @@ The notification system includes comprehensive tests:
 - `NotificationToast.test.jsx`: Tests toast component
 
 Run tests with:
+
 ```bash
 npm test
 ```
@@ -257,16 +264,19 @@ npm test
 ## Best Practices
 
 1. **Notification Types**
+
    - Use appropriate types for different notifications
    - Keep messages clear and concise
    - Include relevant data in the `data` field
 
 2. **Performance**
+
    - Limit notification history
    - Clean up old notifications
    - Use pagination for large lists
 
 3. **Security**
+
    - Validate user permissions
    - Sanitize notification content
    - Use secure WebSocket connections
@@ -281,11 +291,13 @@ npm test
 Common issues and solutions:
 
 1. **WebSocket Connection Issues**
+
    - Check CORS configuration
    - Verify authentication token
    - Check network connectivity
 
 2. **Missing Notifications**
+
    - Verify user permissions
    - Check notification creation
    - Verify WebSocket connection
@@ -303,4 +315,4 @@ When adding new features to the notification system:
 2. Add appropriate tests
 3. Update documentation
 4. Follow security best practices
-5. Consider performance implications 
+5. Consider performance implications

@@ -49,7 +49,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({ open, onClose, appoin
   const [createAppointment] = useCreateAppointmentMutation();
   const [updateAppointment] = useUpdateAppointmentMutation();
   const { data: clients = [] } = useGetClientsQuery();
-  const { data: services = [] } = useGetServicesQuery();
+  const { data: services = [] } = useGetServicesQuery({});
 
   const formik = useFormik<AppointmentFormValues>({
     initialValues: {
@@ -205,4 +205,4 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({ open, onClose, appoin
   );
 };
 
-export default AppointmentForm; 
+export default AppointmentForm;

@@ -1,5 +1,15 @@
 import React from 'react';
-import { Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+} from '@mui/material';
 import { useAppSelector } from '../store/hooks';
 import { useGetClientsQuery } from '../services/api';
 import ClientForm from '../components/ClientForm';

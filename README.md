@@ -5,30 +5,35 @@ A comprehensive Customer Relationship Management system designed specifically fo
 ## Features
 
 - 👥 **Client Management**
+
   - Client profiles with contact information
   - Appointment history
   - Service preferences
   - Notes and special requests
 
 - 📅 **Appointment Scheduling**
+
   - Real-time availability checking
   - Online booking system
   - Automated reminders
   - Conflict prevention
 
 - 💇 **Service Management**
+
   - Service catalog
   - Pricing management
   - Duration tracking
   - Service categories
 
 - 👨‍💼 **Staff Management**
+
   - Barber profiles
   - Schedule management
   - Performance tracking
   - Commission tracking
 
 - 🔔 **Notifications**
+
   - Real-time notifications
   - Email notifications
   - SMS notifications (optional)
@@ -43,6 +48,7 @@ A comprehensive Customer Relationship Management system designed specifically fo
 ## Tech Stack
 
 ### Backend
+
 - Node.js
 - Express.js
 - PostgreSQL
@@ -51,6 +57,7 @@ A comprehensive Customer Relationship Management system designed specifically fo
 - JWT Authentication
 
 ### Frontend
+
 - React
 - Material-UI
 - Redux Toolkit
@@ -66,12 +73,14 @@ A comprehensive Customer Relationship Management system designed specifically fo
 ## Installation
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/yourusername/barber-shop-crm.git
 cd barber-shop-crm
 ```
 
 2. Install dependencies:
+
 ```bash
 # Install backend dependencies
 cd backend
@@ -83,6 +92,7 @@ npm install
 ```
 
 3. Set up environment variables:
+
 ```bash
 # In the backend directory
 cp .env.example .env
@@ -90,6 +100,7 @@ cp .env.example .env
 ```
 
 4. Set up the database:
+
 ```bash
 # In the backend directory
 npm run migrate
@@ -97,6 +108,7 @@ npm run seed
 ```
 
 5. Start the development servers:
+
 ```bash
 # Start backend server (from backend directory)
 npm run dev
@@ -110,6 +122,7 @@ npm start
 The application requires several environment variables to be set. See `.env.example` for all required variables and their descriptions.
 
 Key variables include:
+
 - Database configuration
 - JWT secret
 - Email settings
@@ -121,6 +134,7 @@ Key variables include:
 The API documentation is available at `/api-docs` when running the server in development mode.
 
 Key endpoints:
+
 - `/api/users` - User management
 - `/api/clients` - Client management
 - `/api/services` - Service management
@@ -130,6 +144,7 @@ Key endpoints:
 ## Development
 
 ### Running Tests
+
 ```bash
 # Backend tests
 cd backend
@@ -141,6 +156,7 @@ npm test
 ```
 
 ### Code Style
+
 - ESLint for JavaScript/TypeScript
 - Prettier for code formatting
 - Husky for pre-commit hooks
@@ -148,12 +164,14 @@ npm test
 ## Deployment
 
 1. Build the frontend:
+
 ```bash
 cd frontend
 npm run build
 ```
 
 2. Set up production environment variables:
+
 ```bash
 # In the backend directory
 cp .env.example .env.production
@@ -161,6 +179,7 @@ cp .env.example .env.production
 ```
 
 3. Start the production server:
+
 ```bash
 cd backend
 npm start
@@ -186,4 +205,4 @@ For support, email support@barbershopcrm.com or open an issue in the GitHub repo
 
 - Material-UI for the component library
 - PostgreSQL for the database
-- All contributors who have helped with the project 
+- All contributors who have helped with the project

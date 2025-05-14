@@ -87,9 +87,7 @@ const AppointmentDetails = ({ appointment, onClose, onEdit }) => {
       });
       onClose();
     } catch (error) {
-      setError(
-        error.response?.data?.message || 'Failed to update appointment status'
-      );
+      setError(error.response?.data?.message || 'Failed to update appointment status');
     } finally {
       setLoading(false);
     }
@@ -149,10 +147,7 @@ const AppointmentDetails = ({ appointment, onClose, onEdit }) => {
                   <ListItemIcon>
                     <TimeIcon />
                   </ListItemIcon>
-                  <ListItemText
-                    primary="Phone"
-                    secondary={appointment.client.phone}
-                  />
+                  <ListItemText primary="Phone" secondary={appointment.client.phone} />
                 </ListItem>
               </List>
             </Paper>
@@ -198,18 +193,12 @@ const AppointmentDetails = ({ appointment, onClose, onEdit }) => {
                   </ListItemIcon>
                   <ListItemText
                     primary={getDateLabel(appointment.date)}
-                    secondary={format(
-                      parseISO(`2000-01-01T${appointment.time}`),
-                      'h:mm a'
-                    )}
+                    secondary={format(parseISO(`2000-01-01T${appointment.time}`), 'h:mm a')}
                   />
                 </ListItem>
                 {appointment.notes && (
                   <ListItem>
-                    <ListItemText
-                      primary="Notes"
-                      secondary={appointment.notes}
-                    />
+                    <ListItemText primary="Notes" secondary={appointment.notes} />
                   </ListItem>
                 )}
               </List>
@@ -262,15 +251,11 @@ const AppointmentDetails = ({ appointment, onClose, onEdit }) => {
         </Box>
       </DialogActions>
 
-      <Dialog
-        open={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-      >
+      <Dialog open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)}>
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete this appointment? This action cannot
-            be undone.
+            Are you sure you want to delete this appointment? This action cannot be undone.
           </Typography>
         </DialogContent>
         <DialogActions>

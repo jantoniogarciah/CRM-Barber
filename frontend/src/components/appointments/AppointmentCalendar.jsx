@@ -37,12 +37,7 @@ import {
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
-const AppointmentCalendar = ({
-  appointments,
-  onViewClick,
-  onEditClick,
-  onDeleteClick,
-}) => {
+const AppointmentCalendar = ({ appointments, onViewClick, onEditClick, onDeleteClick }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
   const [openDayDialog, setOpenDayDialog] = useState(false);
@@ -66,9 +61,7 @@ const AppointmentCalendar = ({
   };
 
   const getAppointmentsForDate = (date) => {
-    return appointments.filter((appointment) =>
-      isSameDay(parseISO(appointment.date), date)
-    );
+    return appointments.filter((appointment) => isSameDay(parseISO(appointment.date), date));
   };
 
   const getStatusColor = (status) => {
@@ -92,9 +85,7 @@ const AppointmentCalendar = ({
     const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
     return (
-      <Box
-        sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1 }}
-      >
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1 }}>
         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
           <Typography
             key={day}
@@ -139,18 +130,14 @@ const AppointmentCalendar = ({
                 {dayAppointments.map((appointment) => (
                   <Tooltip
                     key={appointment.id}
-                    title={`${format(
-                      parseISO(`2000-01-01T${appointment.time}`),
-                      'h:mm a'
-                    )} - ${appointment.client.firstName} ${
-                      appointment.client.lastName
-                    }`}
+                    title={`${format(parseISO(`2000-01-01T${appointment.time}`), 'h:mm a')} - ${
+                      appointment.client.firstName
+                    } ${appointment.client.lastName}`}
                   >
                     <Chip
-                      label={`${format(
-                        parseISO(`2000-01-01T${appointment.time}`),
-                        'h:mm a'
-                      )} - ${appointment.client.firstName}`}
+                      label={`${format(parseISO(`2000-01-01T${appointment.time}`), 'h:mm a')} - ${
+                        appointment.client.firstName
+                      }`}
                       size="small"
                       color={getStatusColor(appointment.status)}
                       sx={{ mb: 0.5, width: '100%' }}
@@ -171,32 +158,20 @@ const AppointmentCalendar = ({
     const dayAppointments = getAppointmentsForDate(selectedDate);
 
     return (
-      <Dialog
-        open={openDayDialog}
-        onClose={handleCloseDialog}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          Appointments for {format(selectedDate, 'MMMM d, yyyy')}
-        </DialogTitle>
+      <Dialog open={openDayDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>Appointments for {format(selectedDate, 'MMMM d, yyyy')}</DialogTitle>
         <DialogContent>
           {dayAppointments.length === 0 ? (
-            <Typography color="text.secondary">
-              No appointments scheduled
-            </Typography>
+            <Typography color="text.secondary">No appointments scheduled</Typography>
           ) : (
             <List>
               {dayAppointments.map((appointment) => (
                 <React.Fragment key={appointment.id}>
                   <ListItem>
                     <ListItemText
-                      primary={`${format(
-                        parseISO(`2000-01-01T${appointment.time}`),
-                        'h:mm a'
-                      )} - ${appointment.client.firstName} ${
-                        appointment.client.lastName
-                      }`}
+                      primary={`${format(parseISO(`2000-01-01T${appointment.time}`), 'h:mm a')} - ${
+                        appointment.client.firstName
+                      } ${appointment.client.lastName}`}
                       secondary={`${appointment.service.name} with ${appointment.barber.firstName} ${appointment.barber.lastName}`}
                     />
                     <ListItemSecondaryAction>

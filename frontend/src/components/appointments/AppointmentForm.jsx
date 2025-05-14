@@ -151,9 +151,7 @@ const AppointmentForm = ({ appointment, mode, onSubmit, onCancel }) => {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <DialogTitle>
-        {mode === 'edit' ? 'Edit Appointment' : 'New Appointment'}
-      </DialogTitle>
+      <DialogTitle>{mode === 'edit' ? 'Edit Appointment' : 'New Appointment'}</DialogTitle>
       <DialogContent>
         <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
           {error && (
@@ -166,9 +164,7 @@ const AppointmentForm = ({ appointment, mode, onSubmit, onCancel }) => {
             <Grid item xs={12}>
               <Autocomplete
                 options={clients}
-                getOptionLabel={(option) =>
-                  `${option.firstName} ${option.lastName}`
-                }
+                getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
                 value={clients.find((c) => c.id === formData.clientId) || null}
                 onChange={(event, newValue) => {
                   setFormData((prev) => ({
@@ -192,9 +188,7 @@ const AppointmentForm = ({ appointment, mode, onSubmit, onCancel }) => {
               <Autocomplete
                 options={services}
                 getOptionLabel={(option) => `${option.name} - $${option.price}`}
-                value={
-                  services.find((s) => s.id === formData.serviceId) || null
-                }
+                value={services.find((s) => s.id === formData.serviceId) || null}
                 onChange={(event, newValue) => {
                   setFormData((prev) => ({
                     ...prev,
@@ -271,11 +265,7 @@ const AppointmentForm = ({ appointment, mode, onSubmit, onCancel }) => {
             <Grid item xs={12}>
               <FormControl fullWidth>
                 <InputLabel>Status</InputLabel>
-                <Select
-                  value={formData.status}
-                  onChange={handleChange('status')}
-                  label="Status"
-                >
+                <Select value={formData.status} onChange={handleChange('status')} label="Status">
                   <MenuItem value="scheduled">Scheduled</MenuItem>
                   <MenuItem value="completed">Completed</MenuItem>
                   <MenuItem value="cancelled">Cancelled</MenuItem>

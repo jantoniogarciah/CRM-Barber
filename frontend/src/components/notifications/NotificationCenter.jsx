@@ -171,23 +171,15 @@ const NotificationCenter = () => {
               <React.Fragment key={notification.id}>
                 <ListItem
                   sx={{
-                    bgcolor: notification.isRead
-                      ? 'transparent'
-                      : 'action.hover',
+                    bgcolor: notification.isRead ? 'transparent' : 'action.hover',
                     '&:hover': { bgcolor: 'action.selected' },
                   }}
                 >
-                  <ListItemIcon>
-                    {getNotificationIcon(notification.type)}
-                  </ListItemIcon>
+                  <ListItemIcon>{getNotificationIcon(notification.type)}</ListItemIcon>
                   <ListItemText
                     primary={
-                      <Box
-                        sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-                      >
-                        <Typography variant="body2">
-                          {notification.title}
-                        </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="body2">{notification.title}</Typography>
                         <Chip
                           label={notification.type}
                           size="small"

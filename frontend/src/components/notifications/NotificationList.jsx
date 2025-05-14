@@ -29,8 +29,7 @@ import { useNotifications } from '../../contexts/NotificationContext';
 import { format } from 'date-fns';
 
 const NotificationList = () => {
-  const { notifications, loading, error, markAllAsRead, deleteNotification } =
-    useNotifications();
+  const { notifications, loading, error, markAllAsRead, deleteNotification } = useNotifications();
 
   const [selectedNotifications, setSelectedNotifications] = useState([]);
 
@@ -75,12 +74,7 @@ const NotificationList = () => {
 
   if (loading) {
     return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="200px"
-      >
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
         <CircularProgress />
       </Box>
     );
@@ -96,12 +90,7 @@ const NotificationList = () => {
 
   return (
     <Paper sx={{ p: 2 }}>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={2}
-      >
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h6" component="h2">
           Notifications
         </Typography>
@@ -111,15 +100,9 @@ const NotificationList = () => {
             onClick={handleSelectAll}
             disabled={notifications.length === 0}
           >
-            {selectedNotifications.length === notifications.length
-              ? 'Deselect All'
-              : 'Select All'}
+            {selectedNotifications.length === notifications.length ? 'Deselect All' : 'Select All'}
           </Button>
-          <Button
-            variant="outlined"
-            onClick={markAllAsRead}
-            disabled={notifications.length === 0}
-          >
+          <Button variant="outlined" onClick={markAllAsRead} disabled={notifications.length === 0}>
             Mark All as Read
           </Button>
           <Button
@@ -135,9 +118,7 @@ const NotificationList = () => {
 
       {notifications.length === 0 ? (
         <Box textAlign="center" py={4}>
-          <NotificationsIcon
-            sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }}
-          />
+          <NotificationsIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
           <Typography color="text.secondary">No notifications yet</Typography>
         </Box>
       ) : (
@@ -149,18 +130,12 @@ const NotificationList = () => {
                 onClick={() => handleSelectNotification(notification.id)}
                 sx={{ cursor: 'pointer' }}
               >
-                <ListItemIcon>
-                  {getNotificationIcon(notification.type)}
-                </ListItemIcon>
+                <ListItemIcon>{getNotificationIcon(notification.type)}</ListItemIcon>
                 <ListItemText
                   primary={
                     <Box display="flex" alignItems="center" gap={1}>
-                      <Typography variant="subtitle1">
-                        {notification.title}
-                      </Typography>
-                      {!notification.isRead && (
-                        <Chip label="New" size="small" color="primary" />
-                      )}
+                      <Typography variant="subtitle1">{notification.title}</Typography>
+                      {!notification.isRead && <Chip label="New" size="small" color="primary" />}
                     </Box>
                   }
                   secondary={

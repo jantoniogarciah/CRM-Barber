@@ -67,10 +67,7 @@ const ServiceList = () => {
       setServices(response.data.services);
       setTotalCount(response.data.total);
     } catch (error) {
-      setError(
-        error.response?.data?.message ||
-          'An error occurred while fetching services'
-      );
+      setError(error.response?.data?.message || 'An error occurred while fetching services');
     } finally {
       setLoading(false);
     }
@@ -138,10 +135,7 @@ const ServiceList = () => {
         });
         fetchServices();
       } catch (error) {
-        setError(
-          error.response?.data?.message ||
-            'An error occurred while deleting the service'
-        );
+        setError(error.response?.data?.message || 'An error occurred while deleting the service');
       }
     }
   };
@@ -202,11 +196,7 @@ const ServiceList = () => {
           />
           <FormControl sx={{ minWidth: 200 }}>
             <InputLabel>Category</InputLabel>
-            <Select
-              value={category}
-              onChange={handleCategoryChange}
-              label="Category"
-            >
+            <Select value={category} onChange={handleCategoryChange} label="Category">
               <MenuItem value="">All Categories</MenuItem>
               {categories.map((cat) => (
                 <MenuItem key={cat} value={cat}>
@@ -216,11 +206,7 @@ const ServiceList = () => {
             </Select>
           </FormControl>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleAddClick}
-        >
+        <Button variant="contained" startIcon={<AddIcon />} onClick={handleAddClick}>
           Add Service
         </Button>
       </Box>
@@ -312,12 +298,7 @@ const ServiceList = () => {
         />
       </Dialog>
 
-      <Dialog
-        open={openDetails}
-        onClose={handleDetailsClose}
-        maxWidth="lg"
-        fullWidth
-      >
+      <Dialog open={openDetails} onClose={handleDetailsClose} maxWidth="lg" fullWidth>
         <ServiceDetails
           service={selectedService}
           onClose={handleDetailsClose}

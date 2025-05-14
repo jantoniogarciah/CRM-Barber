@@ -127,18 +127,9 @@ const Clients = () => {
 
   return (
     <Box>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={3}
-      >
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4">Clients</Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => handleOpenForm()}
-        >
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenForm()}>
           Add Client
         </Button>
       </Box>
@@ -195,9 +186,7 @@ const Clients = () => {
                     <TableCell>{client.email}</TableCell>
                     <TableCell>{client.phone}</TableCell>
                     <TableCell>
-                      {client.lastVisit
-                        ? new Date(client.lastVisit).toLocaleDateString()
-                        : 'Never'}
+                      {client.lastVisit ? new Date(client.lastVisit).toLocaleDateString() : 'Never'}
                     </TableCell>
                     <TableCell>
                       <Chip
@@ -207,22 +196,13 @@ const Clients = () => {
                       />
                     </TableCell>
                     <TableCell align="right">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleOpenDetails(client)}
-                      >
+                      <IconButton size="small" onClick={() => handleOpenDetails(client)}>
                         <ViewIcon />
                       </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleOpenForm(client)}
-                      >
+                      <IconButton size="small" onClick={() => handleOpenForm(client)}>
                         <EditIcon />
                       </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDelete(client)}
-                      >
+                      <IconButton size="small" onClick={() => handleDelete(client)}>
                         <DeleteIcon />
                       </IconButton>
                     </TableCell>
@@ -246,25 +226,14 @@ const Clients = () => {
 
       {/* Client Form Dialog */}
       <Dialog open={openForm} onClose={handleCloseForm} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {selectedClient ? 'Edit Client' : 'Add New Client'}
-        </DialogTitle>
+        <DialogTitle>{selectedClient ? 'Edit Client' : 'Add New Client'}</DialogTitle>
         <DialogContent>
-          <ClientForm
-            client={selectedClient}
-            onClose={handleCloseForm}
-            onSave={fetchClients}
-          />
+          <ClientForm client={selectedClient} onClose={handleCloseForm} onSave={fetchClients} />
         </DialogContent>
       </Dialog>
 
       {/* Client Details Dialog */}
-      <Dialog
-        open={openDetails}
-        onClose={handleCloseDetails}
-        maxWidth="md"
-        fullWidth
-      >
+      <Dialog open={openDetails} onClose={handleCloseDetails} maxWidth="md" fullWidth>
         <DialogTitle>Client Details</DialogTitle>
         <DialogContent>
           <ClientDetails client={selectedClient} />
@@ -275,14 +244,10 @@ const Clients = () => {
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
-      >
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
-          Are you sure you want to delete this client? This action cannot be
-          undone.
+          Are you sure you want to delete this client? This action cannot be undone.
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>

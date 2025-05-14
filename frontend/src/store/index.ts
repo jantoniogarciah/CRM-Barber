@@ -16,8 +16,7 @@ export const store = configureStore({
     appointment: appointmentReducer,
     notification: notificationReducer,
   },
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(api.middleware),
+  middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(api.middleware),
   devTools: process.env.NODE_ENV !== 'production',
 });
 

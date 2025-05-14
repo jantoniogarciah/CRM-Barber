@@ -3,12 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { Provider } from 'react-redux';
 import { store } from './store';
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { AuthProvider } from './contexts/AuthContext';
 import theme from './theme';
@@ -38,10 +33,7 @@ const App = () => {
                 <ProtectedRoute>
                   <MainLayout>
                     <Routes>
-                      <Route
-                        index
-                        element={<Navigate to="/dashboard" replace />}
-                      />
+                      <Route index element={<Navigate to="/dashboard" replace />} />
                       <Route path="dashboard" element={<Dashboard />} />
                       <Route path="clients" element={<Clients />} />
                       <Route path="appointments" element={<Appointments />} />

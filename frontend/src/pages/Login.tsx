@@ -14,6 +14,7 @@ import {
   Link,
 } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
+import logo from '../assets/clippercut-logo.png';
 
 interface LoginFormValues {
   email: string;
@@ -67,8 +68,9 @@ const Login: React.FC = () => {
             width: '100%',
           }}
         >
+          <img src={logo} alt="Clipper Cut Logo" style={{ height: 60, marginBottom: 16 }} />
           <Typography component="h1" variant="h5">
-            Barber Shop CRM
+            Clipper Cut Barber Sports
           </Typography>
           <Typography component="h2" variant="h6" sx={{ mt: 2 }}>
             Sign in
@@ -119,7 +121,7 @@ const Login: React.FC = () => {
                 Forgot password?
               </Link>
               <Link href="/register" variant="body2">
-                Don't have an account? Sign up
+                Don&apos;t have an account? Sign up
               </Link>
             </Box>
           </Box>

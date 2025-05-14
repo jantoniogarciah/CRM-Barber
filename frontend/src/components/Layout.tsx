@@ -31,6 +31,7 @@ import {
 import { RootState } from '../store';
 import { useAuth } from '../contexts/AuthContext';
 import { useGetNotificationsQuery } from '../services/api';
+import logo from '../assets/clippercut-logo.png';
 
 const drawerWidth = 240;
 
@@ -44,7 +45,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
   const { data: notifications = [] } = useGetNotificationsQuery();
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -112,6 +113,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           >
             <MenuIcon />
           </IconButton>
+          <img src={logo} alt="Clipper Cut Logo" style={{ height: 40, marginRight: 16 }} />
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             {user?.firstName} {user?.lastName}
           </Typography>

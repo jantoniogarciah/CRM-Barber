@@ -92,7 +92,10 @@ export const createClient = async (client: Partial<ClientType>): Promise<ClientT
   return data.data;
 };
 
-export const updateClient = async (id: number, client: Partial<ClientType>): Promise<ClientType> => {
+export const updateClient = async (
+  id: number,
+  client: Partial<ClientType>
+): Promise<ClientType> => {
   const response = await fetch(`${API_URL}/clients/${id}`, {
     method: 'PUT',
     headers: {

@@ -1,7 +1,12 @@
 import React, { createContext, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { setCredentials, clearCredentials, selectUser, selectLoading } from '../store/slices/authSlice';
+import {
+  setCredentials,
+  clearCredentials,
+  selectUser,
+  selectLoading,
+} from '../store/slices/authSlice';
 import { useLoginMutation, useLogoutMutation, useGetCurrentUserQuery } from '../services/api';
 import { User } from '../types';
 
@@ -53,7 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.warn('Logout endpoint error:', error);
         // Continue with local cleanup even if the server request fails
       }
-      
+
       // Always perform local cleanup
       localStorage.removeItem('token');
       dispatch(clearCredentials());

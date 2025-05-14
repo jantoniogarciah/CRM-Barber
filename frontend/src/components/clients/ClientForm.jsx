@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  TextField,
-  Button,
-  Grid,
-  Alert,
-  CircularProgress,
-} from '@mui/material';
+import { Box, TextField, Button, Grid, Alert, CircularProgress } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -97,10 +90,7 @@ const ClientForm = ({ client, onClose, onSave }) => {
       onSave();
       onClose();
     } catch (error) {
-      setError(
-        error.response?.data?.message ||
-          'An error occurred while saving the client'
-      );
+      setError(error.response?.data?.message || 'An error occurred while saving the client');
     } finally {
       setLoading(false);
     }
@@ -165,9 +155,7 @@ const ClientForm = ({ client, onClose, onSave }) => {
               label="Birth Date"
               value={formData.birthDate}
               onChange={handleDateChange}
-              renderInput={(params) => (
-                <TextField {...params} fullWidth disabled={loading} />
-              )}
+              renderInput={(params) => <TextField {...params} fullWidth disabled={loading} />}
             />
           </LocalizationProvider>
         </Grid>

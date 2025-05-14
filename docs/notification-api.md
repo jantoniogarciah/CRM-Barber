@@ -74,9 +74,9 @@ PUT /:id/read
 
 #### Parameters
 
-| Name | Type   | Description        |
-|------|--------|--------------------|
-| id   | number | Notification ID    |
+| Name | Type   | Description     |
+| ---- | ------ | --------------- |
+| id   | number | Notification ID |
 
 #### Response
 
@@ -112,9 +112,9 @@ DELETE /:id
 
 #### Parameters
 
-| Name | Type   | Description        |
-|------|--------|--------------------|
-| id   | number | Notification ID    |
+| Name | Type   | Description     |
+| ---- | ------ | --------------- |
+| id   | number | Notification ID |
 
 #### Response
 
@@ -134,13 +134,13 @@ POST /
 
 #### Request Body
 
-| Field    | Type   | Required | Description                    |
-|----------|--------|----------|--------------------------------|
-| user_id  | number | Yes      | ID of the user to notify       |
-| title    | string | Yes      | Notification title             |
-| message  | string | Yes      | Notification message           |
-| type     | string | Yes      | Type of notification           |
-| data     | object | No       | Additional data (JSON)         |
+| Field   | Type   | Required | Description              |
+| ------- | ------ | -------- | ------------------------ |
+| user_id | number | Yes      | ID of the user to notify |
+| title   | string | Yes      | Notification title       |
+| message | string | Yes      | Notification message     |
+| type    | string | Yes      | Type of notification     |
+| data    | object | No       | Additional data (JSON)   |
 
 #### Valid Notification Types
 
@@ -236,10 +236,10 @@ POST /
 Connect to the WebSocket server with authentication:
 
 ```javascript
-const socket = io('http://localhost:3001', {
+const socket = io("http://localhost:3001", {
   auth: {
-    token: 'your_jwt_token'
-  }
+    token: "your_jwt_token",
+  },
 });
 ```
 
@@ -248,19 +248,19 @@ const socket = io('http://localhost:3001', {
 Listen for new notifications:
 
 ```javascript
-socket.on('notification', (notification) => {
-  console.log('New notification:', notification);
+socket.on("notification", (notification) => {
+  console.log("New notification:", notification);
 });
 ```
 
 ### Connection Events
 
 ```javascript
-socket.on('connect', () => {
-  console.log('Connected to notification service');
+socket.on("connect", () => {
+  console.log("Connected to notification service");
 });
 
-socket.on('disconnect', () => {
-  console.log('Disconnected from notification service');
+socket.on("disconnect", () => {
+  console.log("Disconnected from notification service");
 });
-``` 
+```

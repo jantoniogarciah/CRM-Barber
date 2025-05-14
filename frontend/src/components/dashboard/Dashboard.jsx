@@ -73,21 +73,20 @@ const Dashboard = () => {
   const fetchDashboardData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const [statsRes, appointmentsRes, revenueRes, appointmentsChartRes] =
-        await Promise.all([
-          axios.get('/api/dashboard/stats', {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          axios.get('/api/appointments?date=today', {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          axios.get('/api/dashboard/revenue', {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          axios.get('/api/dashboard/appointments-chart', {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-        ]);
+      const [statsRes, appointmentsRes, revenueRes, appointmentsChartRes] = await Promise.all([
+        axios.get('/api/dashboard/stats', {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        axios.get('/api/appointments?date=today', {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        axios.get('/api/dashboard/revenue', {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        axios.get('/api/dashboard/appointments-chart', {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
 
       setStats(statsRes.data);
       setTodayAppointments(appointmentsRes.data.appointments);
@@ -141,12 +140,7 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="400px"
-      >
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <CircularProgress />
       </Box>
     );
@@ -163,11 +157,7 @@ const Dashboard = () => {
         <Grid item xs={12} sm={6} md={3}>
           <Card>
             <CardContent>
-              <Box
-                display="flex"
-                justifyContent="space-between"
-                alignItems="center"
-              >
+              <Box display="flex" justifyContent="space-between" alignItems="center">
                 <Box>
                   <Typography color="textSecondary" gutterBottom>
                     Total Clients
@@ -184,18 +174,12 @@ const Dashboard = () => {
         <Grid item xs={12} sm={6} md={3}>
           <Card>
             <CardContent>
-              <Box
-                display="flex"
-                justifyContent="space-between"
-                alignItems="center"
-              >
+              <Box display="flex" justifyContent="space-between" alignItems="center">
                 <Box>
                   <Typography color="textSecondary" gutterBottom>
                     Today's Appointments
                   </Typography>
-                  <Typography variant="h4">
-                    {stats.todayAppointments}
-                  </Typography>
+                  <Typography variant="h4">{stats.todayAppointments}</Typography>
                 </Box>
                 <Avatar sx={{ bgcolor: 'secondary.main' }}>
                   <EventIcon />
@@ -207,11 +191,7 @@ const Dashboard = () => {
         <Grid item xs={12} sm={6} md={3}>
           <Card>
             <CardContent>
-              <Box
-                display="flex"
-                justifyContent="space-between"
-                alignItems="center"
-              >
+              <Box display="flex" justifyContent="space-between" alignItems="center">
                 <Box>
                   <Typography color="textSecondary" gutterBottom>
                     Monthly Revenue
@@ -228,11 +208,7 @@ const Dashboard = () => {
         <Grid item xs={12} sm={6} md={3}>
           <Card>
             <CardContent>
-              <Box
-                display="flex"
-                justifyContent="space-between"
-                alignItems="center"
-              >
+              <Box display="flex" justifyContent="space-between" alignItems="center">
                 <Box>
                   <Typography color="textSecondary" gutterBottom>
                     Growth Rate
@@ -303,12 +279,7 @@ const Dashboard = () => {
 
       {/* Today's Appointments */}
       <Paper sx={{ p: 3 }}>
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          sx={{ mb: 2 }}
-        >
+        <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
           <Typography variant="h6">Today's Appointments</Typography>
           <IconButton>
             <MoreVertIcon />

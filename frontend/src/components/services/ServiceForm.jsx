@@ -86,8 +86,7 @@ const ServiceForm = ({ service, mode, onSubmit, onCancel }) => {
       setLoading(true);
       setError('');
       const token = localStorage.getItem('token');
-      const url =
-        mode === 'edit' ? `/api/services/${service.id}` : '/api/services';
+      const url = mode === 'edit' ? `/api/services/${service.id}` : '/api/services';
       const method = mode === 'edit' ? 'put' : 'post';
 
       await axios[method](
@@ -104,10 +103,7 @@ const ServiceForm = ({ service, mode, onSubmit, onCancel }) => {
 
       onSubmit();
     } catch (error) {
-      setError(
-        error.response?.data?.message ||
-          'An error occurred while saving the service'
-      );
+      setError(error.response?.data?.message || 'An error occurred while saving the service');
     } finally {
       setLoading(false);
     }
@@ -115,9 +111,7 @@ const ServiceForm = ({ service, mode, onSubmit, onCancel }) => {
 
   return (
     <>
-      <DialogTitle>
-        {mode === 'edit' ? 'Edit Service' : 'Add New Service'}
-      </DialogTitle>
+      <DialogTitle>{mode === 'edit' ? 'Edit Service' : 'Add New Service'}</DialogTitle>
       <DialogContent>
         <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
           {error && (
@@ -161,9 +155,7 @@ const ServiceForm = ({ service, mode, onSubmit, onCancel }) => {
                 onChange={handleChange}
                 disabled={loading}
                 InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">minutes</InputAdornment>
-                  ),
+                  endAdornment: <InputAdornment position="end">minutes</InputAdornment>,
                 }}
               />
             </Grid>
@@ -178,9 +170,7 @@ const ServiceForm = ({ service, mode, onSubmit, onCancel }) => {
                 onChange={handleChange}
                 disabled={loading}
                 InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">$</InputAdornment>
-                  ),
+                  startAdornment: <InputAdornment position="start">$</InputAdornment>,
                 }}
               />
             </Grid>

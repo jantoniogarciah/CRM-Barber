@@ -77,10 +77,7 @@ const AppointmentList = () => {
       setAppointments(response.data.appointments);
       setTotalCount(response.data.total);
     } catch (error) {
-      setError(
-        error.response?.data?.message ||
-          'An error occurred while fetching appointments'
-      );
+      setError(error.response?.data?.message || 'An error occurred while fetching appointments');
     } finally {
       setLoading(false);
     }
@@ -145,8 +142,7 @@ const AppointmentList = () => {
         fetchAppointments();
       } catch (error) {
         setError(
-          error.response?.data?.message ||
-            'An error occurred while deleting the appointment'
+          error.response?.data?.message || 'An error occurred while deleting the appointment'
         );
       }
     }
@@ -252,17 +248,11 @@ const AppointmentList = () => {
           <Button
             variant="outlined"
             startIcon={viewMode === 'list' ? <CalendarIcon /> : <ListIcon />}
-            onClick={() =>
-              setViewMode(viewMode === 'list' ? 'calendar' : 'list')
-            }
+            onClick={() => setViewMode(viewMode === 'list' ? 'calendar' : 'list')}
           >
             {viewMode === 'list' ? 'Calendar View' : 'List View'}
           </Button>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleAddClick}
-          >
+          <Button variant="contained" startIcon={<AddIcon />} onClick={handleAddClick}>
             Add Appointment
           </Button>
         </Box>
@@ -300,19 +290,14 @@ const AppointmentList = () => {
                   <TableRow key={appointment.id}>
                     <TableCell>{getDateLabel(appointment.date)}</TableCell>
                     <TableCell>
-                      {format(
-                        parseISO(`2000-01-01T${appointment.time}`),
-                        'h:mm a'
-                      )}
+                      {format(parseISO(`2000-01-01T${appointment.time}`), 'h:mm a')}
                     </TableCell>
                     <TableCell>
-                      {appointment.client.firstName}{' '}
-                      {appointment.client.lastName}
+                      {appointment.client.firstName} {appointment.client.lastName}
                     </TableCell>
                     <TableCell>{appointment.service.name}</TableCell>
                     <TableCell>
-                      {appointment.barber.firstName}{' '}
-                      {appointment.barber.lastName}
+                      {appointment.barber.firstName} {appointment.barber.lastName}
                     </TableCell>
                     <TableCell>
                       <Chip
@@ -377,12 +362,7 @@ const AppointmentList = () => {
         />
       </Dialog>
 
-      <Dialog
-        open={openDetails}
-        onClose={handleDetailsClose}
-        maxWidth="lg"
-        fullWidth
-      >
+      <Dialog open={openDetails} onClose={handleDetailsClose} maxWidth="lg" fullWidth>
         <AppointmentDetails
           appointment={selectedAppointment}
           onClose={handleDetailsClose}

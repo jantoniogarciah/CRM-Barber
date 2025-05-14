@@ -57,10 +57,7 @@ const ClientDetails = ({ client, onClose, onEdit }) => {
         setAppointments(appointmentsRes.data);
         setStats(statsRes.data);
       } catch (error) {
-        setError(
-          error.response?.data?.message ||
-            'An error occurred while fetching client data'
-        );
+        setError(error.response?.data?.message || 'An error occurred while fetching client data');
       } finally {
         setLoading(false);
       }
@@ -148,17 +145,12 @@ const ClientDetails = ({ client, onClose, onEdit }) => {
             {client.birthDate && (
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                 <CakeIcon sx={{ mr: 1 }} />
-                <Typography>
-                  {format(new Date(client.birthDate), 'MMMM d, yyyy')}
-                </Typography>
+                <Typography>{format(new Date(client.birthDate), 'MMMM d, yyyy')}</Typography>
               </Box>
             )}
             {client.notes && (
               <Box sx={{ mt: 2 }}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ display: 'flex', alignItems: 'center' }}
-                >
+                <Typography variant="subtitle2" sx={{ display: 'flex', alignItems: 'center' }}>
                   <NoteIcon sx={{ mr: 1 }} /> Notes
                 </Typography>
                 <Typography variant="body2" sx={{ mt: 1 }}>
@@ -232,19 +224,13 @@ const ClientDetails = ({ client, onClose, onEdit }) => {
                   <TableBody>
                     {appointments.map((appointment) => (
                       <TableRow key={appointment.id}>
+                        <TableCell>{format(new Date(appointment.date), 'MMM d, yyyy')}</TableCell>
                         <TableCell>
-                          {format(new Date(appointment.date), 'MMM d, yyyy')}
-                        </TableCell>
-                        <TableCell>
-                          {format(
-                            new Date(`2000-01-01T${appointment.time}`),
-                            'h:mm a'
-                          )}
+                          {format(new Date(`2000-01-01T${appointment.time}`), 'h:mm a')}
                         </TableCell>
                         <TableCell>{appointment.service.name}</TableCell>
                         <TableCell>
-                          {appointment.barber.firstName}{' '}
-                          {appointment.barber.lastName}
+                          {appointment.barber.firstName} {appointment.barber.lastName}
                         </TableCell>
                         <TableCell>
                           <Chip
@@ -253,9 +239,7 @@ const ClientDetails = ({ client, onClose, onEdit }) => {
                             size="small"
                           />
                         </TableCell>
-                        <TableCell>
-                          ${appointment.service.price.toFixed(2)}
-                        </TableCell>
+                        <TableCell>${appointment.service.price.toFixed(2)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -279,17 +263,12 @@ const ClientDetails = ({ client, onClose, onEdit }) => {
                       .filter((a) => a.status === 'completed')
                       .map((appointment) => (
                         <TableRow key={appointment.id}>
-                          <TableCell>
-                            {format(new Date(appointment.date), 'MMM d, yyyy')}
-                          </TableCell>
+                          <TableCell>{format(new Date(appointment.date), 'MMM d, yyyy')}</TableCell>
                           <TableCell>{appointment.service.name}</TableCell>
                           <TableCell>
-                            {appointment.barber.firstName}{' '}
-                            {appointment.barber.lastName}
+                            {appointment.barber.firstName} {appointment.barber.lastName}
                           </TableCell>
-                          <TableCell>
-                            ${appointment.service.price.toFixed(2)}
-                          </TableCell>
+                          <TableCell>${appointment.service.price.toFixed(2)}</TableCell>
                         </TableRow>
                       ))}
                   </TableBody>

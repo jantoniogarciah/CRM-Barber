@@ -30,12 +30,7 @@ export const SocketTest: React.FC = () => {
         <Typography>
           Status: {isConnected ? 'Connected' : error ? `Error: ${error}` : 'Disconnected'}
         </Typography>
-        <Button
-          variant="contained"
-          onClick={handleEmitTest}
-          disabled={!isConnected}
-          sx={{ mt: 2 }}
-        >
+        <Button variant="contained" onClick={handleEmitTest} disabled={!isConnected} sx={{ mt: 2 }}>
           Send Test Message
         </Button>
       </Paper>
@@ -74,4 +69,4 @@ export const SocketTest: React.FC = () => {
       </Paper>
     </Box>
   );
-}; 
+};

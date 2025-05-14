@@ -79,8 +79,11 @@ export const api = createApi({
     }),
 
     // Service endpoints
-    getServices: builder.query<Service[], void>({
-      query: () => '/services',
+    getServices: builder.query<Service[], { showInactive?: boolean }>({
+      query: (params) => ({
+        url: '/services',
+        params: { showInactive: params.showInactive ? 'true' : 'false' },
+      }),
       providesTags: (result) =>
         result
           ? [
@@ -107,6 +110,21 @@ export const api = createApi({
         method: 'PUT',
         body: service,
       }),
+      async onQueryStarted({ id, service }, { dispatch, queryFulfilled }) {
+        try {
+          const { data: updatedService } = await queryFulfilled;
+          dispatch(
+            api.util.updateQueryData('getServices', { showInactive: true }, (draft) => {
+              const index = draft.findIndex((s) => s.id.toString() === id);
+              if (index !== -1) {
+                draft[index] = { ...draft[index], ...updatedService };
+              }
+            })
+          );
+        } catch {
+          // If the update fails, the optimistic update will be automatically rolled back
+        }
+      },
       invalidatesTags: (result, error, { id }) => [
         { type: 'Service', id },
         { type: 'Service', id: 'LIST' },

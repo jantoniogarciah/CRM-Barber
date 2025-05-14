@@ -20,12 +20,7 @@
     "ecmaVersion": 12,
     "sourceType": "module"
   },
-  "plugins": [
-    "react",
-    "react-hooks",
-    "@typescript-eslint",
-    "prettier"
-  ],
+  "plugins": ["react", "react-hooks", "@typescript-eslint", "prettier"],
   "rules": {
     "react/react-in-jsx-scope": "off",
     "react/prop-types": "off",
@@ -33,17 +28,20 @@
     "@typescript-eslint/no-explicit-any": "warn",
     "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
     "no-console": ["warn", { "allow": ["warn", "error"] }],
-    "prettier/prettier": ["error", {
-      "singleQuote": true,
-      "trailingComma": "es5",
-      "tabWidth": 2,
-      "semi": true,
-      "printWidth": 100
-    }]
+    "prettier/prettier": [
+      "error",
+      {
+        "singleQuote": true,
+        "trailingComma": "es5",
+        "tabWidth": 2,
+        "semi": true,
+        "printWidth": 100
+      }
+    ]
   },
   "settings": {
     "react": {
       "version": "detect"
     }
   }
-} 
+}

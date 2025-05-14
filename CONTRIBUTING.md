@@ -48,8 +48,8 @@ We use GitHub issues to track public bugs. Report a bug by [opening a new issue]
 
 ## Use a Consistent Coding Style
 
-* Use 2 spaces for indentation rather than tabs
-* You can try running `npm run lint` for style unification
+- Use 2 spaces for indentation rather than tabs
+- You can try running `npm run lint` for style unification
 
 ## License
 
@@ -71,21 +71,21 @@ and orientation.
 Examples of behavior that contributes to a positive environment for our
 community include:
 
-* Demonstrating empathy and kindness toward other people
-* Being respectful of differing opinions, viewpoints, and experiences
-* Giving and gracefully accepting constructive feedback
-* Accepting responsibility and apologizing to those affected by our mistakes,
+- Demonstrating empathy and kindness toward other people
+- Being respectful of differing opinions, viewpoints, and experiences
+- Giving and gracefully accepting constructive feedback
+- Accepting responsibility and apologizing to those affected by our mistakes,
   and learning from the experience
-* Focusing on what is best not just for us as individuals, but for the
+- Focusing on what is best not just for us as individuals, but for the
   overall community
 
 Examples of unacceptable behavior include:
 
-* The use of sexualized language or imagery, and sexual attention or
+- The use of sexualized language or imagery, and sexual attention or
   advances of any kind
-* Trolling, insulting or derogatory comments, and personal or political attacks
-* Public or private harassment
-* Other conduct which could reasonably be considered inappropriate in a
+- Trolling, insulting or derogatory comments, and personal or political attacks
+- Public or private harassment
+- Other conduct which could reasonably be considered inappropriate in a
   professional setting
 
 ## Project Structure
@@ -114,6 +114,7 @@ barber-shop-crm/
 ## Development Setup
 
 1. Install dependencies:
+
 ```bash
 # Backend
 cd backend
@@ -125,6 +126,7 @@ npm install
 ```
 
 2. Set up environment:
+
 ```bash
 # Backend
 cp .env.example .env
@@ -132,6 +134,7 @@ cp .env.example .env
 ```
 
 3. Start development servers:
+
 ```bash
 # Backend
 npm run dev
@@ -154,4 +157,4 @@ npm start
 
 ## Questions?
 
-Don't hesitate to ask. We're always happy to help! 
+Don't hesitate to ask. We're always happy to help!

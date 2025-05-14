@@ -63,10 +63,7 @@ describe('NotificationToast', () => {
 
   it('handles different notification types correctly', () => {
     jest
-      .spyOn(
-        require('../../../contexts/NotificationContext'),
-        'useNotifications'
-      )
+      .spyOn(require('../../../contexts/NotificationContext'), 'useNotifications')
       .mockImplementation(() => ({
         notifications: [
           {
@@ -94,10 +91,7 @@ describe('NotificationToast', () => {
 
   it('does not show toast when there are no unread notifications', () => {
     jest
-      .spyOn(
-        require('../../../contexts/NotificationContext'),
-        'useNotifications'
-      )
+      .spyOn(require('../../../contexts/NotificationContext'), 'useNotifications')
       .mockImplementation(() => ({
         notifications: [
           {

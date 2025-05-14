@@ -30,7 +30,10 @@ export const appointmentApi = api.injectEndpoints({
       }),
       invalidatesTags: ['Appointment'],
     }),
-    updateAppointment: builder.mutation<Appointment, { id: number; appointment: Partial<Appointment> }>({
+    updateAppointment: builder.mutation<
+      Appointment,
+      { id: number; appointment: Partial<Appointment> }
+    >({
       query: ({ id, appointment }) => ({
         url: `/appointments/${id}`,
         method: 'PUT',
