@@ -98,6 +98,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <CssBaseline />
       <AppBar
         position="fixed"
+        color="primary"
         sx={{
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           ml: { sm: `${drawerWidth}px` },

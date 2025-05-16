@@ -1,6 +1,6 @@
 import { createTheme } from '@mui/material/styles';
 
-export const theme = createTheme({
+const theme = createTheme({
   palette: {
     primary: {
       main: '#355C3A',
@@ -88,6 +88,13 @@ export const theme = createTheme({
           textTransform: 'none',
           borderRadius: 8,
         },
+        containedPrimary: {
+          backgroundColor: '#355C3A',
+          color: '#fff',
+          '&:hover': {
+            backgroundColor: '#254225',
+          },
+        },
       },
     },
     MuiCard: {
@@ -116,3 +123,5 @@ export const theme = createTheme({
     borderRadius: 8,
   },
 });
+
+export default theme;

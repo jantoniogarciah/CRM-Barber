@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { TextField, Button, Grid, Box, Typography, CircularProgress } from '@mui/material';
@@ -25,6 +25,8 @@ const validationSchema = Yup.object({
 const ClientForm: React.FC<ClientFormProps> = ({ client, isEditing = false, onSuccess }) => {
   const [createClient] = useCreateClientMutation();
   const [updateClient] = useUpdateClientMutation();
+  const [generatedPassword, setGeneratedPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const formik = useFormik({
     initialValues: {
@@ -39,8 +41,12 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, isEditing = false, onSu
         if (isEditing && client?.id) {
           await updateClient({ id: client.id.toString(), client: values });
         } else {
+          setGeneratedPassword(values.password);
+          setShowPassword(false);
           await createClient(values);
+          setShowPassword(true);
         }
+        formik.resetForm();
         onSuccess?.();
       } catch (error) {
         console.error('Error saving client:', error);
@@ -117,6 +123,13 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, isEditing = false, onSu
           {formik.isSubmitting ? <CircularProgress size={24} /> : isEditing ? 'Update' : 'Create'}
         </Button>
       </Grid>
+      {!isEditing && showPassword && generatedPassword && (
+        <Box mt={2}>
+          <Typography variant="subtitle1" color="success.main">
+            Password for the new client: <b>{generatedPassword}</b>
+          </Typography>
+        </Box>
+      )}
     </Box>
   );
 };

@@ -48,7 +48,13 @@ export const api = createApi({
     // Client endpoints
     getClients: builder.query<Client[], void>({
       query: () => '/clients',
-      providesTags: ['Client'],
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({ type: 'Client' as const, id })),
+              { type: 'Client', id: 'LIST' },
+            ]
+          : [{ type: 'Client', id: 'LIST' }],
     }),
     getClient: builder.query<Client, string>({
       query: (id) => `/clients/${id}`,
@@ -60,7 +66,7 @@ export const api = createApi({
         method: 'POST',
         body: client,
       }),
-      invalidatesTags: ['Client'],
+      invalidatesTags: [{ type: 'Client', id: 'LIST' }],
     }),
     updateClient: builder.mutation<Client, { id: string; client: Partial<Client> }>({
       query: ({ id, client }) => ({
@@ -68,14 +74,17 @@ export const api = createApi({
         method: 'PUT',
         body: client,
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: 'Client', id }],
+      invalidatesTags: (result, error, { id }) => [
+        { type: 'Client', id },
+        { type: 'Client', id: 'LIST' },
+      ],
     }),
     deleteClient: builder.mutation<void, string>({
       query: (id) => ({
         url: `/clients/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: ['Client'],
+      invalidatesTags: [{ type: 'Client', id: 'LIST' }],
     }),
 
     // Service endpoints

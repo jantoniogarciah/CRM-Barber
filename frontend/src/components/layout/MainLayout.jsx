@@ -59,6 +59,8 @@ const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })(
 const AppBarStyled = styled(AppBar, {
   shouldForwardProp: (prop) => prop !== 'open',
 })(({ theme, open }) => ({
+  backgroundColor: theme.palette.primary.main,
+  color: theme.palette.primary.contrastText,
   transition: theme.transitions.create(['margin', 'width'], {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen,
@@ -124,7 +126,7 @@ const MainLayout = ({ children }) => {
   return (
     <NotificationProvider>
       <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-        <AppBar position="static">
+        <AppBar position="static" color="primary">
           <Toolbar>
             <img src={logo} alt="Clipper Cut Logo" style={{ height: 40, marginRight: 16 }} />
             <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
@@ -134,7 +136,7 @@ const MainLayout = ({ children }) => {
           </Toolbar>
         </AppBar>
         <Box sx={{ display: 'flex' }}>
-          <AppBarStyled position="fixed" open={open}>
+          <AppBarStyled position="fixed" open={open} color="primary">
             <Toolbar>
               <IconButton
                 color="inherit"

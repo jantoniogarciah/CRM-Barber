@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { PaletteMode } from '@mui/material';
+import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
+import theme from '../theme';
 
 interface ThemeContextType {
   mode: PaletteMode;
@@ -50,7 +52,11 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     toggleColorMode,
   };
 
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+  return (
+    <MuiThemeProvider theme={theme}>
+      <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+    </MuiThemeProvider>
+  );
 };
 
 export default ThemeContext;
