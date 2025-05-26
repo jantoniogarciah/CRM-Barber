@@ -35,8 +35,19 @@ export const clientApi = api.injectEndpoints({
         url: `/clients/${id}`,
         method: 'PUT',
         body: client,
+        headers: {
+          'Content-Type': 'application/json',
+        },
       }),
-      invalidatesTags: ['Client'],
+      transformResponse: (response: { data: Client }) => response.data,
+      transformErrorResponse: (response: { status: number; data: any }) => {
+        console.error('Update client error:', response);
+        return response.data;
+      },
+      invalidatesTags: (result, error, { id }) => [
+        { type: 'Client', id },
+        { type: 'Client', id: 'LIST' },
+      ],
     }),
     deleteClient: builder.mutation<void, number>({
       query: (id) => ({

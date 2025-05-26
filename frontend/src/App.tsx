@@ -16,12 +16,14 @@ import Appointments from './pages/Appointments';
 import { AdminRoute } from './components/AdminRoute';
 import { PrivateRoute } from './components/PrivateRoute';
 import Layout from './components/Layout';
+import { Toaster } from 'react-hot-toast';
 
 const App: React.FC = () => {
   const user = useAppSelector(selectUser);
 
   return (
     <SnackbarProvider maxSnack={3}>
+      <Toaster position="top-right" />
       <SocketProvider>
         <Box sx={{ minHeight: '100vh', position: 'relative' }}>
           <Routes>

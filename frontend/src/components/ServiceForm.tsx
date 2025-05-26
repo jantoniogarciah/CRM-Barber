@@ -15,15 +15,16 @@ import {
   MenuItem,
   CircularProgress,
 } from '@mui/material';
-import { useCreateServiceMutation, useUpdateServiceMutation } from '../services/api';
+import { useCreateServiceMutation, useUpdateServiceMutation, useGetCategoriesQuery } from '../services/api';
 import { Service } from '../types';
+import { toast } from 'react-hot-toast';
 
 interface ServiceFormProps {
   open: boolean;
   onClose: () => void;
   service?: Service;
-  onSuccess?: (message: string) => void;
-  onError?: (message: string) => void;
+  onSuccess: (message: string) => void;
+  onError: (message: string) => void;
 }
 
 interface ServiceFormValues {
@@ -31,18 +32,33 @@ interface ServiceFormValues {
   description: string;
   price: number;
   duration: number;
-  category: string;
+  category_id: number;
+  is_active: boolean;
 }
 
 const validationSchema = Yup.object({
-  name: Yup.string().required('Name is required'),
-  description: Yup.string().required('Description is required'),
-  price: Yup.number().required('Price is required').min(0, 'Price must be positive'),
+  name: Yup.string().required('El nombre es requerido'),
+  description: Yup.string().required('La descripción es requerida'),
+  price: Yup.number()
+    .min(0, 'El precio debe ser mayor o igual a 0')
+    .required('El precio es requerido'),
   duration: Yup.number()
-    .required('Duration is required')
-    .min(1, 'Duration must be at least 1 minute'),
-  category: Yup.string(),
+    .min(1, 'La duración debe ser mayor a 0')
+    .required('La duración es requerida'),
+  category_id: Yup.number()
+    .min(1, 'La categoría es requerida')
+    .required('La categoría es requerida'),
+  is_active: Yup.boolean(),
 });
+
+const CATEGORIES = [
+  'Cabello Hombre',
+  'Barba',
+  'Producto',
+  'Cabello Mujer',
+  'Cabello Niño',
+  'Promoción',
+];
 
 const ServiceForm: React.FC<ServiceFormProps> = ({
   open,
@@ -51,28 +67,30 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
   onSuccess,
   onError,
 }) => {
-  const [createService, { isLoading: isCreating }] = useCreateServiceMutation();
-  const [updateService, { isLoading: isUpdating }] = useUpdateServiceMutation();
+  const [createService] = useCreateServiceMutation();
+  const [updateService] = useUpdateServiceMutation();
+  const { data: categories = [], isLoading: isLoadingCategories } = useGetCategoriesQuery({ showInactive: false });
 
   const formik = useFormik<ServiceFormValues>({
     initialValues: {
       name: service?.name || '',
       description: service?.description || '',
-      price: typeof service?.price === 'string' ? parseFloat(service.price) : service?.price || 0,
+      price: service?.price || 0,
       duration: service?.duration || 30,
-      category: service?.category || '',
+      category_id: service?.category_id || 0,
+      is_active: service?.is_active ?? true,
     },
     validationSchema,
     enableReinitialize: true,
     onSubmit: async (values) => {
       try {
-        const serviceData: Partial<Service> = {
+        const serviceData = {
           name: values.name,
           description: values.description,
-          price: parseFloat(values.price.toString()),
-          duration: parseInt(values.duration.toString(), 10),
-          category: values.category || undefined,
-          active: true,
+          price: values.price,
+          duration: values.duration,
+          category_id: values.category_id,
+          is_active: values.is_active,
         };
 
         if (service?.id) {
@@ -80,35 +98,46 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
             id: service.id.toString(),
             service: serviceData,
           }).unwrap();
-          onSuccess?.('Service updated successfully');
-          onClose();
-          formik.resetForm();
         } else {
           await createService(serviceData).unwrap();
-          onSuccess?.('Service created successfully');
-          onClose();
-          formik.resetForm();
         }
-      } catch (error) {
+        onSuccess('Servicio guardado exitosamente');
+        onClose();
+      } catch (error: any) {
         console.error('Error saving service:', error);
-        onError?.(service?.id ? 'Error updating service' : 'Error creating service');
+        let errorMessage = 'Error al guardar el servicio. ';
+
+        if (error.data?.message) {
+          errorMessage += error.data.message;
+        } else if (error.message) {
+          errorMessage += error.message;
+        } else if (error.data?.errors) {
+          errorMessage += error.data.errors.map((e: any) => e.msg).join(', ');
+        }
+
+        onError(errorMessage);
       }
     },
   });
 
-  const isLoading = isCreating || isUpdating;
-
-  const handleCancel = () => {
-    formik.resetForm();
-    onClose();
-  };
+  if (isLoadingCategories) {
+    return (
+      <Dialog open={open} onClose={onClose}>
+        <DialogContent>
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+            <CircularProgress />
+          </Box>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
-    <Dialog open={open} onClose={handleCancel} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>{service ? 'Editar Servicio' : 'Nuevo Servicio'}</DialogTitle>
       <form onSubmit={formik.handleSubmit}>
         <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
             <TextField
               fullWidth
               id="name"
@@ -118,8 +147,52 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
               onChange={formik.handleChange}
               error={formik.touched.name && Boolean(formik.errors.name)}
               helperText={formik.touched.name && formik.errors.name}
-              disabled={isLoading}
             />
+
+            <TextField
+              fullWidth
+              id="price"
+              name="price"
+              label="Precio"
+              type="number"
+              value={formik.values.price}
+              onChange={formik.handleChange}
+              error={formik.touched.price && Boolean(formik.errors.price)}
+              helperText={formik.touched.price && formik.errors.price}
+            />
+
+            <TextField
+              fullWidth
+              id="duration"
+              name="duration"
+              label="Duración (minutos)"
+              type="number"
+              value={formik.values.duration}
+              onChange={formik.handleChange}
+              error={formik.touched.duration && Boolean(formik.errors.duration)}
+              helperText={formik.touched.duration && formik.errors.duration}
+            />
+
+            <FormControl fullWidth>
+              <InputLabel id="category-label">Categoría</InputLabel>
+              <Select
+                labelId="category-label"
+                id="category_id"
+                name="category_id"
+                value={formik.values.category_id}
+                onChange={formik.handleChange}
+                label="Categoría"
+                error={formik.touched.category_id && Boolean(formik.errors.category_id)}
+              >
+                <MenuItem value={0}>Ninguna</MenuItem>
+                {categories.map((category) => (
+                  <MenuItem key={category.id} value={category.id}>
+                    {category.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
             <TextField
               fullWidth
               id="description"
@@ -131,73 +204,19 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
               onChange={formik.handleChange}
               error={formik.touched.description && Boolean(formik.errors.description)}
               helperText={formik.touched.description && formik.errors.description}
-              disabled={isLoading}
             />
-            <TextField
-              fullWidth
-              id="price"
-              name="price"
-              label="Precio"
-              type="number"
-              value={formik.values.price}
-              onChange={formik.handleChange}
-              error={formik.touched.price && Boolean(formik.errors.price)}
-              helperText={formik.touched.price && formik.errors.price}
-              disabled={isLoading}
-              inputProps={{ step: 0.01, min: 0 }}
-            />
-            <TextField
-              fullWidth
-              id="duration"
-              name="duration"
-              label="Duración (minutos)"
-              type="number"
-              value={formik.values.duration}
-              onChange={formik.handleChange}
-              error={formik.touched.duration && Boolean(formik.errors.duration)}
-              helperText={formik.touched.duration && formik.errors.duration}
-              disabled={isLoading}
-              inputProps={{ min: 1 }}
-            />
-            <FormControl fullWidth>
-              <InputLabel id="category-label">Categoría</InputLabel>
-              <Select
-                labelId="category-label"
-                id="category"
-                name="category"
-                value={formik.values.category}
-                onChange={formik.handleChange}
-                label="Categoría"
-                disabled={isLoading}
-              >
-                <MenuItem value="">Ninguna</MenuItem>
-                <MenuItem value="Cabello Hombre">Cabello Hombre</MenuItem>
-                <MenuItem value="Barba">Barba</MenuItem>
-                <MenuItem value="Producto">Producto</MenuItem>
-                <MenuItem value="Cabello Mujer">Cabello Mujer</MenuItem>
-                <MenuItem value="Cabello Niño">Cabello Niño</MenuItem>
-                <MenuItem value="Promoción">Promoción</MenuItem>
-              </Select>
-            </FormControl>
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCancel} disabled={isLoading}>
-            Cancelar
-          </Button>
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={isLoading}
-            startIcon={isLoading && <CircularProgress size={20} />}
-          >
-            {isLoading
-              ? service
-                ? 'Actualizando...'
-                : 'Creando...'
-              : service
-              ? 'Actualizar'
-              : 'Crear'}
+          <Button onClick={onClose}>Cancelar</Button>
+          <Button type="submit" variant="contained" disabled={formik.isSubmitting}>
+            {formik.isSubmitting ? (
+              <CircularProgress size={24} />
+            ) : service ? (
+              'Actualizar'
+            ) : (
+              'Crear'
+            )}
           </Button>
         </DialogActions>
       </form>

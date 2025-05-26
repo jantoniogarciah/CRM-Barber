@@ -5,8 +5,8 @@ import { useGetAppointmentsQuery, useGetClientsQuery, useGetServicesQuery } from
 
 const Dashboard: React.FC = () => {
   const { data: appointments = [] } = useGetAppointmentsQuery();
-  const { data: clients = [] } = useGetClientsQuery();
-  const { data: services = [] } = useGetServicesQuery({});
+  const { data: clients = [] } = useGetClientsQuery({ showInactive: false });
+  const { data: services = [] } = useGetServicesQuery({ showInactive: false });
 
   return (
     <Box>

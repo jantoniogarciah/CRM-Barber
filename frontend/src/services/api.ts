@@ -1,20 +1,69 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { User, Client, Service, Appointment, Notification } from '../types';
+import { User, Client, Service, Appointment, Notification, Category } from '../types';
+import { RootState } from '../store';
+import { toast } from 'react-hot-toast';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
 const baseQuery = fetchBaseQuery({
   baseUrl: process.env.REACT_APP_API_URL || 'http://localhost:3001/api',
   prepareHeaders: (headers, { getState }) => {
-    const token = localStorage.getItem('token');
+    const token = (getState() as RootState).auth.token;
     if (token) {
       headers.set('authorization', `Bearer ${token}`);
     }
+    headers.set('Content-Type', 'application/json');
     return headers;
   },
+  credentials: 'include',
 });
 
+const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
+  let result = await baseQuery(args, api, extraOptions);
+  
+  if (result.error) {
+    const error = result.error as any;
+    
+    // Handle network errors
+    if (error.status === 'FETCH_ERROR') {
+      toast.error('Error de conexión. Verificando conexión con el servidor...');
+      
+      // Retry logic for network errors
+      let retries = 0;
+      while (retries < 3) {
+        try {
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, 1000 * (retries + 1)));
+          
+          result = await baseQuery(args, api, extraOptions);
+          if (!result.error) {
+            return result;
+          }
+        } catch (err) {
+          console.error('Retry failed:', err);
+        }
+        retries++;
+      }
+      
+      if (retries === 3) {
+        toast.error('No se pudo establecer conexión con el servidor. Por favor, verifica tu conexión a internet.');
+      }
+    }
+    
+    // Handle authentication errors
+    if (error.status === 401) {
+      toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+      // You might want to dispatch a logout action here
+    }
+  }
+  
+  return result;
+};
+
 export const api = createApi({
-  baseQuery,
-  tagTypes: ['User', 'Client', 'Service', 'Appointment', 'Notification'],
+  reducerPath: 'api',
+  baseQuery: baseQueryWithRetry,
+  tagTypes: ['User', 'Client', 'Service', 'Appointment', 'Notification', 'Category'],
   endpoints: (builder) => ({
     // Auth endpoints
     login: builder.mutation<{ user: User; token: string }, { email: string; password: string }>({
@@ -46,17 +95,11 @@ export const api = createApi({
     }),
 
     // Client endpoints
-    getClients: builder.query<Client[], void>({
-      query: () => '/clients',
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.map(({ id }) => ({ type: 'Client' as const, id })),
-              { type: 'Client', id: 'LIST' },
-            ]
-          : [{ type: 'Client', id: 'LIST' }],
+    getClients: builder.query<Client[], { showInactive?: boolean }>({
+      query: ({ showInactive }) => `/clients${showInactive ? '?showInactive=true' : ''}`,
+      providesTags: ['Client'],
     }),
-    getClient: builder.query<Client, string>({
+    getClient: builder.query<Client, number>({
       query: (id) => `/clients/${id}`,
       providesTags: (result, error, id) => [{ type: 'Client', id }],
     }),
@@ -66,40 +109,57 @@ export const api = createApi({
         method: 'POST',
         body: client,
       }),
-      invalidatesTags: [{ type: 'Client', id: 'LIST' }],
+      invalidatesTags: ['Client'],
     }),
-    updateClient: builder.mutation<Client, { id: string; client: Partial<Client> }>({
+    updateClient: builder.mutation<Client, { id: number; client: Partial<Client> }>({
       query: ({ id, client }) => ({
         url: `/clients/${id}`,
         method: 'PUT',
         body: client,
       }),
-      invalidatesTags: (result, error, { id }) => [
-        { type: 'Client', id },
-        { type: 'Client', id: 'LIST' },
-      ],
+      invalidatesTags: (result, error, { id }) => [{ type: 'Client', id }],
     }),
-    deleteClient: builder.mutation<void, string>({
+    deleteClient: builder.mutation<{ message: string; remainingClients: Client[] }, string>({
       query: (id) => ({
         url: `/clients/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: [{ type: 'Client', id: 'LIST' }],
+      invalidatesTags: ['Client'],
+    }),
+    toggleClientStatus: builder.mutation<Client, number>({
+      query: (id) => ({
+        url: `/clients/${id}/toggle-status`,
+        method: 'PATCH',
+      }),
+      async onQueryStarted(id, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          dispatch(
+            api.util.updateQueryData('getClients', { showInactive: true }, (draft) => {
+              const client = draft.find((c) => c.id === id);
+              if (client) {
+                client.is_active = !client.is_active;
+              }
+            })
+          );
+          dispatch(
+            api.util.updateQueryData('getClients', { showInactive: false }, (draft) => {
+              const client = draft.find((c) => c.id === id);
+              if (client) {
+                client.is_active = !client.is_active;
+              }
+            })
+          );
+        } catch {
+          // If the mutation fails, we don't need to do anything
+        }
+      },
     }),
 
     // Service endpoints
     getServices: builder.query<Service[], { showInactive?: boolean }>({
-      query: (params) => ({
-        url: '/services',
-        params: { showInactive: params.showInactive ? 'true' : 'false' },
-      }),
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.map(({ id }) => ({ type: 'Service' as const, id })),
-              { type: 'Service', id: 'LIST' },
-            ]
-          : [{ type: 'Service', id: 'LIST' }],
+      query: ({ showInactive }) => `/services${showInactive ? '?showInactive=true' : ''}`,
+      providesTags: ['Service'],
     }),
     getService: builder.query<Service, string>({
       query: (id) => `/services/${id}`,
@@ -111,7 +171,7 @@ export const api = createApi({
         method: 'POST',
         body: service,
       }),
-      invalidatesTags: [{ type: 'Service', id: 'LIST' }],
+      invalidatesTags: ['Service'],
     }),
     updateService: builder.mutation<Service, { id: string; service: Partial<Service> }>({
       query: ({ id, service }) => ({
@@ -119,32 +179,14 @@ export const api = createApi({
         method: 'PUT',
         body: service,
       }),
-      async onQueryStarted({ id, service }, { dispatch, queryFulfilled }) {
-        try {
-          const { data: updatedService } = await queryFulfilled;
-          dispatch(
-            api.util.updateQueryData('getServices', { showInactive: true }, (draft) => {
-              const index = draft.findIndex((s) => s.id.toString() === id);
-              if (index !== -1) {
-                draft[index] = { ...draft[index], ...updatedService };
-              }
-            })
-          );
-        } catch {
-          // If the update fails, the optimistic update will be automatically rolled back
-        }
-      },
-      invalidatesTags: (result, error, { id }) => [
-        { type: 'Service', id },
-        { type: 'Service', id: 'LIST' },
-      ],
+      invalidatesTags: (result, error, { id }) => [{ type: 'Service', id }, 'Service'],
     }),
     deleteService: builder.mutation<void, string>({
       query: (id) => ({
         url: `/services/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: [{ type: 'Service', id: 'LIST' }],
+      invalidatesTags: ['Service'],
     }),
 
     // Appointment endpoints
@@ -188,12 +230,54 @@ export const api = createApi({
       query: () => '/notifications',
       providesTags: ['Notification'],
     }),
-    markNotificationAsRead: builder.mutation<Notification, string>({
+    markNotificationAsRead: builder.mutation<void, string>({
       query: (id) => ({
         url: `/notifications/${id}/read`,
         method: 'PUT',
       }),
       invalidatesTags: ['Notification'],
+    }),
+
+    // Category endpoints
+    getCategories: builder.query<Category[], { showInactive?: boolean }>({
+      query: ({ showInactive }) => ({
+        url: '/categories',
+        params: { showInactive },
+      }),
+      providesTags: ['Category'],
+    }),
+    getCategory: builder.query<Category, number>({
+      query: (id) => `/categories/${id}`,
+      providesTags: (_result, _error, id) => [{ type: 'Category', id }],
+    }),
+    createCategory: builder.mutation<
+      Category,
+      Pick<Category, 'name' | 'description' | 'icon' | 'is_active'>
+    >({
+      query: (data) => ({
+        url: '/categories',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Category'],
+    }),
+    updateCategory: builder.mutation<
+      Category,
+      { id: number; category: Partial<Category> }
+    >({
+      query: ({ id, category }) => ({
+        url: `/categories/${id}`,
+        method: 'PUT',
+        body: category,
+      }),
+      invalidatesTags: (_result, _error, { id }) => [{ type: 'Category', id }],
+    }),
+    deleteCategory: builder.mutation<void, number>({
+      query: (id) => ({
+        url: `/categories/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Category'],
     }),
   }),
 });
@@ -220,4 +304,10 @@ export const {
   useDeleteAppointmentMutation,
   useGetNotificationsQuery,
   useMarkNotificationAsReadMutation,
+  useToggleClientStatusMutation,
+  useGetCategoriesQuery,
+  useGetCategoryQuery,
+  useCreateCategoryMutation,
+  useUpdateCategoryMutation,
+  useDeleteCategoryMutation,
 } = api;

@@ -9,6 +9,7 @@ import {
 } from '../store/slices/authSlice';
 import { useLoginMutation, useLogoutMutation, useGetCurrentUserQuery } from '../services/api';
 import { User } from '../types';
+import { toast } from 'react-hot-toast';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -27,55 +28,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isLoading = useAppSelector(selectLoading);
   const [loginMutation] = useLoginMutation();
   const [logoutMutation] = useLogoutMutation();
-  const { data: currentUser } = useGetCurrentUserQuery(undefined, {
+  const { data: currentUser, error: currentUserError } = useGetCurrentUserQuery(undefined, {
     skip: !localStorage.getItem('token'),
   });
 
   useEffect(() => {
-    if (currentUser) {
-      dispatch(setCredentials({ user: currentUser, token: localStorage.getItem('token') || '' }));
+    const token = localStorage.getItem('token');
+    if (currentUser && token) {
+      dispatch(setCredentials({ user: currentUser, token }));
+    } else if (currentUserError) {
+      console.error('Error fetching current user:', currentUserError);
+      localStorage.removeItem('token');
+      dispatch(clearCredentials());
     }
-  }, [currentUser, dispatch]);
+  }, [currentUser, currentUserError, dispatch]);
 
   const login = async (email: string, password: string) => {
     try {
       const result = await loginMutation({ email, password }).unwrap();
-      localStorage.setItem('token', result.token);
-      dispatch(setCredentials({ user: result.user, token: result.token }));
-      navigate('/');
-    } catch (error) {
+      if (result.token) {
+        localStorage.setItem('token', result.token);
+        dispatch(setCredentials({ user: result.user, token: result.token }));
+        navigate('/');
+        toast.success('Inicio de sesión exitoso');
+      } else {
+        throw new Error('No se recibió el token de autenticación');
+      }
+    } catch (error: any) {
       console.error('Login error:', error);
+      localStorage.removeItem('token');
+      dispatch(clearCredentials());
+      toast.error(error.data?.message || 'Error al iniciar sesión');
       throw error;
     }
   };
 
   const handleLogout = async () => {
     try {
-      // Try to call the logout endpoint
-      try {
-        await logoutMutation().unwrap();
-      } catch (error) {
-        console.warn('Logout endpoint error:', error);
-        // Continue with local cleanup even if the server request fails
-      }
-
-      // Always perform local cleanup
-      localStorage.removeItem('token');
-      dispatch(clearCredentials());
-      navigate('/login');
+      await logoutMutation().unwrap();
     } catch (error) {
-      console.error('Logout error:', error);
-      // Even if there's an error, try to clean up locally
+      console.warn('Logout endpoint error:', error);
+    } finally {
       localStorage.removeItem('token');
       dispatch(clearCredentials());
       navigate('/login');
+      toast.success('Sesión cerrada exitosamente');
     }
   };
 
   return (
     <AuthContext.Provider
       value={{
-        isAuthenticated: !!user,
+        isAuthenticated: !!user && !!localStorage.getItem('token'),
         isLoading,
         user,
         login,
@@ -89,7 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

@@ -22,7 +22,7 @@ export interface Service {
   description: string;
   price: number;
   duration: number;
-  active: boolean;
+  is_active: boolean;
   categoryId: number;
   createdAt: string;
   updatedAt: string;

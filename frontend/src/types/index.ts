@@ -3,19 +3,30 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
+  role: string;
   phone?: string;
-  role: 'admin' | 'client' | 'barber';
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface Client {
   id: number;
-  name: string;
-  email: string;
+  firstName: string;
+  lastName: string;
+  email: string | null;
   phone: string;
-  createdAt: string;
-  updatedAt: string;
+  notes?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Category {
+  id: number;
+  name: string;
+  description?: string;
+  icon?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Service {
@@ -24,10 +35,11 @@ export interface Service {
   description: string;
   price: number;
   duration: number;
-  category?: string;
-  active: boolean;
-  createdAt: string;
-  updatedAt: string;
+  category_id?: number;
+  category?: Category;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Appointment {
@@ -37,18 +49,19 @@ export interface Appointment {
   date: string;
   time: string;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
+  notes: string;
   client?: Client;
   service?: Service;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Notification {
   id: number;
   userId: number;
-  type: string;
+  title: string;
   message: string;
+  type: string;
   isRead: boolean;
   createdAt: string;
   updatedAt: string;
