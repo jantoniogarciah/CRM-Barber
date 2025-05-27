@@ -85,6 +85,23 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
     validationSchema,
     onSubmit: async (values) => {
       try {
+        // Validate client and service selection
+        if (!values.clientId || values.clientId === 0) {
+          throw new Error('Por favor seleccione un cliente');
+        }
+        if (!values.serviceId || values.serviceId === 0) {
+          throw new Error('Por favor seleccione un servicio');
+        }
+
+        // Validate and format date
+        if (!values.date) {
+          throw new Error('Por favor seleccione una fecha');
+        }
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(values.date)) {
+          throw new Error('Formato de fecha inválido. Use YYYY-MM-DD');
+        }
+
         console.log('Form values before submission:', {
           values,
           clients,
@@ -93,11 +110,22 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
           selectedService: services.find((s) => s.id === values.serviceId),
         });
 
+        const timeValue = values.time;
+        const [hours, minutes] = timeValue.split(':');
+        const hour = parseInt(hours, 10);
+        const period = hour >= 12 ? 'p.m.' : 'a.m.';
+        const formattedHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+        const formattedTime = `${formattedHour}:${minutes} ${period}`;
+
+        // Ensure IDs are numbers
+        const clientId = typeof values.clientId === 'string' ? parseInt(values.clientId) : values.clientId;
+        const serviceId = typeof values.serviceId === 'string' ? parseInt(values.serviceId) : values.serviceId;
+
         const appointmentData = {
-          clientId: Number(values.clientId),
-          serviceId: Number(values.serviceId),
+          clientId,
+          serviceId,
           date: values.date,
-          time: values.time,
+          time: formattedTime,
           status: values.status,
           notes: values.notes || '',
         };
@@ -137,12 +165,28 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
 
   useEffect(() => {
     if (open) {
+      // Convert time from "10:15 a.m." format to "10:15" format for the time input
+      const convertTimeToInputFormat = (time12h: string) => {
+        if (!time12h) return '';
+        const [time, period] = time12h.toLowerCase().split(/\s+/);
+        let [hours, minutes] = time.split(':').map(num => parseInt(num, 10));
+        
+        // Convert to 24-hour format for the input
+        if (period === 'p.m.' && hours !== 12) {
+          hours += 12;
+        } else if (period === 'a.m.' && hours === 12) {
+          hours = 0;
+        }
+        
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+      };
+
       formik.resetForm({
         values: {
           clientId: appointment?.clientId || 0,
           serviceId: appointment?.serviceId || 0,
           date: appointment?.date || new Date().toISOString().split('T')[0],
-          time: appointment?.time || '',
+          time: appointment?.time ? convertTimeToInputFormat(appointment.time) : '',
           status: (appointment?.status as AppointmentFormValues['status']) || 'pending',
           notes: appointment?.notes || '',
         },

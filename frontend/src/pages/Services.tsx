@@ -22,6 +22,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  Chip,
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { useAppSelector } from '../store/hooks';
@@ -33,6 +34,7 @@ import {
 } from '../services/api';
 import ServiceForm from '../components/ServiceForm';
 import { Service } from '../types';
+import { format } from 'date-fns';
 
 const formatPrice = (price: number | string): string => {
   const numericPrice = typeof price === 'string' ? parseFloat(price) : price;
@@ -47,7 +49,7 @@ const Services: React.FC = () => {
   const [updateService] = useUpdateServiceMutation();
   const { user } = useAppSelector((state) => state.auth);
   const [openForm, setOpenForm] = useState(false);
-  const [selectedService, setSelectedService] = useState<Service | undefined>();
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -64,27 +66,38 @@ const Services: React.FC = () => {
     setOpenForm(true);
   };
 
-  const handleDeleteConfirm = async () => {
-    if (!serviceToDelete) return;
-    
-    try {
-      await deleteService(serviceToDelete.id.toString());
-      setSuccessMessage('Servicio eliminado exitosamente');
-      setDeleteDialogOpen(false);
-      setServiceToDelete(null);
-    } catch (error: any) {
-      const errorMessage = error.data?.message || 'Error al eliminar el servicio';
-      setErrorMessage(errorMessage);
-      if (!error.data?.message?.includes('citas asociadas')) {
-        setDeleteDialogOpen(false);
-        setServiceToDelete(null);
-      }
-    }
+  const handleAdd = () => {
+    setSelectedService(null);
+    setOpenForm(true);
   };
 
   const handleDelete = (service: Service) => {
     setServiceToDelete(service);
     setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (serviceToDelete) {
+      try {
+        await deleteService(serviceToDelete.id.toString()).unwrap();
+        setSuccessMessage('Servicio eliminado exitosamente');
+      } catch (error: any) {
+        setErrorMessage(error.data?.message || 'Error al eliminar el servicio');
+      }
+    }
+    setDeleteDialogOpen(false);
+    setServiceToDelete(null);
+  };
+
+  const handleFormClose = () => {
+    setOpenForm(false);
+    setSelectedService(null);
+  };
+
+  const handleFormSuccess = (message: string) => {
+    setOpenForm(false);
+    setSelectedService(null);
+    setSuccessMessage(message);
   };
 
   const handleToggleStatus = async (service: Service) => {
@@ -140,9 +153,9 @@ const Services: React.FC = () => {
             variant="contained"
             color="primary"
             startIcon={<AddIcon />}
-            onClick={() => setOpenForm(true)}
+            onClick={handleAdd}
           >
-            Nuevo Servicio
+            Agregar Servicio
           </Button>
         </Box>
       </Box>
@@ -163,21 +176,24 @@ const Services: React.FC = () => {
             </TableHead>
             <TableBody>
               {services?.map((service) => (
-                <TableRow key={service.id}>
+                <TableRow
+                  key={service.id}
+                  sx={{
+                    opacity: service.is_active ? 1 : 0.6,
+                    backgroundColor: service.is_active ? 'inherit' : 'action.hover',
+                  }}
+                >
                   <TableCell>{service.name}</TableCell>
                   <TableCell>{service.description}</TableCell>
                   <TableCell>{formatPrice(service.price)}</TableCell>
                   <TableCell>{service.duration} min</TableCell>
                   <TableCell>{getCategoryName(service.category_id)}</TableCell>
                   <TableCell>
-                    <Tooltip title={service.is_active ? 'Desactivar servicio' : 'Activar servicio'}>
-                      <Switch
-                        checked={service.is_active}
-                        onChange={() => handleToggleStatus(service)}
-                        color="primary"
-                        size="small"
-                      />
-                    </Tooltip>
+                    <Chip
+                      label={service.is_active ? 'Activo' : 'Inactivo'}
+                      color={service.is_active ? 'success' : 'error'}
+                      size="small"
+                    />
                   </TableCell>
                   <TableCell>
                     <Tooltip title="Editar servicio">
@@ -200,17 +216,9 @@ const Services: React.FC = () => {
 
       <ServiceForm
         open={openForm}
-        onClose={() => {
-          setOpenForm(false);
-          setSelectedService(undefined);
-        }}
+        onClose={handleFormClose}
+        onSuccess={handleFormSuccess}
         service={selectedService}
-        onSuccess={(message) => {
-          setOpenForm(false);
-          setSelectedService(undefined);
-          setSuccessMessage(message);
-        }}
-        onError={(message) => setErrorMessage(message)}
       />
 
       <Dialog
@@ -222,11 +230,16 @@ const Services: React.FC = () => {
       >
         <DialogTitle>Confirmar eliminación</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            ¿Estás seguro de que deseas eliminar el servicio "{serviceToDelete?.name}"?
-            <br /><br />
-            <strong>Advertencia:</strong> Esta acción eliminará permanentemente el servicio de la base de datos y no se puede deshacer. 
-            Si el servicio tiene citas asociadas, no podrá ser eliminado y deberá ser desactivado en su lugar.
+          <DialogContentText component="div">
+            <Typography paragraph>
+              ¿Estás seguro de que deseas eliminar el servicio "{serviceToDelete?.name}"?
+            </Typography>
+            <Typography paragraph>
+              <strong>Advertencia:</strong> Esta acción eliminará permanentemente el servicio de la base de datos y no se puede deshacer.
+            </Typography>
+            <Typography>
+              Si el servicio tiene citas asociadas, no podrá ser eliminado y deberá ser desactivado en su lugar.
+            </Typography>
           </DialogContentText>
         </DialogContent>
         <DialogActions>
@@ -254,7 +267,11 @@ const Services: React.FC = () => {
         </Alert>
       </Snackbar>
 
-      <Snackbar open={!!errorMessage} autoHideDuration={6000} onClose={() => setErrorMessage('')}>
+      <Snackbar
+        open={!!errorMessage}
+        autoHideDuration={6000}
+        onClose={() => setErrorMessage('')}
+      >
         <Alert onClose={() => setErrorMessage('')} severity="error" sx={{ width: '100%' }}>
           {errorMessage}
         </Alert>

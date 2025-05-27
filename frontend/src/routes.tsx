@@ -1,11 +1,6 @@
-import React from 'react';
+import React, { ReactElement } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { PrivateRoute } from './components/PrivateRoute';
-import { AdminRoute } from './components/AdminRoute';
-import { BarberRoute } from './components/BarberRoute';
-import { useAuth } from './contexts/AuthContext';
-
-// Pages
+import { useAppSelector } from './store/hooks';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Clients from './pages/Clients';
@@ -13,13 +8,18 @@ import Appointments from './pages/Appointments';
 import Services from './pages/Services';
 import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
+import { PrivateRoute } from './components/PrivateRoute';
+import { AdminRoute } from './components/AdminRoute';
 
-const AppRoutes: React.FC = () => {
-  const { isAuthenticated } = useAuth();
+const AppRoutes = (): ReactElement => {
+  const auth = useAppSelector((state) => state.auth);
 
   return (
     <Routes>
-      <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} />
+      <Route 
+        path="/login" 
+        element={auth.user ? <Navigate to="/" replace /> : <Login />} 
+      />
       <Route
         path="/"
         element={

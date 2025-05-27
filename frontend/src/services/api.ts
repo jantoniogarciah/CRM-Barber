@@ -2,13 +2,15 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { User, Client, Service, Appointment, Notification, Category } from '../types';
 import { RootState } from '../store';
 import { toast } from 'react-hot-toast';
+import { clearCredentials } from '../store/slices/authSlice';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
 const baseQuery = fetchBaseQuery({
-  baseUrl: process.env.REACT_APP_API_URL || 'http://localhost:3001/api',
+  baseUrl: API_URL,
   prepareHeaders: (headers, { getState }) => {
-    const token = (getState() as RootState).auth.token;
+    // Get token from localStorage first, then from state
+    const token = localStorage.getItem('token') || (getState() as RootState).auth.token;
     if (token) {
       headers.set('authorization', `Bearer ${token}`);
     }
@@ -46,14 +48,21 @@ const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
       }
       
       if (retries === 3) {
-        toast.error('No se pudo establecer conexión con el servidor. Por favor, verifica tu conexión a internet.');
+        toast.error('No se pudo establecer conexión con el servidor.');
       }
     }
     
     // Handle authentication errors
     if (error.status === 401) {
+      localStorage.removeItem('token');
+      api.dispatch(clearCredentials());
       toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
-      // You might want to dispatch a logout action here
+      window.location.href = '/login';
+    }
+
+    // Handle server errors
+    if (error.status === 500) {
+      toast.error('Error en el servidor. Por favor, intenta más tarde.');
     }
   }
   
@@ -131,29 +140,7 @@ export const api = createApi({
         url: `/clients/${id}/toggle-status`,
         method: 'PATCH',
       }),
-      async onQueryStarted(id, { dispatch, queryFulfilled }) {
-        try {
-          await queryFulfilled;
-          dispatch(
-            api.util.updateQueryData('getClients', { showInactive: true }, (draft) => {
-              const client = draft.find((c) => c.id === id);
-              if (client) {
-                client.is_active = !client.is_active;
-              }
-            })
-          );
-          dispatch(
-            api.util.updateQueryData('getClients', { showInactive: false }, (draft) => {
-              const client = draft.find((c) => c.id === id);
-              if (client) {
-                client.is_active = !client.is_active;
-              }
-            })
-          );
-        } catch {
-          // If the mutation fails, we don't need to do anything
-        }
-      },
+      invalidatesTags: ['Client'],
     }),
 
     // Service endpoints
