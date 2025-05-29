@@ -16,10 +16,7 @@ const AppRoutes = (): ReactElement => {
 
   return (
     <Routes>
-      <Route 
-        path="/login" 
-        element={auth.user ? <Navigate to="/" replace /> : <Login />} 
-      />
+      <Route path="/login" element={auth.user ? <Navigate to="/" replace /> : <Login />} />
       <Route
         path="/"
         element={

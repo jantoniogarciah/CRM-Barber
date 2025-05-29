@@ -20,7 +20,10 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     setCredentials: (state, action: PayloadAction<{ user: User; token: string }>) => {
-      state.user = action.payload.user;
+      state.user = {
+        ...action.payload.user,
+        role: action.payload.user.role?.toUpperCase() // Normalize role to uppercase
+      };
       state.token = action.payload.token;
       state.error = null;
     },
@@ -28,6 +31,9 @@ const authSlice = createSlice({
       state.user = null;
       state.token = null;
       state.error = null;
+      // Clear localStorage
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;

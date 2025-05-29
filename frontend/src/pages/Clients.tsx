@@ -19,12 +19,12 @@ import {
   Switch,
   FormControlLabel,
   CircularProgress,
-  Tooltip
+  Tooltip,
 } from '@mui/material';
 import {
   useGetClientsQuery,
   useToggleClientStatusMutation,
-  useDeleteClientMutation
+  useDeleteClientMutation,
 } from '../services/api';
 import ClientForm from '../components/ClientForm';
 import { format } from 'date-fns';
@@ -41,7 +41,7 @@ const Clients: React.FC = () => {
   const [deleteClient] = useDeleteClientMutation();
   const [selectedClient, setSelectedClient] = useState<Client | undefined>(undefined);
   const [formOpen, setFormOpen] = useState(false);
-  const [togglingId, setTogglingId] = useState<number | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
 
@@ -64,7 +64,9 @@ const Clients: React.FC = () => {
     setFormOpen(false);
     setSelectedClient(undefined);
     await refetch();
-    toast.success(selectedClient ? 'Cliente actualizado exitosamente' : 'Cliente creado exitosamente');
+    toast.success(
+      selectedClient ? 'Cliente actualizado exitosamente' : 'Cliente creado exitosamente'
+    );
   };
 
   const handleDelete = (client: Client) => {
@@ -75,7 +77,7 @@ const Clients: React.FC = () => {
   const handleDeleteConfirm = async () => {
     if (clientToDelete) {
       try {
-        await deleteClient(clientToDelete.id.toString()).unwrap();
+        await deleteClient(clientToDelete.id).unwrap();
         await refetch();
         toast.success('Cliente eliminado exitosamente');
       } catch (error: any) {
@@ -198,38 +200,21 @@ const Clients: React.FC = () => {
         )}
       </Dialog>
 
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={() => {
-          setDeleteDialogOpen(false);
-          setClientToDelete(null);
-        }}
-      >
-        <DialogTitle>Confirmar eliminación</DialogTitle>
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>Confirmar Eliminación</DialogTitle>
         <DialogContent>
-          <DialogContentText component="div">
-            <Typography paragraph>
-              ¿Estás seguro de que deseas eliminar al cliente "{clientToDelete?.firstName} {clientToDelete?.lastName}"?
-            </Typography>
-            <Typography paragraph>
-              <strong>Advertencia:</strong> Esta acción eliminará permanentemente el cliente de la base de datos y no se puede deshacer.
-            </Typography>
-            <Typography>
-              Si el cliente tiene citas asociadas, no podrá ser eliminado y deberá ser desactivado en su lugar.
-            </Typography>
+          <DialogContentText>
+            ¿Estás seguro de que deseas eliminar a{' '}
+            {clientToDelete
+              ? `${clientToDelete.firstName} ${clientToDelete.lastName}`
+              : 'este cliente'}
+            ? Esta acción no se puede deshacer.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button
-            onClick={() => {
-              setDeleteDialogOpen(false);
-              setClientToDelete(null);
-            }}
-          >
-            Cancelar
-          </Button>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
           <Button onClick={handleDeleteConfirm} color="error" variant="contained">
-            Eliminar Permanentemente
+            Eliminar
           </Button>
         </DialogActions>
       </Dialog>

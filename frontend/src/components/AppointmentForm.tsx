@@ -39,12 +39,9 @@ interface AppointmentFormValues {
 }
 
 const validationSchema = Yup.object({
-  clientId: Yup.string()
-    .required('Por favor seleccione un cliente'),
-  serviceId: Yup.string()
-    .required('Por favor seleccione un servicio'),
-  barberId: Yup.string()
-    .required('Por favor seleccione un barbero'),
+  clientId: Yup.string().required('Por favor seleccione un cliente'),
+  serviceId: Yup.string().required('Por favor seleccione un servicio'),
+  barberId: Yup.string().required('Por favor seleccione un barbero'),
   date: Yup.string().required('Por favor seleccione una fecha'),
   time: Yup.string().required('Por favor seleccione una hora'),
   status: Yup.string().oneOf(['pending', 'confirmed', 'cancelled', 'completed']).required(),
@@ -169,15 +166,15 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
       const convertTimeToInputFormat = (time12h: string) => {
         if (!time12h) return '';
         const [time, period] = time12h.toLowerCase().split(/\s+/);
-        let [hours, minutes] = time.split(':').map(num => parseInt(num, 10));
-        
+        let [hours, minutes] = time.split(':').map((num) => parseInt(num, 10));
+
         // Convert to 24-hour format for the input
         if (period === 'p.m.' && hours !== 12) {
           hours += 12;
         } else if (period === 'a.m.' && hours === 12) {
           hours = 0;
         }
-        
+
         return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
       };
 

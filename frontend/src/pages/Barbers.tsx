@@ -20,11 +20,7 @@ import {
   DialogContentText,
   DialogActions,
 } from '@mui/material';
-import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-} from '@mui/icons-material';
+import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import {
   useGetBarbersQuery,
   useToggleBarberStatusMutation,
@@ -65,7 +61,9 @@ const Barbers = () => {
     setFormOpen(false);
     setSelectedBarber(null);
     await refetch();
-    toast.success(selectedBarber ? 'Barbero actualizado exitosamente' : 'Barbero creado exitosamente');
+    toast.success(
+      selectedBarber ? 'Barbero actualizado exitosamente' : 'Barbero creado exitosamente'
+    );
   };
 
   const handleDelete = (barber: Barber) => {
@@ -121,12 +119,7 @@ const Barbers = () => {
             }
             label="Mostrar Barberos Inactivos"
           />
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<AddIcon />}
-            onClick={handleAdd}
-          >
+          <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={handleAdd}>
             Agregar Barbero
           </Button>
         </Box>
@@ -224,13 +217,16 @@ const Barbers = () => {
         <DialogContent>
           <DialogContentText component="div">
             <Typography paragraph>
-              ¿Estás seguro de que deseas eliminar al barbero "{barberToDelete?.firstName} {barberToDelete?.lastName}"?
+              ¿Estás seguro de que deseas eliminar al barbero "{barberToDelete?.firstName}{' '}
+              {barberToDelete?.lastName}"?
             </Typography>
             <Typography paragraph>
-              <strong>Advertencia:</strong> Esta acción eliminará permanentemente el barbero de la base de datos y no se puede deshacer.
+              <strong>Advertencia:</strong> Esta acción eliminará permanentemente el barbero de la
+              base de datos y no se puede deshacer.
             </Typography>
             <Typography>
-              Si el barbero tiene citas asociadas, no podrá ser eliminado y deberá ser desactivado en su lugar.
+              Si el barbero tiene citas asociadas, no podrá ser eliminado y deberá ser desactivado
+              en su lugar.
             </Typography>
           </DialogContentText>
         </DialogContent>
@@ -252,4 +248,4 @@ const Barbers = () => {
   );
 };
 
-export default Barbers; 
+export default Barbers;

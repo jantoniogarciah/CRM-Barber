@@ -45,11 +45,12 @@ const Login: React.FC = () => {
     onSubmit: async (values) => {
       try {
         const result = await login(values).unwrap();
-        dispatch(setCredentials(result));
         localStorage.setItem('token', result.token);
+        localStorage.setItem('user', JSON.stringify(result.user));
+        dispatch(setCredentials(result));
         navigate('/');
-      } catch (err) {
-        setError('Invalid email or password');
+      } catch (err: any) {
+        setError(err.data?.message || 'Invalid email or password');
         console.error('Login error:', err);
       }
     },
@@ -104,10 +105,16 @@ const Login: React.FC = () => {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   '& fieldset': {
-                    borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.23)' : 'rgba(0, 0, 0, 0.23)',
+                    borderColor:
+                      theme.palette.mode === 'dark'
+                        ? 'rgba(255, 255, 255, 0.23)'
+                        : 'rgba(0, 0, 0, 0.23)',
                   },
                   '&:hover fieldset': {
-                    borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
+                    borderColor:
+                      theme.palette.mode === 'dark'
+                        ? 'rgba(255, 255, 255, 0.5)'
+                        : 'rgba(0, 0, 0, 0.5)',
                   },
                 },
               }}
@@ -127,10 +134,16 @@ const Login: React.FC = () => {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   '& fieldset': {
-                    borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.23)' : 'rgba(0, 0, 0, 0.23)',
+                    borderColor:
+                      theme.palette.mode === 'dark'
+                        ? 'rgba(255, 255, 255, 0.23)'
+                        : 'rgba(0, 0, 0, 0.23)',
                   },
                   '&:hover fieldset': {
-                    borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
+                    borderColor:
+                      theme.palette.mode === 'dark'
+                        ? 'rgba(255, 255, 255, 0.5)'
+                        : 'rgba(0, 0, 0, 0.5)',
                   },
                 },
               }}

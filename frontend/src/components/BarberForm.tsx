@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  Box,
-  Button,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  TextField,
-} from '@mui/material';
+import { Box, Button, DialogActions, DialogContent, DialogTitle, TextField } from '@mui/material';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -25,16 +18,18 @@ const schema = yup.object().shape({
   firstName: yup.string().required('El nombre es requerido'),
   lastName: yup.string().required('El apellido es requerido'),
   phone: yup.string().required('El teléfono es requerido'),
-  email: yup.string().transform((value) => value === '' ? null : value).nullable().email('Email inválido'),
-  instagram: yup.string().transform((value) => value === '' ? null : value).nullable(),
+  email: yup
+    .string()
+    .transform((value) => (value === '' ? null : value))
+    .nullable()
+    .email('Email inválido'),
+  instagram: yup
+    .string()
+    .transform((value) => (value === '' ? null : value))
+    .nullable(),
 });
 
-const BarberForm: React.FC<BarberFormProps> = ({
-  barber,
-  onSuccess,
-  onClose,
-  onError,
-}) => {
+const BarberForm: React.FC<BarberFormProps> = ({ barber, onSuccess, onClose, onError }) => {
   const [createBarber] = useCreateBarberMutation();
   const [updateBarber] = useUpdateBarberMutation();
 
@@ -123,4 +118,4 @@ const BarberForm: React.FC<BarberFormProps> = ({
   );
 };
 
-export default BarberForm; 
+export default BarberForm;

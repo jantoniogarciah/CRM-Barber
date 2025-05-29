@@ -6,7 +6,7 @@ import { selectUser } from '../store/slices/authSlice';
 export const AdminRoute = ({ children }: PropsWithChildren<{}>): JSX.Element => {
   const user = useAppSelector(selectUser);
 
-  if (!user || user.role !== 'admin') {
+  if (!user || user.role?.toUpperCase() !== 'ADMIN') {
     return <Navigate to="/" />;
   }
 

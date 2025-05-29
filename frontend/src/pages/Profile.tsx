@@ -99,13 +99,7 @@ const Profile: React.FC = () => {
           helperText={formik.touched.phone && formik.errors.phone}
           margin="normal"
         />
-        <Button 
-          color="primary" 
-          variant="contained" 
-          fullWidth 
-          type="submit"
-          disabled={isLoading}
-        >
+        <Button color="primary" variant="contained" fullWidth type="submit" disabled={isLoading}>
           {isLoading ? 'Updating...' : 'Update Profile'}
         </Button>
       </form>

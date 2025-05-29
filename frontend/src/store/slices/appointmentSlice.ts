@@ -32,7 +32,7 @@ export const appointmentApi = api.injectEndpoints({
     }),
     updateAppointment: builder.mutation<
       Appointment,
-      { id: number; appointment: Partial<Appointment> }
+      { id: string; appointment: Partial<Appointment> }
     >({
       query: ({ id, appointment }) => ({
         url: `/appointments/${id}`,
@@ -41,7 +41,7 @@ export const appointmentApi = api.injectEndpoints({
       }),
       invalidatesTags: ['Appointment'],
     }),
-    deleteAppointment: builder.mutation<void, number>({
+    deleteAppointment: builder.mutation<void, string>({
       query: (id) => ({
         url: `/appointments/${id}`,
         method: 'DELETE',
@@ -74,7 +74,7 @@ const appointmentSlice = createSlice({
         state.appointments[index] = action.payload;
       }
     },
-    deleteAppointment: (state, action: PayloadAction<number>) => {
+    deleteAppointment: (state, action: PayloadAction<string>) => {
       state.appointments = state.appointments.filter((a) => a.id !== action.payload);
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
@@ -97,7 +97,7 @@ export const {
 } = appointmentSlice.actions;
 
 export const selectAppointments = (state: RootState) => state.appointment.appointments;
-export const selectAppointmentById = (id: number) => (state: RootState) =>
+export const selectAppointmentById = (id: string) => (state: RootState) =>
   state.appointment.appointments.find((a) => a.id === id);
 export const selectLoading = (state: RootState) => state.appointment.loading;
 export const selectError = (state: RootState) => state.appointment.error;

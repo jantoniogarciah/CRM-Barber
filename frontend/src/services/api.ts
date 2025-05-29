@@ -9,8 +9,8 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 const baseQuery = fetchBaseQuery({
   baseUrl: API_URL,
   prepareHeaders: (headers, { getState }) => {
-    // Get token from localStorage first, then from state
-    const token = localStorage.getItem('token') || (getState() as RootState).auth.token;
+    // Get token from localStorage
+    const token = localStorage.getItem('token');
     if (token) {
       headers.set('authorization', `Bearer ${token}`);
     }
@@ -22,50 +22,35 @@ const baseQuery = fetchBaseQuery({
 
 const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
   let result = await baseQuery(args, api, extraOptions);
-  
+
   if (result.error) {
     const error = result.error as any;
-    
-    // Handle network errors
-    if (error.status === 'FETCH_ERROR') {
-      toast.error('Error de conexión. Verificando conexión con el servidor...');
-      
-      // Retry logic for network errors
-      let retries = 0;
-      while (retries < 3) {
-        try {
-          // Wait before retrying
-          await new Promise(resolve => setTimeout(resolve, 1000 * (retries + 1)));
-          
-          result = await baseQuery(args, api, extraOptions);
-          if (!result.error) {
-            return result;
-          }
-        } catch (err) {
-          console.error('Retry failed:', err);
-        }
-        retries++;
-      }
-      
-      if (retries === 3) {
-        toast.error('No se pudo establecer conexión con el servidor.');
-      }
-    }
-    
+
     // Handle authentication errors
     if (error.status === 401) {
-      localStorage.removeItem('token');
+      // Clear all auth data
+      localStorage.clear();
       api.dispatch(clearCredentials());
+      
+      // Show error message
       toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
-      window.location.href = '/login';
+      
+      // Force a full page reload to clear all state
+      window.location.replace('/login');
+      return result;
     }
 
     // Handle server errors
     if (error.status === 500) {
       toast.error('Error en el servidor. Por favor, intenta más tarde.');
     }
+
+    // Handle network errors
+    if (error.status === 'FETCH_ERROR') {
+      toast.error('Error de conexión. Por favor, verifica tu conexión a internet.');
+    }
   }
-  
+
   return result;
 };
 
@@ -116,7 +101,7 @@ export const api = createApi({
       query: ({ showInactive }) => `/clients${showInactive ? '?showInactive=true' : ''}`,
       providesTags: ['Client'],
     }),
-    getClient: builder.query<Client, number>({
+    getClient: builder.query<Client, string>({
       query: (id) => `/clients/${id}`,
       providesTags: (result, error, id) => [{ type: 'Client', id }],
     }),
@@ -128,7 +113,7 @@ export const api = createApi({
       }),
       invalidatesTags: ['Client'],
     }),
-    updateClient: builder.mutation<Client, { id: number; client: Partial<Client> }>({
+    updateClient: builder.mutation<Client, { id: string; client: Partial<Client> }>({
       query: ({ id, client }) => ({
         url: `/clients/${id}`,
         method: 'PUT',
@@ -143,7 +128,7 @@ export const api = createApi({
       }),
       invalidatesTags: ['Client'],
     }),
-    toggleClientStatus: builder.mutation<Client, number>({
+    toggleClientStatus: builder.mutation<Client, string>({
       query: (id) => ({
         url: `/clients/${id}/toggle-status`,
         method: 'PATCH',
@@ -248,25 +233,21 @@ export const api = createApi({
       }),
       providesTags: ['Category'],
     }),
-    getCategory: builder.query<Category, number>({
+    getCategory: builder.query<Category, string>({
       query: (id) => `/categories/${id}`,
       providesTags: (_result, _error, id) => [{ type: 'Category', id }],
     }),
-    createCategory: builder.mutation<
-      Category,
-      Pick<Category, 'name' | 'description' | 'icon' | 'is_active'>
-    >({
-      query: (data) => ({
-        url: '/categories',
-        method: 'POST',
-        body: data,
-      }),
-      invalidatesTags: ['Category'],
-    }),
-    updateCategory: builder.mutation<
-      Category,
-      { id: number; category: Partial<Category> }
-    >({
+    createCategory: builder.mutation<Category, Pick<Category, 'name' | 'description' | 'isActive'>>(
+      {
+        query: (data) => ({
+          url: '/categories',
+          method: 'POST',
+          body: data,
+        }),
+        invalidatesTags: ['Category'],
+      }
+    ),
+    updateCategory: builder.mutation<Category, { id: string; category: Partial<Category> }>({
       query: ({ id, category }) => ({
         url: `/categories/${id}`,
         method: 'PUT',
@@ -274,7 +255,7 @@ export const api = createApi({
       }),
       invalidatesTags: (_result, _error, { id }) => [{ type: 'Category', id }],
     }),
-    deleteCategory: builder.mutation<void, number>({
+    deleteCategory: builder.mutation<void, string>({
       query: (id) => ({
         url: `/categories/${id}`,
         method: 'DELETE',

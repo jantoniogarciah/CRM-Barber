@@ -30,7 +30,7 @@ export const clientApi = api.injectEndpoints({
       }),
       invalidatesTags: ['Client'],
     }),
-    updateClient: builder.mutation<Client, { id: number; client: Partial<Client> }>({
+    updateClient: builder.mutation<Client, { id: string; client: Partial<Client> }>({
       query: ({ id, client }) => ({
         url: `/clients/${id}`,
         method: 'PUT',
@@ -49,7 +49,7 @@ export const clientApi = api.injectEndpoints({
         { type: 'Client', id: 'LIST' },
       ],
     }),
-    deleteClient: builder.mutation<void, number>({
+    deleteClient: builder.mutation<void, string>({
       query: (id) => ({
         url: `/clients/${id}`,
         method: 'DELETE',
@@ -82,7 +82,7 @@ const clientSlice = createSlice({
         state.clients[index] = action.payload;
       }
     },
-    deleteClient: (state, action: PayloadAction<number>) => {
+    deleteClient: (state, action: PayloadAction<string>) => {
       state.clients = state.clients.filter((c) => c.id !== action.payload);
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
@@ -105,7 +105,7 @@ export const {
 } = clientSlice.actions;
 
 export const selectClients = (state: RootState) => state.client.clients;
-export const selectClientById = (id: number) => (state: RootState) =>
+export const selectClientById = (id: string) => (state: RootState) =>
   state.client.clients.find((c) => c.id === id);
 export const selectLoading = (state: RootState) => state.client.loading;
 export const selectError = (state: RootState) => state.client.error;

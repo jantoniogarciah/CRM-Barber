@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   AppBar,
   Box,
@@ -42,11 +42,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useAppDispatch();
   const user = useAppSelector(selectUser);
   const [logout] = useLogoutMutation();
-  const { data: notifications = [] } = useGetNotificationsQuery();
+  const { data: notifications = [] } = useGetNotificationsQuery(undefined, {
+    skip: !user,
+  });
   const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -61,37 +66,54 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   const handleLogout = async () => {
-    handleClose();
     try {
       await logout().unwrap();
-      localStorage.removeItem('token');
-      dispatch(clearCredentials());
-      navigate('/login');
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('Error during logout:', error);
+    } finally {
+      // Clear all auth data
+      localStorage.clear();
+      sessionStorage.clear();
+      dispatch(clearCredentials());
+      
+      // Force a full page reload to clear all state
+      window.location.replace('/login');
     }
   };
 
-  const menuItems = [
-    { text: 'Dashboard', icon: <Dashboard />, path: '/' },
-    { text: 'Citas', icon: <Event />, path: '/appointments' },
-    { text: 'Clientes', icon: <People />, path: '/clients' },
-    { text: 'Servicios', icon: <Build />, path: '/services' },
-    { text: 'Barberos', icon: <People />, path: '/barbers' },
-  ];
+  const menuItems = useMemo(() => {
+    const items = [
+      { text: 'Dashboard', icon: <Dashboard />, path: '/' },
+      { text: 'Citas', icon: <Event />, path: '/appointments' },
+      { text: 'Clientes', icon: <People />, path: '/clients' },
+    ];
+
+    // Only show Services and Barbers for admin users
+    if (user?.role?.toUpperCase() === 'ADMIN') {
+      items.push(
+        { text: 'Servicios', icon: <Build />, path: '/services' },
+        { text: 'Barberos', icon: <People />, path: '/barbers' }
+      );
+    }
+
+    return items;
+  }, [user?.role]);
 
   const drawer = (
     <div>
       <Toolbar>
         <Typography variant="h6" noWrap component="div">
-         Clipper Cut CRM
+          Clipper Cut CRM
         </Typography>
       </Toolbar>
       <Divider />
       <List>
         {menuItems.map((item) => (
           <ListItem key={item.text} disablePadding>
-            <ListItemButton onClick={() => navigate(item.path)}>
+            <ListItemButton 
+              onClick={() => navigate(item.path)}
+              selected={location.pathname === item.path}
+            >
               <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText primary={item.text} />
             </ListItemButton>
@@ -101,112 +123,121 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     </div>
   );
 
+  if (isAuthPage) {
+    return <Box>{children}</Box>;
+  }
+
   return (
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
-      <AppBar
-        position="fixed"
-        color="primary"
-        sx={{
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: `${drawerWidth}px` },
-        }}
-      >
-        <Toolbar>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: 'none' } }}
-          >
-            <MenuIcon />
-          </IconButton>
-          <img src={logo} alt="Clipper Cut Logo" style={{ height: 40, marginRight: 16 }} />
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            {user?.firstName} {user?.lastName}
-          </Typography>
-          <IconButton size="large" color="inherit" onClick={() => navigate('/notifications')}>
-            <Badge badgeContent={unreadCount} color="error">
-              <Notifications />
-            </Badge>
-          </IconButton>
-          <IconButton
-            size="large"
-            aria-label="account of current user"
-            aria-controls="menu-appbar"
-            aria-haspopup="true"
-            onClick={handleMenu}
-            color="inherit"
-          >
-            <AccountCircle />
-          </IconButton>
-          <Menu
-            id="menu-appbar"
-            anchorEl={anchorEl}
-            anchorOrigin={{
-              vertical: 'top',
-              horizontal: 'right',
+      {user && (
+        <>
+          <AppBar
+            position="fixed"
+            color="primary"
+            sx={{
+              width: { sm: `calc(100% - ${drawerWidth}px)` },
+              ml: { sm: `${drawerWidth}px` },
             }}
-            keepMounted
-            transformOrigin={{
-              vertical: 'top',
-              horizontal: 'right',
-            }}
-            open={Boolean(anchorEl)}
-            onClose={handleClose}
           >
-            <MenuItem
-              onClick={() => {
-                handleClose();
-                navigate('/profile');
+            <Toolbar>
+              <IconButton
+                color="inherit"
+                aria-label="open drawer"
+                edge="start"
+                onClick={handleDrawerToggle}
+                sx={{ mr: 2, display: { sm: 'none' } }}
+              >
+                <MenuIcon />
+              </IconButton>
+              <img src={logo} alt="Clipper Cut Logo" style={{ height: 40, marginRight: 16 }} />
+              <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+                {user?.firstName} {user?.lastName}
+              </Typography>
+              <IconButton size="large" color="inherit" onClick={() => navigate('/notifications')}>
+                <Badge badgeContent={unreadCount} color="error">
+                  <Notifications />
+                </Badge>
+              </IconButton>
+              <IconButton
+                size="large"
+                aria-label="account of current user"
+                aria-controls="menu-appbar"
+                aria-haspopup="true"
+                onClick={handleMenu}
+                color="inherit"
+              >
+                <AccountCircle />
+              </IconButton>
+              <Menu
+                id="menu-appbar"
+                anchorEl={anchorEl}
+                anchorOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+                keepMounted
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+                open={Boolean(anchorEl)}
+                onClose={handleClose}
+              >
+                <MenuItem
+                  onClick={() => {
+                    handleClose();
+                    navigate('/profile');
+                  }}
+                >
+                  Profile
+                </MenuItem>
+                <MenuItem onClick={handleLogout}>Logout</MenuItem>
+              </Menu>
+            </Toolbar>
+          </AppBar>
+          <Box component="nav" sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}>
+            <Drawer
+              variant="temporary"
+              open={mobileOpen}
+              onClose={handleDrawerToggle}
+              ModalProps={{
+                keepMounted: true,
+              }}
+              sx={{
+                display: { xs: 'block', sm: 'none' },
+                '& .MuiDrawer-paper': {
+                  boxSizing: 'border-box',
+                  width: drawerWidth,
+                },
               }}
             >
-              Profile
-            </MenuItem>
-            <MenuItem onClick={handleLogout}>Logout</MenuItem>
-          </Menu>
-        </Toolbar>
-      </AppBar>
-      <Box component="nav" sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}>
-        <Drawer
-          variant="temporary"
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true,
-          }}
-          sx={{
-            display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': {
-              boxSizing: 'border-box',
-              width: drawerWidth,
-            },
-          }}
-        >
-          {drawer}
-        </Drawer>
-        <Drawer
-          variant="permanent"
-          sx={{
-            display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': {
-              boxSizing: 'border-box',
-              width: drawerWidth,
-            },
-          }}
-          open
-        >
-          {drawer}
-        </Drawer>
-      </Box>
+              {drawer}
+            </Drawer>
+            <Drawer
+              variant="permanent"
+              sx={{
+                display: { xs: 'none', sm: 'block' },
+                '& .MuiDrawer-paper': {
+                  boxSizing: 'border-box',
+                  width: drawerWidth,
+                },
+              }}
+              open
+            >
+              {drawer}
+            </Drawer>
+          </Box>
+        </>
+      )}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
           p: 3,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
-          mt: 8,
+          ml: { sm: user ? `${drawerWidth}px` : 0 },
+          mt: user ? '64px' : 0,
         }}
       >
         {children}

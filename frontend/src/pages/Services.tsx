@@ -22,11 +22,7 @@ import {
   DialogContentText,
   DialogActions,
 } from '@mui/material';
-import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-} from '@mui/icons-material';
+import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import {
   useGetServicesQuery,
   useUpdateServiceMutation,
@@ -238,10 +234,12 @@ const Services = () => {
               ¿Estás seguro de que deseas eliminar el servicio "{serviceToDelete?.name}"?
             </Typography>
             <Typography paragraph>
-              <strong>Advertencia:</strong> Esta acción eliminará permanentemente el servicio de la base de datos y no se puede deshacer.
+              <strong>Advertencia:</strong> Esta acción eliminará permanentemente el servicio de la
+              base de datos y no se puede deshacer.
             </Typography>
             <Typography>
-              Si el servicio tiene citas asociadas, no podrá ser eliminado y deberá ser desactivado en su lugar.
+              Si el servicio tiene citas asociadas, no podrá ser eliminado y deberá ser desactivado
+              en su lugar.
             </Typography>
           </DialogContentText>
         </DialogContent>

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { Notification } from '../types';
+import { Notification, User } from '../types';
 
 interface SocketContextType {
   socket: Socket | null;
@@ -14,13 +14,21 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
 const SocketContext = createContext<SocketContextType | undefined>(undefined);
 
-export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+interface SocketProviderProps {
+  children: React.ReactNode;
+  user: User | null;
+}
+
+export const SocketProvider: React.FC<SocketProviderProps> = ({ children, user }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const connect = () => {
-    if (socket?.connected) return;
+    if (socket?.connected || !user) return;
+
+    const token = localStorage.getItem('token');
+    if (!token) return;
 
     const newSocket = io(API_URL, {
       reconnection: true,
@@ -28,6 +36,9 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
       timeout: 20000,
+      auth: {
+        token,
+      },
     });
 
     newSocket.on('connect', () => {
@@ -65,12 +76,16 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   useEffect(() => {
-    connect();
+    if (user) {
+      connect();
+    } else {
+      disconnect();
+    }
 
     return () => {
       disconnect();
     };
-  }, []);
+  }, [user]);
 
   return (
     <SocketContext.Provider value={{ socket, isConnected, error, connect, disconnect }}>

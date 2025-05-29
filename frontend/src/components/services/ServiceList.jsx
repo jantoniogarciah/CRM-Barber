@@ -106,10 +106,14 @@ const ServiceList = () => {
   const [openDetails, setOpenDetails] = useState(false);
   const [formMode, setFormMode] = useState('add');
   const [showInactive, setShowInactive] = useState(true);
-  
+
   const [toggleStatus] = useToggleServiceStatusMutation();
-  const { data: services = [], isLoading, error } = useGetServicesQuery({ 
-    showInactive
+  const {
+    data: services = [],
+    isLoading,
+    error,
+  } = useGetServicesQuery({
+    showInactive,
   });
 
   const totalCount = services.length || 0;
@@ -200,9 +204,7 @@ const ServiceList = () => {
     try {
       await toggleStatus(service.id);
       toast.success(
-        service.isActive 
-          ? 'Servicio desactivado correctamente' 
-          : 'Servicio activado correctamente'
+        service.isActive ? 'Servicio desactivado correctamente' : 'Servicio activado correctamente'
       );
     } catch (error) {
       console.error('Error toggling service status:', error);

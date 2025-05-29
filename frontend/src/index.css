@@ -1,0 +1,237 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
+    'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+* {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+/* Custom styles for Material-UI components */
+.MuiButton-root {
+  text-transform: none;
+}
+
+.MuiTableCell-root {
+  padding: 8px 16px;
+}
+
+.MuiTableRow-root:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.MuiChip-root {
+  font-size: 0.75rem;
+}
+
+.MuiDialog-paper {
+  margin: 16px;
+}
+
+.MuiDialogTitle-root {
+  padding: 16px 24px;
+}
+
+.MuiDialogContent-root {
+  padding: 8px 24px;
+}
+
+.MuiDialogActions-root {
+  padding: 8px 24px;
+}
+
+.MuiTextField-root {
+  margin: 8px 0;
+}
+
+.MuiFormControl-root {
+  margin: 8px 0;
+}
+
+.MuiSelect-root {
+  min-width: 120px;
+}
+
+.MuiMenuItem-root {
+  min-height: 36px;
+}
+
+.MuiListItemIcon-root {
+  min-width: 40px;
+}
+
+.MuiListItemText-root {
+  margin: 0;
+}
+
+.MuiDrawer-paper {
+  width: 240px;
+}
+
+.MuiAppBar-root {
+  z-index: 1201;
+}
+
+.MuiToolbar-root {
+  min-height: 64px;
+}
+
+.MuiCard-root {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.MuiCardContent-root {
+  padding: 16px;
+}
+
+.MuiCardActions-root {
+  padding: 8px;
+}
+
+.MuiAlert-root {
+  margin: 8px 0;
+}
+
+.MuiSnackbar-root {
+  z-index: 1400;
+}
+
+.MuiTooltip-tooltip {
+  font-size: 0.75rem;
+}
+
+.MuiBackdrop-root {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.MuiCircularProgress-root {
+  color: inherit;
+}
+
+.MuiSkeleton-root {
+  transform: scale(1);
+}
+
+.MuiPaper-root {
+  background-color: #fff;
+}
+
+.MuiSwitch-root {
+  margin: 8px;
+}
+
+.MuiFormControlLabel-root {
+  margin: 0;
+}
+
+.MuiInputLabel-root {
+  transform: translate(14px, 12px) scale(1);
+}
+
+.MuiInputLabel-shrink {
+  transform: translate(14px, -6px) scale(0.75);
+}
+
+.MuiOutlinedInput-root {
+  padding: 8px 14px;
+}
+
+.MuiOutlinedInput-notchedOutline {
+  border-color: rgba(0, 0, 0, 0.23);
+}
+
+.MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: rgba(0, 0, 0, 0.87);
+}
+
+.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: #1976d2;
+  border-width: 2px;
+}
+
+.MuiOutlinedInput-root.Mui-error .MuiOutlinedInput-notchedOutline {
+  border-color: #d32f2f;
+}
+
+.MuiOutlinedInput-input {
+  padding: 8.5px 14px;
+}
+
+.MuiOutlinedInput-multiline {
+  padding: 0;
+}
+
+.MuiOutlinedInput-multiline .MuiOutlinedInput-input {
+  padding: 8.5px 14px;
+}
+
+.MuiOutlinedInput-adornedStart {
+  padding-left: 14px;
+}
+
+.MuiOutlinedInput-adornedEnd {
+  padding-right: 14px;
+}
+
+.MuiInputAdornment-root {
+  height: 0.01em;
+  max-height: 2em;
+}
+
+.MuiInputAdornment-positionStart {
+  margin-right: 8px;
+}
+
+.MuiInputAdornment-positionEnd {
+  margin-left: 8px;
+}
+
+.MuiFormHelperText-root {
+  margin: 3px 14px 0;
+}
+
+.MuiFormHelperText-contained {
+  margin: 3px 14px 0;
+}
+
+.MuiFormHelperText-root.Mui-error {
+  color: #d32f2f;
+}
+
+.MuiFormHelperText-root.Mui-disabled {
+  color: rgba(0, 0, 0, 0.38);
+}
+
+.MuiFormHelperText-root.Mui-focused {
+  color: #1976d2;
+}
+
+.MuiFormHelperText-root.Mui-required {
+  color: #d32f2f;
+}
+
+.MuiFormHelperText-root.Mui-error.Mui-focused {
+  color: #d32f2f;
+}
+
+.MuiFormHelperText-root.Mui-error.Mui-disabled {
+  color: rgba(0, 0, 0, 0.38);
+}
+
+.MuiFormHelperText-root.Mui-error.Mui-required {
+  color: #d32f2f;
+}

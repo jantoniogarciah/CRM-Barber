@@ -15,7 +15,11 @@ import {
   MenuItem,
   CircularProgress,
 } from '@mui/material';
-import { useCreateServiceMutation, useUpdateServiceMutation, useGetCategoriesQuery } from '../services/api';
+import {
+  useCreateServiceMutation,
+  useUpdateServiceMutation,
+  useGetCategoriesQuery,
+} from '../services/api';
 import { Service } from '../types';
 import { toast } from 'react-hot-toast';
 
@@ -32,7 +36,7 @@ interface ServiceFormValues {
   description: string;
   price: number;
   duration: number;
-  categoryId: number;
+  categoryId: string;
   isActive: boolean;
 }
 
@@ -43,15 +47,11 @@ const validationSchema = Yup.object({
   description: Yup.string()
     .min(10, 'La descripción debe tener al menos 10 caracteres')
     .required('La descripción es requerida'),
-  price: Yup.number()
-    .min(0, 'El precio no puede ser negativo')
-    .required('El precio es requerido'),
+  price: Yup.number().min(0, 'El precio no puede ser negativo').required('El precio es requerido'),
   duration: Yup.number()
     .min(1, 'La duración debe ser mayor a 0')
     .required('La duración es requerida'),
-  categoryId: Yup.number()
-    .min(1, 'La categoría es requerida')
-    .required('La categoría es requerida'),
+  categoryId: Yup.string().required('La categoría es requerida'),
   isActive: Yup.boolean(),
 });
 
@@ -73,7 +73,9 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
 }) => {
   const [createService] = useCreateServiceMutation();
   const [updateService] = useUpdateServiceMutation();
-  const { data: categories = [], isLoading: isLoadingCategories } = useGetCategoriesQuery({ showInactive: false });
+  const { data: categories = [], isLoading: isLoadingCategories } = useGetCategoriesQuery({
+    showInactive: false,
+  });
 
   const formik = useFormik<ServiceFormValues>({
     initialValues: {
@@ -81,7 +83,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
       description: service?.description || '',
       price: service?.price || 0,
       duration: service?.duration || 30,
-      categoryId: service?.categoryId || 0,
+      categoryId: service?.categoryId || '',
       isActive: service?.isActive ?? true,
     },
     validationSchema,
@@ -188,9 +190,9 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
                 label="Categoría"
                 error={formik.touched.categoryId && Boolean(formik.errors.categoryId)}
               >
-                <MenuItem value={0}>Ninguna</MenuItem>
+                <MenuItem value="">Ninguna</MenuItem>
                 {categories.map((category) => (
-                  <MenuItem key={category.id} value={parseInt(category.id, 10)}>
+                  <MenuItem key={category.id} value={category.id}>
                     {category.name}
                   </MenuItem>
                 ))}

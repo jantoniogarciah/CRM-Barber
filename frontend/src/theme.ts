@@ -3,16 +3,10 @@ import { createTheme } from '@mui/material/styles';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#355C3A',
-      light: '#4F7C50',
-      dark: '#254225',
-      contrastText: '#fff',
+      main: '#2E7D32', // Green 800
     },
     secondary: {
-      main: '#9c27b0',
-      light: '#ba68c8',
-      dark: '#7b1fa2',
-      contrastText: '#fff',
+      main: '#5C6BC0', // Indigo 400
     },
     error: {
       main: '#d32f2f',
@@ -56,9 +50,6 @@ const theme = createTheme({
       '"Helvetica Neue"',
       'Arial',
       'sans-serif',
-      '"Apple Color Emoji"',
-      '"Segoe UI Emoji"',
-      '"Segoe UI Symbol"',
     ].join(','),
     h1: {
       fontSize: '2.5rem',
@@ -90,14 +81,6 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           textTransform: 'none',
-          borderRadius: 8,
-        },
-        containedPrimary: {
-          backgroundColor: '#355C3A',
-          color: '#fff',
-          '&:hover': {
-            backgroundColor: '#254225',
-          },
         },
       },
     },

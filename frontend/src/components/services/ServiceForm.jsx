@@ -15,7 +15,11 @@ import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { toast } from 'react-hot-toast';
-import { useCreateServiceMutation, useUpdateServiceMutation, useGetCategoriesQuery } from '../../services/api';
+import {
+  useCreateServiceMutation,
+  useUpdateServiceMutation,
+  useGetCategoriesQuery,
+} from '../../services/api';
 
 const schema = yup.object().shape({
   name: yup.string().required('El nombre es requerido'),
@@ -174,7 +178,11 @@ const ServiceForm = ({ service, onClose, onSuccess }) => {
         <Button onClick={onClose} disabled={isSubmitting}>
           Cancelar
         </Button>
-        <Button onClick={handleSubmit(handleFormSubmit)} variant="contained" disabled={isSubmitting}>
+        <Button
+          onClick={handleSubmit(handleFormSubmit)}
+          variant="contained"
+          disabled={isSubmitting}
+        >
           {isSubmitting ? 'Guardando...' : mode === 'add' ? 'Agregar' : 'Guardar'}
         </Button>
       </DialogActions>
