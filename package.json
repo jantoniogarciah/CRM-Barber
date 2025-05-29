@@ -1,7 +1,7 @@
 {
   "name": "crm-barber",
   "version": "1.0.0",
-  "description": "Barber Shop CRM System",
+  "description": "Clipper Cut Barber Sports CRM",
   "private": true,
   "workspaces": [
     "frontend",

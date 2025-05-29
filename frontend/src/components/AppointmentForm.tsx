@@ -17,8 +17,9 @@ import {
   useUpdateAppointmentMutation,
   useGetClientsQuery,
   useGetServicesQuery,
+  useGetBarbersQuery,
 } from '../services/api';
-import { Appointment, Client, Service } from '../types';
+import { Appointment, Client, Service, Barber } from '../types';
 
 interface AppointmentFormProps {
   open: boolean;
@@ -28,8 +29,9 @@ interface AppointmentFormProps {
 }
 
 interface AppointmentFormValues {
-  clientId: number;
-  serviceId: number;
+  clientId: string;
+  serviceId: string;
+  barberId: string;
   date: string;
   time: string;
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
@@ -37,17 +39,15 @@ interface AppointmentFormValues {
 }
 
 const validationSchema = Yup.object({
-  clientId: Yup.number()
-    .min(1, 'Por favor seleccione un cliente')
-    .required('El cliente es requerido'),
-  serviceId: Yup.number()
-    .min(1, 'Por favor seleccione un servicio')
-    .required('El servicio es requerido'),
-  date: Yup.string().required('La fecha es requerida'),
-  time: Yup.string().required('La hora es requerida'),
-  status: Yup.string()
-    .oneOf(['pending', 'confirmed', 'cancelled', 'completed'], 'Estado inválido')
-    .required('El estado es requerido'),
+  clientId: Yup.string()
+    .required('Por favor seleccione un cliente'),
+  serviceId: Yup.string()
+    .required('Por favor seleccione un servicio'),
+  barberId: Yup.string()
+    .required('Por favor seleccione un barbero'),
+  date: Yup.string().required('Por favor seleccione una fecha'),
+  time: Yup.string().required('Por favor seleccione una hora'),
+  status: Yup.string().oneOf(['pending', 'confirmed', 'cancelled', 'completed']).required(),
   notes: Yup.string(),
 });
 
@@ -60,6 +60,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
   const [createAppointment] = useCreateAppointmentMutation();
   const [updateAppointment] = useUpdateAppointmentMutation();
   const { data: clients = [] } = useGetClientsQuery({ showInactive: false });
+  const { data: barbers = [] } = useGetBarbersQuery({ showInactive: false });
   const {
     data: services = [],
     isLoading: isLoadingServices,
@@ -75,8 +76,9 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
 
   const formik = useFormik<AppointmentFormValues>({
     initialValues: {
-      clientId: appointment?.clientId || 0,
-      serviceId: appointment?.serviceId || 0,
+      clientId: appointment?.clientId || '',
+      serviceId: appointment?.serviceId || '',
+      barberId: appointment?.barberId || '',
       date: appointment?.date || new Date().toISOString().split('T')[0],
       time: appointment?.time || '',
       status: (appointment?.status as AppointmentFormValues['status']) || 'pending',
@@ -86,11 +88,14 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
     onSubmit: async (values) => {
       try {
         // Validate client and service selection
-        if (!values.clientId || values.clientId === 0) {
+        if (!values.clientId) {
           throw new Error('Por favor seleccione un cliente');
         }
-        if (!values.serviceId || values.serviceId === 0) {
+        if (!values.serviceId) {
           throw new Error('Por favor seleccione un servicio');
+        }
+        if (!values.barberId) {
+          throw new Error('Por favor seleccione un barbero');
         }
 
         // Validate and format date
@@ -108,6 +113,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
           selectedClient: clients.find((c) => c.id === values.clientId),
           services,
           selectedService: services.find((s) => s.id === values.serviceId),
+          selectedBarber: barbers.find((b) => b.id === values.barberId),
         });
 
         const timeValue = values.time;
@@ -117,34 +123,28 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
         const formattedHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
         const formattedTime = `${formattedHour}:${minutes} ${period}`;
 
-        // Ensure IDs are numbers
-        const clientId = typeof values.clientId === 'string' ? parseInt(values.clientId) : values.clientId;
-        const serviceId = typeof values.serviceId === 'string' ? parseInt(values.serviceId) : values.serviceId;
-
         const appointmentData = {
-          clientId,
-          serviceId,
+          clientId: values.clientId,
+          serviceId: values.serviceId,
+          barberId: values.barberId,
           date: values.date,
           time: formattedTime,
           status: values.status,
-          notes: values.notes || '',
+          notes: values.notes,
         };
 
         console.log('Appointment data to be sent:', appointmentData);
 
-        if (appointment?.id) {
-          console.log('Updating appointment:', appointmentData);
-          const result = await updateAppointment({
+        if (appointment) {
+          await updateAppointment({
             id: appointment.id.toString(),
             appointment: appointmentData,
           }).unwrap();
-          console.log('Update successful:', result);
+          onSuccess();
         } else {
-          console.log('Creating new appointment:', appointmentData);
-          const result = await createAppointment(appointmentData).unwrap();
-          console.log('Creation successful:', result);
+          await createAppointment(appointmentData).unwrap();
+          onSuccess();
         }
-        onSuccess();
         onClose();
       } catch (error: any) {
         console.error('Error saving appointment:', error);
@@ -183,8 +183,9 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
 
       formik.resetForm({
         values: {
-          clientId: appointment?.clientId || 0,
-          serviceId: appointment?.serviceId || 0,
+          clientId: appointment?.clientId || '',
+          serviceId: appointment?.serviceId || '',
+          barberId: appointment?.barberId || '',
           date: appointment?.date || new Date().toISOString().split('T')[0],
           time: appointment?.time ? convertTimeToInputFormat(appointment.time) : '',
           status: (appointment?.status as AppointmentFormValues['status']) || 'pending',
@@ -211,8 +212,8 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
               error={formik.touched.clientId && Boolean(formik.errors.clientId)}
               helperText={formik.touched.clientId && formik.errors.clientId}
             >
-              <MenuItem value={0}>Select a client</MenuItem>
-              {clients.map((client: Client) => (
+              <MenuItem value="">Select a client</MenuItem>
+              {clients.map((client) => (
                 <MenuItem key={client.id} value={client.id}>
                   {`${client.firstName} ${client.lastName}`}
                 </MenuItem>
@@ -226,29 +227,35 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
               label="Service"
               select
               value={formik.values.serviceId}
-              onChange={(e) => {
-                console.log('Service selected:', {
-                  selectedValue: e.target.value,
-                  availableServices: services,
-                });
-                formik.handleChange(e);
-              }}
+              onChange={formik.handleChange}
               error={formik.touched.serviceId && Boolean(formik.errors.serviceId)}
-              helperText={
-                (formik.touched.serviceId && formik.errors.serviceId) ||
-                (isLoadingServices ? 'Loading services...' : '')
-              }
-              disabled={isLoadingServices}
+              helperText={formik.touched.serviceId && formik.errors.serviceId}
             >
-              <MenuItem value={0}>Select a service</MenuItem>
-              {services.map((service: Service) => {
-                console.log('Rendering service option:', service);
-                return (
-                  <MenuItem key={service.id} value={service.id}>
-                    {service.name}
-                  </MenuItem>
-                );
-              })}
+              <MenuItem value="">Select a service</MenuItem>
+              {services.map((service) => (
+                <MenuItem key={service.id} value={service.id}>
+                  {service.name}
+                </MenuItem>
+              ))}
+            </TextField>
+
+            <TextField
+              fullWidth
+              id="barberId"
+              name="barberId"
+              label="Barber"
+              select
+              value={formik.values.barberId}
+              onChange={formik.handleChange}
+              error={formik.touched.barberId && Boolean(formik.errors.barberId)}
+              helperText={formik.touched.barberId && formik.errors.barberId}
+            >
+              <MenuItem value="">Select a barber</MenuItem>
+              {barbers.map((barber) => (
+                <MenuItem key={barber.id} value={barber.id}>
+                  {`${barber.firstName} ${barber.lastName}`}
+                </MenuItem>
+              ))}
             </TextField>
 
             <TextField
@@ -261,7 +268,9 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
               onChange={formik.handleChange}
               error={formik.touched.date && Boolean(formik.errors.date)}
               helperText={formik.touched.date && formik.errors.date}
-              InputLabelProps={{ shrink: true }}
+              InputLabelProps={{
+                shrink: true,
+              }}
             />
 
             <TextField
@@ -274,7 +283,9 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
               onChange={formik.handleChange}
               error={formik.touched.time && Boolean(formik.errors.time)}
               helperText={formik.touched.time && formik.errors.time}
-              InputLabelProps={{ shrink: true }}
+              InputLabelProps={{
+                shrink: true,
+              }}
             />
 
             <TextField
@@ -310,7 +321,12 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
         </DialogContent>
         <DialogActions>
           <Button onClick={onClose}>Cancel</Button>
-          <Button type="submit" variant="contained" disabled={formik.isSubmitting}>
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            disabled={formik.isSubmitting || isLoadingServices}
+          >
             {formik.isSubmitting ? (
               <CircularProgress size={24} />
             ) : appointment ? (

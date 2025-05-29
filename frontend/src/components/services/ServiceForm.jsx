@@ -1,212 +1,181 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   Box,
-  TextField,
   Button,
-  Grid,
-  Alert,
-  CircularProgress,
   DialogTitle,
   DialogContent,
   DialogActions,
+  TextField,
+  MenuItem,
   FormControl,
   InputLabel,
   Select,
-  MenuItem,
-  InputAdornment,
 } from '@mui/material';
-import axios from 'axios';
+import { useForm, Controller } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
+import { toast } from 'react-hot-toast';
+import { useCreateServiceMutation, useUpdateServiceMutation, useGetCategoriesQuery } from '../../services/api';
 
-const ServiceForm = ({ service, mode, onSubmit, onCancel }) => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [categories, setCategories] = useState([]);
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    duration: '',
-    price: '',
-    category: '',
+const schema = yup.object().shape({
+  name: yup.string().required('El nombre es requerido'),
+  description: yup.string().required('La descripción es requerida'),
+  price: yup
+    .number()
+    .typeError('El precio debe ser un número')
+    .required('El precio es requerido')
+    .min(0, 'El precio no puede ser negativo'),
+  duration: yup
+    .number()
+    .typeError('La duración debe ser un número')
+    .required('La duración es requerida')
+    .min(1, 'La duración debe ser al menos 1 minuto'),
+  categoryId: yup.string().required('La categoría es requerida'),
+});
+
+const ServiceForm = ({ service, onClose, onSuccess }) => {
+  const [createService] = useCreateServiceMutation();
+  const [updateService] = useUpdateServiceMutation();
+  const { data: categories = [] } = useGetCategoriesQuery({ showInactive: false });
+  const mode = service ? 'edit' : 'add';
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: yupResolver(schema),
+    defaultValues: {
+      name: service?.name || '',
+      description: service?.description || '',
+      price: service?.price || '',
+      duration: service?.duration || '',
+      categoryId: service?.categoryId || '',
+    },
   });
 
-  useEffect(() => {
-    fetchCategories();
-    if (service) {
-      setFormData({
-        name: service.name || '',
-        description: service.description || '',
-        duration: service.duration || '',
-        price: service.price || '',
-        category: service.category || '',
-      });
-    }
-  }, [service]);
-
-  const fetchCategories = async () => {
+  const handleFormSubmit = async (data) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('/api/services/categories/all', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setCategories(response.data.categories);
+      if (mode === 'add') {
+        await createService(data).unwrap();
+        toast.success('Servicio creado exitosamente');
+      } else {
+        await updateService({ id: service.id, service: data }).unwrap();
+        toast.success('Servicio actualizado exitosamente');
+      }
+      onSuccess();
     } catch (error) {
-      console.error('Error fetching categories:', error);
-    }
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const validateForm = () => {
-    if (!formData.name.trim()) {
-      setError('Service name is required');
-      return false;
-    }
-    if (!formData.duration || formData.duration < 1) {
-      setError('Duration must be at least 1 minute');
-      return false;
-    }
-    if (!formData.price || formData.price <= 0) {
-      setError('Price must be greater than 0');
-      return false;
-    }
-    return true;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-
-    try {
-      setLoading(true);
-      setError('');
-      const token = localStorage.getItem('token');
-      const url = mode === 'edit' ? `/api/services/${service.id}` : '/api/services';
-      const method = mode === 'edit' ? 'put' : 'post';
-
-      await axios[method](
-        url,
-        {
-          ...formData,
-          duration: parseInt(formData.duration, 10),
-          price: parseFloat(formData.price),
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      onSubmit();
-    } catch (error) {
-      setError(error.response?.data?.message || 'An error occurred while saving the service');
-    } finally {
-      setLoading(false);
+      console.error('Error saving service:', error);
+      toast.error(error.data?.message || 'Error al guardar el servicio');
     }
   };
 
   return (
     <>
-      <DialogTitle>{mode === 'edit' ? 'Edit Service' : 'Add New Service'}</DialogTitle>
+      <DialogTitle>{mode === 'add' ? 'Agregar Servicio' : 'Editar Servicio'}</DialogTitle>
       <DialogContent>
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
-
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
+        <Box
+          component="form"
+          noValidate
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            pt: 2,
+          }}
+        >
+          <Controller
+            name="name"
+            control={control}
+            render={({ field }) => (
               <TextField
-                required
+                {...field}
+                label="Nombre"
                 fullWidth
-                label="Service Name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                disabled={loading}
+                error={!!errors.name}
+                helperText={errors.name?.message}
               />
-            </Grid>
-            <Grid item xs={12}>
+            )}
+          />
+
+          <Controller
+            name="description"
+            control={control}
+            render={({ field }) => (
               <TextField
+                {...field}
+                label="Descripción"
                 fullWidth
-                label="Description"
-                name="description"
                 multiline
                 rows={3}
-                value={formData.description}
-                onChange={handleChange}
-                disabled={loading}
+                error={!!errors.description}
+                helperText={errors.description?.message}
               />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                required
-                fullWidth
-                label="Duration"
-                name="duration"
-                type="number"
-                value={formData.duration}
-                onChange={handleChange}
-                disabled={loading}
-                InputProps={{
-                  endAdornment: <InputAdornment position="end">minutes</InputAdornment>,
-                }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                required
-                fullWidth
-                label="Price"
-                name="price"
-                type="number"
-                value={formData.price}
-                onChange={handleChange}
-                disabled={loading}
-                InputProps={{
-                  startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                }}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <FormControl fullWidth>
-                <InputLabel>Category</InputLabel>
-                <Select
-                  name="category"
-                  value={formData.category}
-                  onChange={handleChange}
-                  label="Category"
-                  disabled={loading}
-                >
-                  <MenuItem value="">None</MenuItem>
+            )}
+          />
+
+          <Controller
+            name="categoryId"
+            control={control}
+            render={({ field }) => (
+              <FormControl fullWidth error={!!errors.categoryId}>
+                <InputLabel>Categoría</InputLabel>
+                <Select {...field} label="Categoría">
                   {categories.map((category) => (
-                    <MenuItem key={category} value={category}>
-                      {category}
+                    <MenuItem key={category.id} value={category.id}>
+                      {category.name}
                     </MenuItem>
                   ))}
                 </Select>
+                {errors.categoryId && (
+                  <Box sx={{ color: 'error.main', mt: 1, fontSize: '0.75rem' }}>
+                    {errors.categoryId.message}
+                  </Box>
+                )}
               </FormControl>
-            </Grid>
-          </Grid>
+            )}
+          />
+
+          <Controller
+            name="price"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Precio"
+                type="number"
+                fullWidth
+                InputProps={{
+                  startAdornment: '$',
+                }}
+                error={!!errors.price}
+                helperText={errors.price?.message}
+              />
+            )}
+          />
+
+          <Controller
+            name="duration"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Duración (minutos)"
+                type="number"
+                fullWidth
+                error={!!errors.duration}
+                helperText={errors.duration?.message}
+              />
+            )}
+          />
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onCancel} disabled={loading}>
-          Cancel
+        <Button onClick={onClose} disabled={isSubmitting}>
+          Cancelar
         </Button>
-        <Button
-          onClick={handleSubmit}
-          variant="contained"
-          disabled={loading}
-          startIcon={loading && <CircularProgress size={20} />}
-        >
-          {loading ? 'Saving...' : 'Save'}
+        <Button onClick={handleSubmit(handleFormSubmit)} variant="contained" disabled={isSubmitting}>
+          {isSubmitting ? 'Guardando...' : mode === 'add' ? 'Agregar' : 'Guardar'}
         </Button>
       </DialogActions>
     </>

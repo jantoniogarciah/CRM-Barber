@@ -75,7 +75,7 @@ const Clients: React.FC = () => {
   const handleDeleteConfirm = async () => {
     if (clientToDelete) {
       try {
-        await deleteClient(clientToDelete.id).unwrap();
+        await deleteClient(clientToDelete.id.toString()).unwrap();
         await refetch();
         toast.success('Cliente eliminado exitosamente');
       } catch (error: any) {
@@ -91,7 +91,7 @@ const Clients: React.FC = () => {
       setTogglingId(client.id);
       await toggleClientStatus(client.id).unwrap();
       await refetch();
-      toast.success(`Cliente ${client.is_active ? 'desactivado' : 'activado'} exitosamente`);
+      toast.success(`Cliente ${client.isActive ? 'desactivado' : 'activado'} exitosamente`);
     } catch (error: any) {
       console.error('Error toggling client status:', error);
       toast.error(error.data?.message || 'Error al actualizar el estado del cliente');
@@ -147,8 +147,8 @@ const Clients: React.FC = () => {
               <TableRow
                 key={client.id}
                 sx={{
-                  opacity: client.is_active ? 1 : 0.6,
-                  backgroundColor: client.is_active ? 'inherit' : 'action.hover',
+                  opacity: client.isActive ? 1 : 0.6,
+                  backgroundColor: client.isActive ? 'inherit' : 'action.hover',
                   transition: 'all 0.3s ease',
                 }}
               >
@@ -157,12 +157,12 @@ const Clients: React.FC = () => {
                 <TableCell>{client.phone}</TableCell>
                 <TableCell>{client.notes || '-'}</TableCell>
                 <TableCell>
-                  {client.created_at ? format(new Date(client.created_at), 'yyyy-MM-dd') : ''}
+                  {client.createdAt ? format(new Date(client.createdAt), 'yyyy-MM-dd') : ''}
                 </TableCell>
                 <TableCell>
-                  <Tooltip title={client.is_active ? 'Click para desactivar' : 'Click para activar'}>
+                  <Tooltip title={client.isActive ? 'Click para desactivar' : 'Click para activar'}>
                     <Switch
-                      checked={client.is_active}
+                      checked={client.isActive}
                       onChange={() => handleToggleStatus(client)}
                       disabled={togglingId === client.id}
                       color="primary"
@@ -188,8 +188,12 @@ const Clients: React.FC = () => {
           <ClientForm
             client={selectedClient}
             open={formOpen}
-            onSuccess={handleFormSuccess}
+            onSuccess={async () => {
+              await handleFormSuccess();
+              toast.success('Cliente guardado exitosamente');
+            }}
             onClose={handleFormClose}
+            onError={(error) => toast.error(error)}
           />
         )}
       </Dialog>

@@ -21,6 +21,7 @@ import { useGetAppointmentsQuery, useDeleteAppointmentMutation } from '../servic
 import { Appointment } from '../types';
 import AppointmentForm from '../components/AppointmentForm';
 import DeleteConfirmDialog from '../components/DeleteConfirmDialog';
+import { toast } from 'react-hot-toast';
 
 const statusColors = {
   pending: 'warning',
@@ -60,9 +61,10 @@ export const Appointments = () => {
       try {
         await deleteAppointment(appointmentToDelete.id.toString());
         refetch();
+        toast.success('Cita eliminada exitosamente');
       } catch (error) {
         console.error('Error deleting appointment:', error);
-        alert('Error al eliminar la cita');
+        toast.error('Error al eliminar la cita');
       }
     }
     setOpenDelete(false);
@@ -76,6 +78,50 @@ export const Appointments = () => {
   const handleSuccess = () => {
     refetch();
     handleCloseForm();
+    toast.success(
+      selectedAppointment
+        ? 'Cita actualizada exitosamente'
+        : 'Cita creada exitosamente'
+    );
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'warning';
+      case 'confirmed':
+        return 'info';
+      case 'completed':
+        return 'success';
+      case 'cancelled':
+        return 'error';
+      default:
+        return 'default';
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'Pendiente';
+      case 'confirmed':
+        return 'Confirmada';
+      case 'completed':
+        return 'Completada';
+      case 'cancelled':
+        return 'Cancelada';
+      default:
+        return status;
+    }
+  };
+
+  const formatDate = (dateStr: string) => {
+    try {
+      return format(new Date(dateStr), 'dd/MM/yyyy', { locale: es });
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return dateStr;
+    }
   };
 
   if (isLoading) {
@@ -96,7 +142,10 @@ export const Appointments = () => {
           variant="contained"
           color="primary"
           startIcon={<AddIcon />}
-          onClick={() => setOpenForm(true)}
+          onClick={() => {
+            setSelectedAppointment(undefined);
+            setOpenForm(true);
+          }}
         >
           Nueva Cita
         </Button>
@@ -106,6 +155,7 @@ export const Appointments = () => {
         <Table>
           <TableHead>
             <TableRow>
+              <TableCell>Barbero</TableCell>
               <TableCell>Cliente</TableCell>
               <TableCell>Servicio</TableCell>
               <TableCell>Fecha</TableCell>
@@ -116,31 +166,38 @@ export const Appointments = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {appointments.map((appointment) => (
+            {appointments.map((appointment: any) => (
               <TableRow key={appointment.id}>
                 <TableCell>
-                  {appointment.client 
-                    ? `${appointment.client.firstName} ${appointment.client.lastName}` 
-                    : 'N/A'}
+                  {`${appointment.barber.firstName} ${appointment.barber.lastName}`}
                 </TableCell>
-                <TableCell>{appointment.service?.name || 'N/A'}</TableCell>
                 <TableCell>
-                  {format(new Date(appointment.date), 'dd/MM/yyyy', { locale: es })}
+                  {`${appointment.client.firstName} ${appointment.client.lastName}`}
                 </TableCell>
+                <TableCell>{appointment.service.name}</TableCell>
+                <TableCell>{formatDate(appointment.date)}</TableCell>
                 <TableCell>{appointment.time}</TableCell>
                 <TableCell>
                   <Chip
-                    label={statusLabels[appointment.status]}
-                    color={statusColors[appointment.status]}
+                    label={getStatusText(appointment.status)}
+                    color={getStatusColor(appointment.status)}
                     size="small"
                   />
                 </TableCell>
-                <TableCell>{appointment.notes}</TableCell>
+                <TableCell>{appointment.notes || '-'}</TableCell>
                 <TableCell align="right">
-                  <IconButton color="primary" size="small" onClick={() => handleEdit(appointment)}>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleEdit(appointment)}
+                    color="primary"
+                  >
                     <EditIcon />
                   </IconButton>
-                  <IconButton color="error" size="small" onClick={() => handleDelete(appointment)}>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleDelete(appointment)}
+                    color="error"
+                  >
                     <DeleteIcon />
                   </IconButton>
                 </TableCell>

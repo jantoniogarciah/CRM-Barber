@@ -2,7 +2,7 @@
 
 ## Overview
 
-The notification system provides real-time notifications to users in the Barber Shop CRM application. It consists of both frontend and backend components that work together to deliver a seamless notification experience.
+The notification system provides real-time notifications to users in the Clipper Cut Barber Sports CRM application. It consists of both frontend and backend components that work together to deliver a seamless notification experience.
 
 ## Features
 

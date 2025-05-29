@@ -13,6 +13,7 @@ import Profile from './pages/Profile';
 import Clients from './pages/Clients';
 import Services from './pages/Services';
 import Appointments from './pages/Appointments';
+import Barbers from './pages/Barbers';
 import { AdminRoute } from './components/AdminRoute';
 import { PrivateRoute } from './components/PrivateRoute';
 import Layout from './components/Layout';
@@ -74,6 +75,16 @@ const App: React.FC = () => {
                 <PrivateRoute>
                   <Layout>
                     <Appointments />
+                  </Layout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/barbers"
+              element={
+                <PrivateRoute>
+                  <Layout>
+                    <Barbers />
                   </Layout>
                 </PrivateRoute>
               }

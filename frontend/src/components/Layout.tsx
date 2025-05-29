@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
 import {
   AppBar,
   Box,
@@ -28,9 +27,9 @@ import {
   Notifications,
   AccountCircle,
 } from '@mui/icons-material';
-import { RootState } from '../store';
-import { useAuth } from '../contexts/AuthContext';
-import { useGetNotificationsQuery } from '../services/api';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { selectUser, clearCredentials } from '../store/slices/authSlice';
+import { useGetNotificationsQuery, useLogoutMutation } from '../services/api';
 import logo from '../assets/clippercut-logo.png';
 
 const drawerWidth = 240;
@@ -43,7 +42,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
-  const { logout, user } = useAuth();
+  const dispatch = useAppDispatch();
+  const user = useAppSelector(selectUser);
+  const [logout] = useLogoutMutation();
   const { data: notifications = [] } = useGetNotificationsQuery();
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
@@ -61,22 +62,29 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const handleLogout = async () => {
     handleClose();
-    await logout();
-    navigate('/login');
+    try {
+      await logout().unwrap();
+      localStorage.removeItem('token');
+      dispatch(clearCredentials());
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   const menuItems = [
     { text: 'Dashboard', icon: <Dashboard />, path: '/' },
-    { text: 'Appointments', icon: <Event />, path: '/appointments' },
-    { text: 'Clients', icon: <People />, path: '/clients' },
-    { text: 'Services', icon: <Build />, path: '/services' },
+    { text: 'Citas', icon: <Event />, path: '/appointments' },
+    { text: 'Clientes', icon: <People />, path: '/clients' },
+    { text: 'Servicios', icon: <Build />, path: '/services' },
+    { text: 'Barberos', icon: <People />, path: '/barbers' },
   ];
 
   const drawer = (
     <div>
       <Toolbar>
         <Typography variant="h6" noWrap component="div">
-          Barber Shop CRM
+         Clipper Cut CRM
         </Typography>
       </Toolbar>
       <Divider />
@@ -198,9 +206,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           flexGrow: 1,
           p: 3,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
+          mt: 8,
         }}
       >
-        <Toolbar />
         {children}
       </Box>
     </Box>

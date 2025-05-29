@@ -32,23 +32,27 @@ interface ServiceFormValues {
   description: string;
   price: number;
   duration: number;
-  category_id: number;
-  is_active: boolean;
+  categoryId: number;
+  isActive: boolean;
 }
 
 const validationSchema = Yup.object({
-  name: Yup.string().required('El nombre es requerido'),
-  description: Yup.string().required('La descripción es requerida'),
+  name: Yup.string()
+    .min(3, 'El nombre debe tener al menos 3 caracteres')
+    .required('El nombre es requerido'),
+  description: Yup.string()
+    .min(10, 'La descripción debe tener al menos 10 caracteres')
+    .required('La descripción es requerida'),
   price: Yup.number()
-    .min(0, 'El precio debe ser mayor o igual a 0')
+    .min(0, 'El precio no puede ser negativo')
     .required('El precio es requerido'),
   duration: Yup.number()
     .min(1, 'La duración debe ser mayor a 0')
     .required('La duración es requerida'),
-  category_id: Yup.number()
+  categoryId: Yup.number()
     .min(1, 'La categoría es requerida')
     .required('La categoría es requerida'),
-  is_active: Yup.boolean(),
+  isActive: Yup.boolean(),
 });
 
 const CATEGORIES = [
@@ -77,8 +81,8 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
       description: service?.description || '',
       price: service?.price || 0,
       duration: service?.duration || 30,
-      category_id: service?.category_id || 0,
-      is_active: service?.is_active ?? true,
+      categoryId: service?.categoryId || 0,
+      isActive: service?.isActive ?? true,
     },
     validationSchema,
     enableReinitialize: true,
@@ -89,8 +93,8 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
           description: values.description,
           price: values.price,
           duration: values.duration,
-          category_id: values.category_id,
-          is_active: values.is_active,
+          categoryId: values.categoryId,
+          isActive: values.isActive,
         };
 
         if (service?.id) {
@@ -177,16 +181,16 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
               <InputLabel id="category-label">Categoría</InputLabel>
               <Select
                 labelId="category-label"
-                id="category_id"
-                name="category_id"
-                value={formik.values.category_id}
+                id="categoryId"
+                name="categoryId"
+                value={formik.values.categoryId}
                 onChange={formik.handleChange}
                 label="Categoría"
-                error={formik.touched.category_id && Boolean(formik.errors.category_id)}
+                error={formik.touched.categoryId && Boolean(formik.errors.categoryId)}
               >
                 <MenuItem value={0}>Ninguna</MenuItem>
                 {categories.map((category) => (
-                  <MenuItem key={category.id} value={category.id}>
+                  <MenuItem key={category.id} value={parseInt(category.id, 10)}>
                     {category.name}
                   </MenuItem>
                 ))}

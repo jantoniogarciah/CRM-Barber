@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import {
   Box,
-  Typography,
+  Button,
+  Container,
+  Dialog,
+  IconButton,
   Paper,
   Table,
   TableBody,
@@ -9,69 +12,56 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Button,
-  IconButton,
-  Tooltip,
+  Typography,
+  Chip,
   Alert,
-  Snackbar,
-  CircularProgress,
   Switch,
   FormControlLabel,
-  Dialog,
   DialogTitle,
   DialogContent,
   DialogContentText,
   DialogActions,
-  Chip,
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import { useAppSelector } from '../store/hooks';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+} from '@mui/icons-material';
 import {
   useGetServicesQuery,
-  useDeleteServiceMutation,
   useUpdateServiceMutation,
-  useGetCategoriesQuery,
+  useDeleteServiceMutation,
+  useToggleServiceStatusMutation,
 } from '../services/api';
-import ServiceForm from '../components/ServiceForm';
+import ServiceForm from '../components/services/ServiceForm';
 import { Service } from '../types';
-import { format } from 'date-fns';
+import { toast } from 'react-hot-toast';
 
-const formatPrice = (price: number | string): string => {
-  const numericPrice = typeof price === 'string' ? parseFloat(price) : price;
-  return !isNaN(numericPrice) ? `$${numericPrice.toFixed(2)}` : '$0.00';
-};
-
-const Services: React.FC = () => {
-  const [showInactive, setShowInactive] = useState(false);
-  const { data: services = [], isLoading, error } = useGetServicesQuery({ showInactive });
-  const { data: categories = [] } = useGetCategoriesQuery({ showInactive: false });
-  const [deleteService] = useDeleteServiceMutation();
-  const [updateService] = useUpdateServiceMutation();
-  const { user } = useAppSelector((state) => state.auth);
-  const [openForm, setOpenForm] = useState(false);
+const Services = () => {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [showInactive, setShowInactive] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
 
-  const getCategoryName = (categoryId: number | null | undefined) => {
-    if (!categoryId) return 'N/A';
-    const category = categories.find(c => c.id === categoryId);
-    return category ? category.name : 'N/A';
-  };
+  const { data: services = [], isLoading, error, refetch } = useGetServicesQuery({ showInactive });
+  const [updateService] = useUpdateServiceMutation();
+  const [deleteService] = useDeleteServiceMutation();
+  const [toggleStatus] = useToggleServiceStatusMutation();
 
-  const handleEdit = (service: Service) => {
-    setSelectedService(service);
-    setOpenForm(true);
-  };
-
-  const handleAdd = () => {
+  const handleAddClick = () => {
     setSelectedService(null);
-    setOpenForm(true);
+    setFormOpen(true);
   };
 
-  const handleDelete = (service: Service) => {
+  const handleEditClick = (service: Service) => {
+    setSelectedService(service);
+    setFormOpen(true);
+  };
+
+  const handleDeleteClick = (service: Service) => {
     setServiceToDelete(service);
     setDeleteDialogOpen(true);
   };
@@ -79,10 +69,11 @@ const Services: React.FC = () => {
   const handleDeleteConfirm = async () => {
     if (serviceToDelete) {
       try {
-        await deleteService(serviceToDelete.id.toString()).unwrap();
-        setSuccessMessage('Servicio eliminado exitosamente');
+        await deleteService(serviceToDelete.id).unwrap();
+        await refetch();
+        toast.success('Servicio eliminado exitosamente');
       } catch (error: any) {
-        setErrorMessage(error.data?.message || 'Error al eliminar el servicio');
+        toast.error(error.data?.message || 'Error al eliminar el servicio');
       }
     }
     setDeleteDialogOpen(false);
@@ -90,55 +81,54 @@ const Services: React.FC = () => {
   };
 
   const handleFormClose = () => {
-    setOpenForm(false);
+    setFormOpen(false);
     setSelectedService(null);
   };
 
-  const handleFormSuccess = (message: string) => {
-    setOpenForm(false);
-    setSelectedService(null);
-    setSuccessMessage(message);
+  const handleFormSuccess = async () => {
+    await refetch();
+    handleFormClose();
   };
 
   const handleToggleStatus = async (service: Service) => {
     try {
-      await updateService({
-        id: service.id.toString(),
-        service: {
-          is_active: !service.is_active,
-        },
-      }).unwrap();
-
-      setSuccessMessage(`Servicio ${service.is_active ? 'desactivado' : 'activado'} exitosamente`);
+      await toggleStatus(service.id).unwrap();
+      toast.success(`Servicio ${service.isActive ? 'desactivado' : 'activado'} exitosamente`);
+      refetch();
     } catch (error) {
       console.error('Error updating service status:', error);
-      setErrorMessage('Error al actualizar el estado del servicio');
+      toast.error('Error al actualizar el estado del servicio');
     }
+  };
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('es-MX', {
+      style: 'currency',
+      currency: 'MXN',
+    }).format(price);
   };
 
   if (isLoading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-        <CircularProgress />
-      </Box>
+      <Container>
+        <Typography>Cargando servicios...</Typography>
+      </Container>
     );
   }
 
   if (error) {
     return (
-      <Alert severity="error" sx={{ mb: 2 }}>
-        Error al cargar los servicios
-      </Alert>
+      <Container>
+        <Alert severity="error">Error al cargar los servicios</Alert>
+      </Container>
     );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1">
-          Servicios
-        </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+    <Container>
+      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography variant="h4">Servicios</Typography>
+        <Box display="flex" alignItems="center" gap={2}>
           <FormControlLabel
             control={
               <Switch
@@ -147,79 +137,92 @@ const Services: React.FC = () => {
                 color="primary"
               />
             }
-            label="Mostrar servicios inactivos"
+            label="Mostrar Servicios Inactivos"
           />
           <Button
             variant="contained"
             color="primary"
             startIcon={<AddIcon />}
-            onClick={handleAdd}
+            onClick={handleAddClick}
           >
             Agregar Servicio
           </Button>
         </Box>
       </Box>
 
-      <Paper sx={{ width: '100%', mb: 2 }}>
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Nombre</TableCell>
-                <TableCell>Descripción</TableCell>
-                <TableCell>Precio</TableCell>
-                <TableCell>Duración (min)</TableCell>
-                <TableCell>Categoría</TableCell>
-                <TableCell>Estado</TableCell>
-                <TableCell>Acciones</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {services?.map((service) => (
-                <TableRow
-                  key={service.id}
-                  sx={{
-                    opacity: service.is_active ? 1 : 0.6,
-                    backgroundColor: service.is_active ? 'inherit' : 'action.hover',
-                  }}
-                >
-                  <TableCell>{service.name}</TableCell>
-                  <TableCell>{service.description}</TableCell>
-                  <TableCell>{formatPrice(service.price)}</TableCell>
-                  <TableCell>{service.duration} min</TableCell>
-                  <TableCell>{getCategoryName(service.category_id)}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={service.is_active ? 'Activo' : 'Inactivo'}
-                      color={service.is_active ? 'success' : 'error'}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Tooltip title="Editar servicio">
-                      <IconButton size="small" onClick={() => handleEdit(service)} color="primary">
-                        <EditIcon />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Eliminar servicio">
-                      <IconButton size="small" onClick={() => handleDelete(service)} color="error">
-                        <DeleteIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
+      {successMessage && (
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage('')}>
+          {successMessage}
+        </Alert>
+      )}
 
-      <ServiceForm
-        open={openForm}
-        onClose={handleFormClose}
-        onSuccess={handleFormSuccess}
-        service={selectedService}
-      />
+      {errorMessage && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setErrorMessage('')}>
+          {errorMessage}
+        </Alert>
+      )}
+
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Nombre</TableCell>
+              <TableCell>Descripción</TableCell>
+              <TableCell>Precio</TableCell>
+              <TableCell>Duración</TableCell>
+              <TableCell>Categoría</TableCell>
+              <TableCell>Estado</TableCell>
+              <TableCell align="right">Acciones</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {services.map((service) => (
+              <TableRow
+                key={service.id}
+                sx={{
+                  opacity: service.isActive ? 1 : 0.6,
+                  backgroundColor: service.isActive ? 'inherit' : 'action.hover',
+                }}
+              >
+                <TableCell>{service.name}</TableCell>
+                <TableCell>{service.description}</TableCell>
+                <TableCell>{formatPrice(service.price)}</TableCell>
+                <TableCell>{service.duration} min</TableCell>
+                <TableCell>{service.category?.name || 'Sin categoría'}</TableCell>
+                <TableCell>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={service.isActive}
+                        onChange={() => handleToggleStatus(service)}
+                        color="primary"
+                        size="small"
+                      />
+                    }
+                    label={service.isActive ? 'Activo' : 'Inactivo'}
+                  />
+                </TableCell>
+                <TableCell align="right">
+                  <IconButton
+                    size="small"
+                    onClick={() => handleEditClick(service)}
+                    title="Editar servicio"
+                  >
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleDeleteClick(service)}
+                    title="Eliminar servicio"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
       <Dialog
         open={deleteDialogOpen}
@@ -257,26 +260,14 @@ const Services: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      <Snackbar
-        open={!!successMessage}
-        autoHideDuration={6000}
-        onClose={() => setSuccessMessage('')}
-      >
-        <Alert onClose={() => setSuccessMessage('')} severity="success" sx={{ width: '100%' }}>
-          {successMessage}
-        </Alert>
-      </Snackbar>
-
-      <Snackbar
-        open={!!errorMessage}
-        autoHideDuration={6000}
-        onClose={() => setErrorMessage('')}
-      >
-        <Alert onClose={() => setErrorMessage('')} severity="error" sx={{ width: '100%' }}>
-          {errorMessage}
-        </Alert>
-      </Snackbar>
-    </Box>
+      <Dialog open={formOpen} onClose={handleFormClose} maxWidth="md" fullWidth>
+        <ServiceForm
+          service={selectedService}
+          onClose={handleFormClose}
+          onSuccess={handleFormSuccess}
+        />
+      </Dialog>
+    </Container>
   );
 };
 

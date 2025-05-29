@@ -76,7 +76,7 @@ const serviceSlice = createSlice({
         state.services[index] = action.payload;
       }
     },
-    deleteService: (state, action: PayloadAction<number>) => {
+    deleteService: (state, action: PayloadAction<string>) => {
       state.services = state.services.filter((s) => s.id !== action.payload);
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
@@ -99,7 +99,7 @@ export const {
 } = serviceSlice.actions;
 
 export const selectServices = (state: RootState) => state.service.services;
-export const selectServiceById = (id: number) => (state: RootState) =>
+export const selectServiceById = (id: string) => (state: RootState) =>
   state.service.services.find((s) => s.id === id);
 export const selectLoading = (state: RootState) => state.service.loading;
 export const selectError = (state: RootState) => state.service.error;

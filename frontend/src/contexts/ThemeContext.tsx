@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { PaletteMode } from '@mui/material';
-import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
+import { ThemeProvider as MuiThemeProvider, createTheme } from '@mui/material/styles';
 import theme from '../theme';
 
 interface ThemeContextType {
@@ -8,7 +8,7 @@ interface ThemeContextType {
   toggleColorMode: () => void;
 }
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined); // ✅ Modificado
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const useTheme = () => {
   const context = useContext(ThemeContext);
@@ -47,15 +47,22 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   };
 
   const value: ThemeContextType = {
-    // ✅ Definimos el tipo aquí
     mode,
     toggleColorMode,
   };
 
+  const currentTheme = createTheme({
+    ...theme,
+    palette: {
+      ...theme.palette,
+      mode,
+    },
+  });
+
   return (
-    <MuiThemeProvider theme={theme}>
-      <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
-    </MuiThemeProvider>
+    <ThemeContext.Provider value={value}>
+      <MuiThemeProvider theme={currentTheme}>{children}</MuiThemeProvider>
+    </ThemeContext.Provider>
   );
 };
 

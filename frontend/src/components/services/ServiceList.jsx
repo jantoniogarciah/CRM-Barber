@@ -21,6 +21,10 @@ import {
   Select,
   FormControl,
   InputLabel,
+  Switch,
+  Typography,
+  styled,
+  FormControlLabel,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -33,62 +37,99 @@ import { format } from 'date-fns';
 import axios from 'axios';
 import ServiceForm from './ServiceForm';
 import ServiceDetails from './ServiceDetails';
+import { useGetServicesQuery, useToggleServiceStatusMutation } from '../../services/api';
+import { toast } from 'react-hot-toast';
+
+// Custom styled switch
+const StatusSwitch = styled(Switch)(({ theme }) => ({
+  width: 58,
+  height: 38,
+  padding: 8,
+  '& .MuiSwitch-switchBase': {
+    margin: 1,
+    padding: 0,
+    transform: 'translateX(6px)',
+    '&.Mui-checked': {
+      color: '#fff',
+      transform: 'translateX(22px)',
+      '& .MuiSwitch-thumb': {
+        backgroundColor: theme.palette.success.main,
+      },
+      '& + .MuiSwitch-track': {
+        opacity: 1,
+        backgroundColor: theme.palette.success.light,
+      },
+    },
+  },
+  '& .MuiSwitch-thumb': {
+    backgroundColor: theme.palette.grey[400],
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    '&:before': {
+      content: "''",
+      position: 'absolute',
+      width: '100%',
+      height: '100%',
+      left: 0,
+      top: 0,
+      borderRadius: '50%',
+      transition: theme.transitions.create(['background-color'], {
+        duration: 200,
+      }),
+    },
+  },
+  '& .MuiSwitch-track': {
+    opacity: 1,
+    backgroundColor: theme.palette.grey[300],
+    borderRadius: 20,
+    border: `1px solid ${theme.palette.grey[400]}`,
+    transition: theme.transitions.create(['background-color', 'border-color'], {
+      duration: 200,
+    }),
+    '&.Mui-checked': {
+      opacity: 1,
+      backgroundColor: theme.palette.success.light,
+      borderColor: theme.palette.success.main,
+    },
+  },
+}));
 
 const ServiceList = () => {
-  const [services, setServices] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [categories, setCategories] = useState([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [totalCount, setTotalCount] = useState(0);
   const [selectedService, setSelectedService] = useState(null);
   const [openForm, setOpenForm] = useState(false);
   const [openDetails, setOpenDetails] = useState(false);
   const [formMode, setFormMode] = useState('add');
+  const [showInactive, setShowInactive] = useState(true);
+  
+  const [toggleStatus] = useToggleServiceStatusMutation();
+  const { data: services = [], isLoading, error } = useGetServicesQuery({ 
+    showInactive
+  });
 
-  const fetchServices = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      const token = localStorage.getItem('token');
-      const response = await axios.get('/api/services', {
-        headers: { Authorization: `Bearer ${token}` },
-        params: {
-          search,
-          category,
-          page: page + 1,
-          limit: rowsPerPage,
-        },
-      });
-
-      setServices(response.data.services);
-      setTotalCount(response.data.total);
-    } catch (error) {
-      setError(error.response?.data?.message || 'An error occurred while fetching services');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const totalCount = services.length || 0;
 
   const fetchCategories = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('/api/services/categories/all', {
+      const response = await axios.get('/api/services/categories', {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setCategories(response.data.categories);
+      setCategories(response.data);
     } catch (error) {
       console.error('Error fetching categories:', error);
+      toast.error('Error al cargar las categorías');
     }
   };
 
   useEffect(() => {
-    fetchServices();
     fetchCategories();
-  }, [page, rowsPerPage, search, category]);
+  }, []);
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -133,9 +174,9 @@ const ServiceList = () => {
         await axios.delete(`/api/services/${service.id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        fetchServices();
+        fetchCategories();
       } catch (error) {
-        setError(error.response?.data?.message || 'An error occurred while deleting the service');
+        console.error('Error deleting service:', error);
       }
     }
   };
@@ -151,8 +192,22 @@ const ServiceList = () => {
   };
 
   const handleFormSubmit = async () => {
-    await fetchServices();
+    fetchCategories();
     handleFormClose();
+  };
+
+  const handleStatusToggle = async (service) => {
+    try {
+      await toggleStatus(service.id);
+      toast.success(
+        service.isActive 
+          ? 'Servicio desactivado correctamente' 
+          : 'Servicio activado correctamente'
+      );
+    } catch (error) {
+      console.error('Error toggling service status:', error);
+      toast.error('Error al actualizar el estado del servicio');
+    }
   };
 
   const formatDuration = (minutes) => {
@@ -168,9 +223,25 @@ const ServiceList = () => {
     <Box sx={{ p: 3 }}>
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
+          {error.message}
         </Alert>
       )}
+
+      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography variant="h4" component="h1">
+          Servicios
+        </Typography>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={showInactive}
+              onChange={(e) => setShowInactive(e.target.checked)}
+              color="primary"
+            />
+          }
+          label="Mostrar servicios inactivos"
+        />
+      </Box>
 
       <Box
         sx={{
@@ -182,7 +253,7 @@ const ServiceList = () => {
       >
         <Box sx={{ display: 'flex', gap: 2 }}>
           <TextField
-            placeholder="Search services..."
+            placeholder="Buscar servicios..."
             value={search}
             onChange={handleSearchChange}
             InputProps={{
@@ -195,19 +266,19 @@ const ServiceList = () => {
             sx={{ width: 300 }}
           />
           <FormControl sx={{ minWidth: 200 }}>
-            <InputLabel>Category</InputLabel>
-            <Select value={category} onChange={handleCategoryChange} label="Category">
-              <MenuItem value="">All Categories</MenuItem>
+            <InputLabel>Categoría</InputLabel>
+            <Select value={category} onChange={handleCategoryChange} label="Categoría">
+              <MenuItem value="">Todas las categorías</MenuItem>
               {categories.map((cat) => (
-                <MenuItem key={cat} value={cat}>
-                  {cat}
+                <MenuItem key={cat.id} value={cat.id}>
+                  {cat.name}
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
         </Box>
         <Button variant="contained" startIcon={<AddIcon />} onClick={handleAddClick}>
-          Add Service
+          Agregar Servicio
         </Button>
       </Box>
 
@@ -215,60 +286,75 @@ const ServiceList = () => {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Category</TableCell>
-              <TableCell>Duration</TableCell>
-              <TableCell>Price</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell align="right">Actions</TableCell>
+              <TableCell>Nombre</TableCell>
+              <TableCell>Descripción</TableCell>
+              <TableCell>Categoría</TableCell>
+              <TableCell>Duración</TableCell>
+              <TableCell>Precio</TableCell>
+              <TableCell>Estado</TableCell>
+              <TableCell align="right">Acciones</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {loading ? (
+            {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} align="center">
+                <TableCell colSpan={7} align="center">
                   <CircularProgress />
                 </TableCell>
               </TableRow>
             ) : services.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} align="center">
-                  No services found
+                <TableCell colSpan={7} align="center">
+                  No se encontraron servicios
                 </TableCell>
               </TableRow>
             ) : (
               services.map((service) => (
                 <TableRow key={service.id}>
                   <TableCell>{service.name}</TableCell>
-                  <TableCell>{service.category || '-'}</TableCell>
-                  <TableCell>{formatDuration(service.duration)}</TableCell>
+                  <TableCell>{service.description}</TableCell>
+                  <TableCell>{service.category?.name || 'Sin categoría'}</TableCell>
+                  <TableCell>{service.duration} min</TableCell>
                   <TableCell>${service.price.toFixed(2)}</TableCell>
                   <TableCell>
-                    <Chip
-                      label={service.isActive ? 'Active' : 'Inactive'}
-                      color={service.isActive ? 'success' : 'default'}
-                      size="small"
-                    />
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <StatusSwitch
+                        checked={Boolean(service.isActive)}
+                        onChange={() => handleStatusToggle(service)}
+                        color="success"
+                        size="small"
+                        disabled={isLoading}
+                      />
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: service.isActive ? 'success.main' : 'error.main',
+                          fontWeight: 500,
+                        }}
+                      >
+                        {service.isActive ? 'Activo' : 'Inactivo'}
+                      </Typography>
+                    </Box>
                   </TableCell>
                   <TableCell align="right">
                     <IconButton
                       size="small"
                       onClick={() => handleViewClick(service)}
-                      title="View Details"
+                      title="Ver detalles"
                     >
                       <ViewIcon />
                     </IconButton>
                     <IconButton
                       size="small"
                       onClick={() => handleEditClick(service)}
-                      title="Edit Service"
+                      title="Editar servicio"
                     >
                       <EditIcon />
                     </IconButton>
                     <IconButton
                       size="small"
                       onClick={() => handleDeleteClick(service)}
-                      title="Delete Service"
+                      title="Eliminar servicio"
                     >
                       <DeleteIcon />
                     </IconButton>
@@ -280,12 +366,16 @@ const ServiceList = () => {
         </Table>
         <TablePagination
           component="div"
-          count={totalCount}
+          count={services.length}
           page={page}
           onPageChange={handleChangePage}
           rowsPerPage={rowsPerPage}
           onRowsPerPageChange={handleChangeRowsPerPage}
           rowsPerPageOptions={[5, 10, 25, 50]}
+          labelDisplayedRows={({ from, to, count }) =>
+            `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`
+          }
+          labelRowsPerPage="Filas por página:"
         />
       </TableContainer>
 
@@ -295,6 +385,7 @@ const ServiceList = () => {
           mode={formMode}
           onSubmit={handleFormSubmit}
           onCancel={handleFormClose}
+          categories={categories}
         />
       </Dialog>
 

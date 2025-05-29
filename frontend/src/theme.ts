@@ -42,6 +42,10 @@ const theme = createTheme({
       default: '#f5f5f5',
       paper: '#fff',
     },
+    text: {
+      primary: '#000000',
+      secondary: 'rgba(0, 0, 0, 0.7)',
+    },
   },
   typography: {
     fontFamily: [
@@ -116,6 +120,13 @@ const theme = createTheme({
         paper: {
           borderRadius: 12,
         },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: ({ theme }) => ({
+          backgroundColor: theme.palette.mode === 'dark' ? '#1a1a1a' : '#fff',
+        }),
       },
     },
   },

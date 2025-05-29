@@ -8,50 +8,53 @@ export interface User {
 }
 
 export interface Client {
-  id: number;
+  id: string;
   firstName: string;
   lastName: string;
-  email: string | null;
+  email?: string;
   phone: string;
   notes?: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Category {
-  id: number;
+  id: string;
   name: string;
   description?: string;
-  icon?: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  services?: Service[];
 }
 
 export interface Service {
-  id: number;
+  id: string;
   name: string;
   description: string;
   price: number;
   duration: number;
-  category_id?: number;
+  image?: string;
+  isActive: boolean;
+  categoryId?: string;
   category?: Category;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Appointment {
-  id: number;
-  clientId: number;
-  serviceId: number;
+  id: string;
+  clientId: string;
+  serviceId: string;
+  barberId: string;
   date: string;
   time: string;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   notes: string;
   client?: Client;
   service?: Service;
+  barber?: Barber;
   createdAt: string;
   updatedAt: string;
 }
@@ -71,4 +74,16 @@ export interface ApiResponse<T> {
   data: T;
   message?: string;
   error?: string;
+}
+
+export interface Barber {
+  id: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email?: string;
+  instagram?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }

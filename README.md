@@ -1,4 +1,4 @@
-# Barber Shop CRM
+# Clipper Cut Barber Sports CRM
 
 A comprehensive Customer Relationship Management system designed specifically for barber shops. This application helps manage clients, appointments, services, and staff efficiently.
 

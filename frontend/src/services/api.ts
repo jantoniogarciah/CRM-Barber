@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { User, Client, Service, Appointment, Notification, Category } from '../types';
+import { User, Client, Service, Appointment, Notification, Category, Barber } from '../types';
 import { RootState } from '../store';
 import { toast } from 'react-hot-toast';
 import { clearCredentials } from '../store/slices/authSlice';
@@ -72,7 +72,7 @@ const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
 export const api = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithRetry,
-  tagTypes: ['User', 'Client', 'Service', 'Appointment', 'Notification', 'Category'],
+  tagTypes: ['User', 'Client', 'Service', 'Appointment', 'Notification', 'Category', 'Barber'],
   endpoints: (builder) => ({
     // Auth endpoints
     login: builder.mutation<{ user: User; token: string }, { email: string; password: string }>({
@@ -101,6 +101,14 @@ export const api = createApi({
         url: '/auth/logout',
         method: 'POST',
       }),
+    }),
+    updateUser: builder.mutation<{ user: User; token: string }, Partial<User>>({
+      query: (userData) => ({
+        url: '/auth/update',
+        method: 'PUT',
+        body: userData,
+      }),
+      invalidatesTags: ['User'],
     }),
 
     // Client endpoints
@@ -175,6 +183,13 @@ export const api = createApi({
       }),
       invalidatesTags: ['Service'],
     }),
+    toggleServiceStatus: builder.mutation<Service, string>({
+      query: (id) => ({
+        url: `/services/${id}/toggle-status`,
+        method: 'PATCH',
+      }),
+      invalidatesTags: ['Service'],
+    }),
 
     // Appointment endpoints
     getAppointments: builder.query<Appointment[], void>({
@@ -183,7 +198,7 @@ export const api = createApi({
     }),
     getAppointment: builder.query<Appointment, string>({
       query: (id) => `/appointments/${id}`,
-      providesTags: (result, error, id) => [{ type: 'Appointment', id }],
+      providesTags: ['Appointment'],
     }),
     createAppointment: builder.mutation<Appointment, Partial<Appointment>>({
       query: (appointment) => ({
@@ -202,7 +217,7 @@ export const api = createApi({
         method: 'PUT',
         body: appointment,
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: 'Appointment', id }],
+      invalidatesTags: ['Appointment'],
     }),
     deleteAppointment: builder.mutation<void, string>({
       query: (id) => ({
@@ -266,6 +281,46 @@ export const api = createApi({
       }),
       invalidatesTags: ['Category'],
     }),
+
+    // Barber endpoints
+    getBarbers: builder.query<Barber[], { showInactive?: boolean }>({
+      query: ({ showInactive }) => `/barbers${showInactive ? '?showInactive=true' : ''}`,
+      providesTags: ['Barber'],
+    }),
+    getBarber: builder.query<Barber, string>({
+      query: (id) => `/barbers/${id}`,
+      providesTags: (result, error, id) => [{ type: 'Barber', id }],
+    }),
+    createBarber: builder.mutation<Barber, Partial<Barber>>({
+      query: (barber) => ({
+        url: '/barbers',
+        method: 'POST',
+        body: barber,
+      }),
+      invalidatesTags: ['Barber'],
+    }),
+    updateBarber: builder.mutation<Barber, { id: string; barber: Partial<Barber> }>({
+      query: ({ id, barber }) => ({
+        url: `/barbers/${id}`,
+        method: 'PUT',
+        body: barber,
+      }),
+      invalidatesTags: (result, error, { id }) => [{ type: 'Barber', id }],
+    }),
+    deleteBarber: builder.mutation<{ message: string }, string>({
+      query: (id) => ({
+        url: `/barbers/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Barber'],
+    }),
+    toggleBarberStatus: builder.mutation<Barber, string>({
+      query: (id) => ({
+        url: `/barbers/${id}/toggle-status`,
+        method: 'PATCH',
+      }),
+      invalidatesTags: ['Barber'],
+    }),
   }),
 });
 
@@ -297,4 +352,12 @@ export const {
   useCreateCategoryMutation,
   useUpdateCategoryMutation,
   useDeleteCategoryMutation,
+  useToggleServiceStatusMutation,
+  useUpdateUserMutation,
+  useGetBarbersQuery,
+  useGetBarberQuery,
+  useCreateBarberMutation,
+  useUpdateBarberMutation,
+  useDeleteBarberMutation,
+  useToggleBarberStatusMutation,
 } = api;

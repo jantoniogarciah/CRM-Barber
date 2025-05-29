@@ -1,6 +1,6 @@
-# Contributing to Barber Shop CRM
+# Contributing to Clipper Cut Barber Sports CRM
 
-We love your input! We want to make contributing to Barber Shop CRM as easy and transparent as possible, whether it's:
+We love your input! We want to make contributing to Clipper Cut Barber Sports CRM as easy and transparent as possible, whether it's:
 
 - Reporting a bug
 - Discussing the current state of the code

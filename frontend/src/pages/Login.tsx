@@ -12,8 +12,11 @@ import {
   Alert,
   CircularProgress,
   Link,
+  useTheme,
 } from '@mui/material';
-import { useAuth } from '../contexts/AuthContext';
+import { useLoginMutation } from '../services/api';
+import { useAppDispatch } from '../store/hooks';
+import { setCredentials } from '../store/slices/authSlice';
 import logo from '../assets/clippercut-logo.png';
 
 interface LoginFormValues {
@@ -28,8 +31,10 @@ const validationSchema = Yup.object({
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { login, isLoading } = useAuth();
+  const dispatch = useAppDispatch();
+  const [login, { isLoading }] = useLoginMutation();
   const [error, setError] = React.useState<string | null>(null);
+  const theme = useTheme();
 
   const formik = useFormik<LoginFormValues>({
     initialValues: {
@@ -39,7 +44,9 @@ const Login: React.FC = () => {
     validationSchema,
     onSubmit: async (values) => {
       try {
-        await login(values.email, values.password);
+        const result = await login(values).unwrap();
+        dispatch(setCredentials(result));
+        localStorage.setItem('token', result.token);
         navigate('/');
       } catch (err) {
         setError('Invalid email or password');
@@ -66,13 +73,14 @@ const Login: React.FC = () => {
             flexDirection: 'column',
             alignItems: 'center',
             width: '100%',
+            backgroundColor: theme.palette.background.paper,
           }}
         >
           <img src={logo} alt="Clipper Cut Logo" style={{ height: 60, marginBottom: 16 }} />
-          <Typography component="h1" variant="h5">
+          <Typography component="h1" variant="h5" color="textPrimary">
             Clipper Cut Barber Sports
           </Typography>
-          <Typography component="h2" variant="h6" sx={{ mt: 2 }}>
+          <Typography component="h2" variant="h6" sx={{ mt: 2 }} color="textSecondary">
             Sign in
           </Typography>
           {error && (
@@ -93,6 +101,16 @@ const Login: React.FC = () => {
               margin="normal"
               autoComplete="email"
               autoFocus
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': {
+                    borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.23)' : 'rgba(0, 0, 0, 0.23)',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
+                  },
+                },
+              }}
             />
             <TextField
               fullWidth
@@ -106,6 +124,16 @@ const Login: React.FC = () => {
               helperText={formik.touched.password && formik.errors.password}
               margin="normal"
               autoComplete="current-password"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': {
+                    borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.23)' : 'rgba(0, 0, 0, 0.23)',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
+                  },
+                },
+              }}
             />
             <Button
               type="submit"
@@ -117,10 +145,10 @@ const Login: React.FC = () => {
               {isLoading ? <CircularProgress size={24} /> : 'Login'}
             </Button>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Link href="/forgot-password" variant="body2">
+              <Link href="/forgot-password" variant="body2" color="primary">
                 Forgot password?
               </Link>
-              <Link href="/register" variant="body2">
+              <Link href="/register" variant="body2" color="primary">
                 Don&apos;t have an account? Sign up
               </Link>
             </Box>
