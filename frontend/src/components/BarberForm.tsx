@@ -1,120 +1,162 @@
 import React from 'react';
-import { Box, Button, DialogActions, DialogContent, DialogTitle, TextField } from '@mui/material';
-import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
+  Grid,
+  Box,
+  CircularProgress,
+} from '@mui/material';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
 import { Barber } from '../types';
-import { useCreateBarberMutation, useUpdateBarberMutation } from '../services/api';
 
 interface BarberFormProps {
-  barber?: Barber | null;
   open: boolean;
-  onSuccess: () => void;
   onClose: () => void;
-  onError: (error: string) => void;
+  onSubmit: (barber: Partial<Barber>) => Promise<void>;
+  initialValues?: Partial<Barber>;
+  isSubmitting?: boolean;
 }
 
-const schema = yup.object().shape({
-  firstName: yup.string().required('El nombre es requerido'),
-  lastName: yup.string().required('El apellido es requerido'),
-  phone: yup.string().required('El teléfono es requerido'),
-  email: yup
-    .string()
-    .transform((value) => (value === '' ? null : value))
-    .nullable()
-    .email('Email inválido'),
-  instagram: yup
-    .string()
-    .transform((value) => (value === '' ? null : value))
-    .nullable(),
+const validationSchema = Yup.object({
+  firstName: Yup.string().required('El nombre es requerido'),
+  lastName: Yup.string().required('El apellido es requerido'),
+  phone: Yup.string()
+    .required('El teléfono es requerido')
+    .matches(/^\+?[\d\s-]{10,}$/, 'Formato de teléfono inválido'),
+  email: Yup.string().email('Email inválido').nullable(),
+  instagram: Yup.string().nullable(),
 });
 
-const BarberForm: React.FC<BarberFormProps> = ({ barber, onSuccess, onClose, onError }) => {
-  const [createBarber] = useCreateBarberMutation();
-  const [updateBarber] = useUpdateBarberMutation();
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm({
-    resolver: yupResolver(schema),
-    defaultValues: {
-      firstName: barber?.firstName || '',
-      lastName: barber?.lastName || '',
-      phone: barber?.phone || '',
-      email: barber?.email || '',
-      instagram: barber?.instagram || '',
+const BarberForm: React.FC<BarberFormProps> = ({
+  open,
+  onClose,
+  onSubmit,
+  initialValues,
+  isSubmitting = false,
+}) => {
+  const formik = useFormik({
+    initialValues: {
+      firstName: initialValues?.firstName || '',
+      lastName: initialValues?.lastName || '',
+      phone: initialValues?.phone || '',
+      email: initialValues?.email || '',
+      instagram: initialValues?.instagram || '',
     },
+    validationSchema,
+    onSubmit: async (values) => {
+      await onSubmit(values);
+      formik.resetForm();
+    },
+    enableReinitialize: true,
   });
 
-  const onSubmit = async (data: any) => {
-    try {
-      console.log('Form data being submitted:', data);
-      if (barber) {
-        await updateBarber({ id: barber.id, barber: data }).unwrap();
-      } else {
-        const result = await createBarber(data).unwrap();
-        console.log('Create barber response:', result);
-      }
-      onSuccess();
-    } catch (error: any) {
-      console.error('Error submitting form:', error);
-      onError(error.data?.message || 'Error al guardar el barbero');
-    }
-  };
-
   return (
-    <>
-      <DialogTitle>{barber ? 'Editar Barbero' : 'Nuevo Barbero'}</DialogTitle>
-      <form onSubmit={handleSubmit(onSubmit)}>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: { overflowY: 'visible' },
+      }}
+    >
+      <DialogTitle>{initialValues ? 'Editar Barbero' : 'Nuevo Barbero'}</DialogTitle>
+      <form onSubmit={formik.handleSubmit}>
         <DialogContent>
-          <Box display="flex" flexDirection="column" gap={2}>
-            <TextField
-              label="Nombre"
-              {...register('firstName')}
-              error={!!errors.firstName}
-              helperText={errors.firstName?.message}
-              fullWidth
-            />
-            <TextField
-              label="Apellido"
-              {...register('lastName')}
-              error={!!errors.lastName}
-              helperText={errors.lastName?.message}
-              fullWidth
-            />
-            <TextField
-              label="Teléfono"
-              {...register('phone')}
-              error={!!errors.phone}
-              helperText={errors.phone?.message}
-              fullWidth
-            />
-            <TextField
-              label="Email"
-              {...register('email')}
-              error={!!errors.email}
-              helperText={errors.email?.message}
-              fullWidth
-            />
-            <TextField
-              label="Instagram"
-              {...register('instagram')}
-              error={!!errors.instagram}
-              helperText={errors.instagram?.message}
-              fullWidth
-            />
+          <Box sx={{ mt: 2 }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  id="firstName"
+                  name="firstName"
+                  label="Nombre"
+                  value={formik.values.firstName}
+                  onChange={formik.handleChange}
+                  error={formik.touched.firstName && Boolean(formik.errors.firstName)}
+                  helperText={formik.touched.firstName && formik.errors.firstName}
+                  disabled={isSubmitting}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  id="lastName"
+                  name="lastName"
+                  label="Apellido"
+                  value={formik.values.lastName}
+                  onChange={formik.handleChange}
+                  error={formik.touched.lastName && Boolean(formik.errors.lastName)}
+                  helperText={formik.touched.lastName && formik.errors.lastName}
+                  disabled={isSubmitting}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  id="phone"
+                  name="phone"
+                  label="Teléfono"
+                  value={formik.values.phone}
+                  onChange={formik.handleChange}
+                  error={formik.touched.phone && Boolean(formik.errors.phone)}
+                  helperText={formik.touched.phone && formik.errors.phone}
+                  disabled={isSubmitting}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  id="email"
+                  name="email"
+                  label="Email"
+                  type="email"
+                  value={formik.values.email}
+                  onChange={formik.handleChange}
+                  error={formik.touched.email && Boolean(formik.errors.email)}
+                  helperText={formik.touched.email && formik.errors.email}
+                  disabled={isSubmitting}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  id="instagram"
+                  name="instagram"
+                  label="Instagram"
+                  value={formik.values.instagram}
+                  onChange={formik.handleChange}
+                  error={formik.touched.instagram && Boolean(formik.errors.instagram)}
+                  helperText={formik.touched.instagram && formik.errors.instagram}
+                  disabled={isSubmitting}
+                  placeholder="@usuario"
+                />
+              </Grid>
+            </Grid>
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Cancelar</Button>
-          <Button type="submit" variant="contained" color="primary">
-            {barber ? 'Actualizar' : 'Crear'}
+          <Button onClick={onClose} disabled={isSubmitting}>
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={isSubmitting || !formik.isValid || !formik.dirty}
+          >
+            {isSubmitting ? <CircularProgress size={24} /> : initialValues ? 'Guardar' : 'Crear'}
           </Button>
         </DialogActions>
       </form>
-    </>
+    </Dialog>
   );
 };
 

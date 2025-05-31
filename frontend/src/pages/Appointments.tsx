@@ -38,6 +38,7 @@ import AppointmentForm from '../components/AppointmentForm';
 import AppointmentCalendar from '../components/AppointmentCalendar';
 import DeleteConfirmDialog from '../components/DeleteConfirmDialog';
 import { toast } from 'react-hot-toast';
+import { PageContainer } from '../components/PageContainer';
 
 type ViewMode = 'list' | 'calendar';
 
@@ -140,15 +141,15 @@ export const Appointments = () => {
 
   if (isLoading) {
     return (
-      <Container>
+      <PageContainer>
         <Typography>Cargando citas...</Typography>
-      </Container>
+      </PageContainer>
     );
   }
 
   return (
-    <Container>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+    <Box sx={{ p: 3 }}>
+      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h4" component="h1">
           Citas
         </Typography>
@@ -282,7 +283,7 @@ export const Appointments = () => {
         title="Eliminar Cita"
         content="¿Estás seguro de que deseas eliminar esta cita?"
       />
-    </Container>
+    </Box>
   );
 };
 

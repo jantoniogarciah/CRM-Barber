@@ -1,26 +1,43 @@
-import { useEffect } from 'react';
-import { useAppDispatch } from '../store/hooks';
-import { setCredentials } from '../store/slices/authSlice';
+import React, { useEffect } from 'react';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { setCredentials, selectUser } from '../store/slices/authSlice';
+import { toast } from 'react-hot-toast';
 
-export const AuthInitializer = () => {
+interface AuthInitializerProps {
+  children: React.ReactNode;
+}
+
+const AuthInitializer: React.FC<AuthInitializerProps> = ({ children }) => {
   const dispatch = useAppDispatch();
+  const reduxUser = useAppSelector(selectUser);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userStr = localStorage.getItem('user');
+    try {
+      const storedUser = localStorage.getItem('user');
+      const storedToken = localStorage.getItem('token');
 
-    if (token && userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        dispatch(setCredentials({ user, token }));
-      } catch (error) {
-        console.error('Error parsing user data from localStorage:', error);
-        // Clear invalid data
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+      if (!reduxUser && storedUser && storedToken) {
+        const user = JSON.parse(storedUser);
+        if (user && user.role) {
+          user.role = user.role.toUpperCase();
+          dispatch(
+            setCredentials({
+              user,
+              token: storedToken,
+            })
+          );
+        }
       }
+    } catch (error) {
+      console.error('Error restoring user from localStorage:', error);
+      localStorage.clear();
+      sessionStorage.clear();
+      toast.error('Error al restaurar la sesión. Por favor, inicia sesión nuevamente.');
+      window.location.href = '/login';
     }
-  }, [dispatch]);
+  }, [dispatch, reduxUser]);
 
-  return null;
-}; 
+  return <>{children}</>;
+};
+
+export default AuthInitializer;

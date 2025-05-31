@@ -13,6 +13,7 @@ const baseQuery = fetchBaseQuery({
     const token = localStorage.getItem('token');
     if (token) {
       headers.set('authorization', `Bearer ${token}`);
+      console.log('Setting auth header:', `Bearer ${token}`); // Debug log
     }
     headers.set('Content-Type', 'application/json');
     return headers;
@@ -21,22 +22,24 @@ const baseQuery = fetchBaseQuery({
 });
 
 const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
-  let result = await baseQuery(args, api, extraOptions);
+  const result = await baseQuery(args, api, extraOptions);
 
   if (result.error) {
     const error = result.error as any;
+    console.log('API Error:', error);
 
     // Handle authentication errors
     if (error.status === 401) {
       // Clear all auth data
       localStorage.clear();
+      sessionStorage.clear();
       api.dispatch(clearCredentials());
-      
+
       // Show error message
       toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
-      
-      // Force a full page reload to clear all state
-      window.location.replace('/login');
+
+      // Use navigate instead of window.location for a smoother transition
+      window.location.href = '/login';
       return result;
     }
 
@@ -265,11 +268,17 @@ export const api = createApi({
 
     // Barber endpoints
     getBarbers: builder.query<Barber[], { showInactive?: boolean }>({
-      query: ({ showInactive }) => `/barbers${showInactive ? '?showInactive=true' : ''}`,
+      query: ({ showInactive }) => ({
+        url: `/barbers${showInactive ? '?showInactive=true' : ''}`,
+        method: 'GET',
+      }),
       providesTags: ['Barber'],
     }),
     getBarber: builder.query<Barber, string>({
-      query: (id) => `/barbers/${id}`,
+      query: (id) => ({
+        url: `/barbers/${id}`,
+        method: 'GET',
+      }),
       providesTags: (result, error, id) => [{ type: 'Barber', id }],
     }),
     createBarber: builder.mutation<Barber, Partial<Barber>>({
@@ -286,9 +295,9 @@ export const api = createApi({
         method: 'PUT',
         body: barber,
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: 'Barber', id }],
+      invalidatesTags: (result, error, { id }) => [{ type: 'Barber', id }, 'Barber'],
     }),
-    deleteBarber: builder.mutation<{ message: string }, string>({
+    deleteBarber: builder.mutation<void, string>({
       query: (id) => ({
         url: `/barbers/${id}`,
         method: 'DELETE',

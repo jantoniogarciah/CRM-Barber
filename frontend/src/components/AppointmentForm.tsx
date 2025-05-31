@@ -166,16 +166,19 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
       const convertTimeToInputFormat = (time12h: string) => {
         if (!time12h) return '';
         const [time, period] = time12h.toLowerCase().split(/\s+/);
-        let [hours, minutes] = time.split(':').map((num) => parseInt(num, 10));
+        const [hours, minutes] = time.split(':').map((num) => parseInt(num, 10));
 
         // Convert to 24-hour format for the input
-        if (period === 'p.m.' && hours !== 12) {
-          hours += 12;
-        } else if (period === 'a.m.' && hours === 12) {
-          hours = 0;
-        }
+        const adjustedHours =
+          period === 'p.m.' && hours !== 12
+            ? hours + 12
+            : period === 'a.m.' && hours === 12
+            ? 0
+            : hours;
 
-        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+        return `${adjustedHours.toString().padStart(2, '0')}:${minutes
+          .toString()
+          .padStart(2, '0')}`;
       };
 
       formik.resetForm({

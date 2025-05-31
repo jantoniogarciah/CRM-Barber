@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Clients from './pages/Clients';
 import Appointments from './pages/Appointments';
 import Services from './pages/Services';
+import Barbers from './pages/Barbers';
 import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
 import { PrivateRoute } from './components/PrivateRoute';
@@ -46,6 +47,14 @@ const AppRoutes = (): ReactElement => {
         element={
           <AdminRoute>
             <Services />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/barbers"
+        element={
+          <AdminRoute>
+            <Barbers />
           </AdminRoute>
         }
       />

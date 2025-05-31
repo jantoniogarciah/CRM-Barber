@@ -6,17 +6,20 @@ import clientReducer from './slices/clientSlice';
 import serviceReducer from './slices/serviceSlice';
 import appointmentReducer from './slices/appointmentSlice';
 import notificationReducer from './slices/notificationSlice';
+import { barberApi } from './services/barberApi';
 
 export const store = configureStore({
   reducer: {
     [api.reducerPath]: api.reducer,
+    [barberApi.reducerPath]: barberApi.reducer,
     auth: authReducer,
     client: clientReducer,
     service: serviceReducer,
     appointment: appointmentReducer,
     notification: notificationReducer,
   },
-  middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(api.middleware),
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat([api.middleware, barberApi.middleware]),
   devTools: process.env.NODE_ENV !== 'production',
 });
 

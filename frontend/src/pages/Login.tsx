@@ -18,6 +18,7 @@ import { useLoginMutation } from '../services/api';
 import { useAppDispatch } from '../store/hooks';
 import { setCredentials } from '../store/slices/authSlice';
 import logo from '../assets/clippercut-logo.png';
+import { toast } from 'react-hot-toast';
 
 interface LoginFormValues {
   email: string;
@@ -45,13 +46,19 @@ const Login: React.FC = () => {
     onSubmit: async (values) => {
       try {
         const result = await login(values).unwrap();
+
+        // Store token and user in localStorage
         localStorage.setItem('token', result.token);
         localStorage.setItem('user', JSON.stringify(result.user));
+
+        // Update Redux state
         dispatch(setCredentials(result));
+
+        // Navigate to dashboard
         navigate('/');
-      } catch (err: any) {
-        setError(err.data?.message || 'Invalid email or password');
-        console.error('Login error:', err);
+      } catch (error: any) {
+        console.error('Login error:', error);
+        toast.error(error.data?.message || 'Error al iniciar sesión');
       }
     },
   });

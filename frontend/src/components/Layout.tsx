@@ -14,7 +14,6 @@ import {
   ListItemText,
   Toolbar,
   Typography,
-  Badge,
   Menu,
   MenuItem,
 } from '@mui/material';
@@ -24,12 +23,11 @@ import {
   Event,
   People,
   Build,
-  Notifications,
   AccountCircle,
 } from '@mui/icons-material';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { selectUser, clearCredentials } from '../store/slices/authSlice';
-import { useGetNotificationsQuery, useLogoutMutation } from '../services/api';
+import { useLogoutMutation } from '../services/api';
 import logo from '../assets/clippercut-logo.png';
 
 const drawerWidth = 240;
@@ -46,10 +44,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const dispatch = useAppDispatch();
   const user = useAppSelector(selectUser);
   const [logout] = useLogoutMutation();
-  const { data: notifications = [] } = useGetNotificationsQuery(undefined, {
-    skip: !user,
-  });
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
 
@@ -75,7 +69,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       localStorage.clear();
       sessionStorage.clear();
       dispatch(clearCredentials());
-      
+
       // Force a full page reload to clear all state
       window.location.replace('/login');
     }
@@ -99,28 +93,31 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     return items;
   }, [user?.role]);
 
-  const drawer = (
-    <div>
-      <Toolbar>
-        <Typography variant="h6" noWrap component="div">
-          Clipper Cut CRM
-        </Typography>
-      </Toolbar>
-      <Divider />
-      <List>
-        {menuItems.map((item) => (
-          <ListItem key={item.text} disablePadding>
-            <ListItemButton 
-              onClick={() => navigate(item.path)}
-              selected={location.pathname === item.path}
-            >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
-    </div>
+  const drawer = useMemo(
+    () => (
+      <div>
+        <Toolbar>
+          <Typography variant="h6" noWrap component="div">
+            Clipper Cut CRM
+          </Typography>
+        </Toolbar>
+        <Divider />
+        <List>
+          {menuItems.map((item) => (
+            <ListItem key={item.text} disablePadding>
+              <ListItemButton
+                onClick={() => navigate(item.path)}
+                selected={location.pathname === item.path}
+              >
+                <ListItemIcon>{item.icon}</ListItemIcon>
+                <ListItemText primary={item.text} />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+      </div>
+    ),
+    [menuItems, location.pathname, navigate]
   );
 
   if (isAuthPage) {
@@ -154,11 +151,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
                 {user?.firstName} {user?.lastName}
               </Typography>
-              <IconButton size="large" color="inherit" onClick={() => navigate('/notifications')}>
-                <Badge badgeContent={unreadCount} color="error">
-                  <Notifications />
-                </Badge>
-              </IconButton>
               <IconButton
                 size="large"
                 aria-label="account of current user"
@@ -234,13 +226,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: user ? `${drawerWidth}px` : 0 },
-          mt: user ? '64px' : 0,
+          height: '100vh',
+          overflow: 'auto',
+          bgcolor: 'background.default',
         }}
       >
-        {children}
+        <Toolbar />
+        <Box sx={{ p: 0 }}>{children}</Box>
       </Box>
     </Box>
   );

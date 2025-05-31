@@ -1,10 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Button,
-  Container,
-  Dialog,
-  IconButton,
+  Typography,
   Paper,
   Table,
   TableBody,
@@ -12,103 +9,145 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Typography,
+  IconButton,
+  Button,
   Switch,
   FormControlLabel,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
+  CircularProgress,
+  Tooltip,
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { useSnackbar } from 'notistack';
 import {
   useGetBarbersQuery,
-  useToggleBarberStatusMutation,
+  useCreateBarberMutation,
+  useUpdateBarberMutation,
   useDeleteBarberMutation,
+  useToggleBarberStatusMutation,
 } from '../services/api';
 import BarberForm from '../components/BarberForm';
+import ConfirmDialog from '../components/ConfirmDialog';
 import { Barber } from '../types';
-import { toast } from 'react-hot-toast';
+import LoadingScreen from '../components/LoadingScreen';
 import { format } from 'date-fns';
 
-const Barbers = () => {
-  const [selectedBarber, setSelectedBarber] = useState<Barber | null>(null);
-  const [formOpen, setFormOpen] = useState(false);
+const BarbersPage: React.FC = () => {
+  console.log('BarbersPage - Component rendering');
+
+  useEffect(() => {
+    console.log('BarbersPage - Component mounted');
+    return () => {
+      console.log('BarbersPage - Component unmounted');
+    };
+  }, []);
+
+  const { enqueueSnackbar } = useSnackbar();
   const [showInactive, setShowInactive] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [barberToDelete, setBarberToDelete] = useState<Barber | null>(null);
+  const [openForm, setOpenForm] = useState(false);
+  const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
+  const [selectedBarber, setSelectedBarber] = useState<Partial<Barber> | null>(null);
 
-  const { data: barbers = [], isLoading, refetch } = useGetBarbersQuery({ showInactive });
-  const [toggleBarberStatus] = useToggleBarberStatusMutation();
-  const [deleteBarber] = useDeleteBarberMutation();
+  const { data: barbers = [], isLoading, refetch, error } = useGetBarbersQuery({ showInactive });
 
-  const handleAdd = () => {
-    setSelectedBarber(null);
-    setFormOpen(true);
-  };
-
-  const handleEdit = (barber: Barber) => {
-    setSelectedBarber(barber);
-    setFormOpen(true);
-  };
-
-  const handleFormClose = () => {
-    setFormOpen(false);
-    setSelectedBarber(null);
-  };
-
-  const handleFormSuccess = async () => {
-    setFormOpen(false);
-    setSelectedBarber(null);
-    await refetch();
-    toast.success(
-      selectedBarber ? 'Barbero actualizado exitosamente' : 'Barbero creado exitosamente'
-    );
-  };
-
-  const handleDelete = (barber: Barber) => {
-    setBarberToDelete(barber);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (barberToDelete) {
-      try {
-        await deleteBarber(barberToDelete.id).unwrap();
-        await refetch();
-        toast.success('Barbero eliminado exitosamente');
-      } catch (error: any) {
-        toast.error(error.data?.message || 'Error al eliminar el barbero');
-      }
+  useEffect(() => {
+    if (error) {
+      console.error('BarbersPage - Error fetching barbers:', error);
     }
-    setDeleteDialogOpen(false);
-    setBarberToDelete(null);
+  }, [error]);
+
+  const [createBarber, { isLoading: isCreating }] = useCreateBarberMutation();
+  const [updateBarber, { isLoading: isUpdating }] = useUpdateBarberMutation();
+  const [deleteBarber, { isLoading: isDeleting }] = useDeleteBarberMutation();
+  const [toggleBarberStatus] = useToggleBarberStatusMutation();
+
+  const handleOpenForm = (barber?: Barber) => {
+    setSelectedBarber(barber || null);
+    setOpenForm(true);
   };
 
-  const handleToggleStatus = async (barber: Barber) => {
+  const handleCloseForm = () => {
+    setOpenForm(false);
+    setSelectedBarber(null);
+  };
+
+  const handleOpenConfirmDialog = (barber: Barber) => {
+    setSelectedBarber(barber);
+    setOpenConfirmDialog(true);
+  };
+
+  const handleCloseConfirmDialog = () => {
+    setOpenConfirmDialog(false);
+    setSelectedBarber(null);
+  };
+
+  const handleSubmit = async (barber: Partial<Barber>) => {
     try {
-      await toggleBarberStatus(barber.id).unwrap();
-      await refetch();
-      toast.success(`Barbero ${barber.isActive ? 'desactivado' : 'activado'} exitosamente`);
+      if (selectedBarber?.id) {
+        await updateBarber({
+          id: selectedBarber.id,
+          barber,
+        }).unwrap();
+        enqueueSnackbar('Barbero actualizado exitosamente', { variant: 'success' });
+      } else {
+        await createBarber(barber).unwrap();
+        enqueueSnackbar('Barbero creado exitosamente', { variant: 'success' });
+      }
+      handleCloseForm();
+      refetch();
+    } catch (error: any) {
+      console.error('Error saving barber:', error);
+      enqueueSnackbar(error.data?.message || 'Error al guardar el barbero', { variant: 'error' });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedBarber?.id) return;
+
+    try {
+      await deleteBarber(selectedBarber.id).unwrap();
+      enqueueSnackbar('Barbero eliminado exitosamente', { variant: 'success' });
+      handleCloseConfirmDialog();
+      refetch();
+    } catch (error: any) {
+      console.error('Error deleting barber:', error);
+      enqueueSnackbar(error.data?.message || 'Error al eliminar el barbero', { variant: 'error' });
+    }
+  };
+
+  const handleToggleStatus = async (id: string) => {
+    try {
+      await toggleBarberStatus(id).unwrap();
+      enqueueSnackbar('Estado del barbero actualizado exitosamente', { variant: 'success' });
+      refetch();
     } catch (error: any) {
       console.error('Error toggling barber status:', error);
-      toast.error(error.data?.message || 'Error al actualizar el estado del barbero');
+      enqueueSnackbar(error.data?.message || 'Error al actualizar el estado del barbero', {
+        variant: 'error',
+      });
     }
   };
 
   if (isLoading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-        <Typography>Cargando barberos...</Typography>
-      </Box>
-    );
+    console.log('BarbersPage - Loading state');
+    return <LoadingScreen />;
   }
 
+  console.log('BarbersPage - Rendering with data:', { barbers, showInactive });
+
   return (
-    <Container>
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h4">Barberos</Typography>
-        <Box display="flex" alignItems="center" gap={2}>
+    <Box sx={{ p: 3 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          mb: 3,
+        }}
+      >
+        <Typography variant="h4" component="h1">
+          Barberos
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <FormControlLabel
             control={
               <Switch
@@ -117,10 +156,15 @@ const Barbers = () => {
                 color="primary"
               />
             }
-            label="Mostrar Barberos Inactivos"
+            label="Mostrar inactivos"
           />
-          <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={handleAdd}>
-            Agregar Barbero
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => handleOpenForm()}
+            disabled={isCreating}
+          >
+            Nuevo Barbero
           </Button>
         </Box>
       </Box>
@@ -131,9 +175,9 @@ const Barbers = () => {
             <TableRow>
               <TableCell>Nombre</TableCell>
               <TableCell>Teléfono</TableCell>
-              <TableCell>Instagram</TableCell>
               <TableCell>Email</TableCell>
-              <TableCell>Creado</TableCell>
+              <TableCell>Instagram</TableCell>
+              <TableCell>Fecha de registro</TableCell>
               <TableCell>Estado</TableCell>
               <TableCell align="right">Acciones</TableCell>
             </TableRow>
@@ -150,41 +194,35 @@ const Barbers = () => {
               >
                 <TableCell>{`${barber.firstName} ${barber.lastName}`}</TableCell>
                 <TableCell>{barber.phone}</TableCell>
-                <TableCell>
-                  {barber.instagram ? (
-                    <a
-                      href={`https://www.instagram.com/${barber.instagram.replace('@', '')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ textDecoration: 'none', color: '#1976d2' }}
-                    >
-                      {barber.instagram}
-                    </a>
-                  ) : (
-                    '-'
-                  )}
-                </TableCell>
                 <TableCell>{barber.email || '-'}</TableCell>
+                <TableCell>{barber.instagram || '-'}</TableCell>
                 <TableCell>
-                  {barber.createdAt ? format(new Date(barber.createdAt), 'yyyy-MM-dd') : ''}
+                  {barber.createdAt ? format(new Date(barber.createdAt), 'dd/MM/yyyy') : '-'}
                 </TableCell>
                 <TableCell>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={barber.isActive}
-                        onChange={() => handleToggleStatus(barber)}
-                        color="primary"
-                      />
-                    }
-                    label={barber.isActive ? 'Activo' : 'Inactivo'}
-                  />
+                  <Tooltip title={barber.isActive ? 'Desactivar barbero' : 'Activar barbero'}>
+                    <Switch
+                      checked={barber.isActive}
+                      onChange={() => handleToggleStatus(barber.id)}
+                      color="primary"
+                    />
+                  </Tooltip>
                 </TableCell>
                 <TableCell align="right">
-                  <IconButton color="primary" onClick={() => handleEdit(barber)}>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleOpenForm(barber)}
+                    disabled={isUpdating}
+                    color="primary"
+                  >
                     <EditIcon />
                   </IconButton>
-                  <IconButton color="error" onClick={() => handleDelete(barber)}>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleOpenConfirmDialog(barber)}
+                    disabled={isDeleting}
+                    color="error"
+                  >
                     <DeleteIcon />
                   </IconButton>
                 </TableCell>
@@ -194,58 +232,24 @@ const Barbers = () => {
         </Table>
       </TableContainer>
 
-      <Dialog open={formOpen} onClose={handleFormClose} maxWidth="md" fullWidth>
-        {formOpen && (
-          <BarberForm
-            barber={selectedBarber}
-            open={formOpen}
-            onSuccess={handleFormSuccess}
-            onClose={handleFormClose}
-            onError={(error: string) => toast.error(error)}
-          />
-        )}
-      </Dialog>
+      <BarberForm
+        open={openForm}
+        onClose={handleCloseForm}
+        onSubmit={handleSubmit}
+        initialValues={selectedBarber || undefined}
+        isSubmitting={isCreating || isUpdating}
+      />
 
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={() => {
-          setDeleteDialogOpen(false);
-          setBarberToDelete(null);
-        }}
-      >
-        <DialogTitle>Confirmar eliminación</DialogTitle>
-        <DialogContent>
-          <DialogContentText component="div">
-            <Typography paragraph>
-              ¿Estás seguro de que deseas eliminar al barbero "{barberToDelete?.firstName}{' '}
-              {barberToDelete?.lastName}"?
-            </Typography>
-            <Typography paragraph>
-              <strong>Advertencia:</strong> Esta acción eliminará permanentemente el barbero de la
-              base de datos y no se puede deshacer.
-            </Typography>
-            <Typography>
-              Si el barbero tiene citas asociadas, no podrá ser eliminado y deberá ser desactivado
-              en su lugar.
-            </Typography>
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => {
-              setDeleteDialogOpen(false);
-              setBarberToDelete(null);
-            }}
-          >
-            Cancelar
-          </Button>
-          <Button onClick={handleDeleteConfirm} color="error" variant="contained">
-            Eliminar Permanentemente
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Container>
+      <ConfirmDialog
+        open={openConfirmDialog}
+        onClose={handleCloseConfirmDialog}
+        onConfirm={handleDelete}
+        title="Eliminar Barbero"
+        content="¿Estás seguro de que deseas eliminar este barbero? Esta acción no se puede deshacer."
+        isSubmitting={isDeleting}
+      />
+    </Box>
   );
 };
 
-export default Barbers;
+export default BarbersPage;

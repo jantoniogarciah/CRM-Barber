@@ -10,7 +10,7 @@ interface SocketContextType {
   disconnect: () => void;
 }
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'http://localhost:3001';
 
 const SocketContext = createContext<SocketContextType | undefined>(undefined);
 
@@ -30,7 +30,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children, user }
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    const newSocket = io(API_URL, {
+    const newSocket = io(SOCKET_URL, {
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,

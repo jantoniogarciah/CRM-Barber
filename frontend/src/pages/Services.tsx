@@ -121,7 +121,7 @@ const Services = () => {
   }
 
   return (
-    <Container>
+    <Box sx={{ p: 3 }}>
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h4">Servicios</Typography>
         <Box display="flex" alignItems="center" gap={2}>
@@ -231,7 +231,8 @@ const Services = () => {
         <DialogContent>
           <DialogContentText component="div">
             <Typography paragraph>
-              ¿Estás seguro de que deseas eliminar el servicio "{serviceToDelete?.name}"?
+              ¿Estás seguro de que deseas eliminar el servicio &quot;{serviceToDelete?.name}&quot;?
+              Esta acción no se puede deshacer.
             </Typography>
             <Typography paragraph>
               <strong>Advertencia:</strong> Esta acción eliminará permanentemente el servicio de la
@@ -265,7 +266,7 @@ const Services = () => {
           onSuccess={handleFormSuccess}
         />
       </Dialog>
-    </Container>
+    </Box>
   );
 };
 

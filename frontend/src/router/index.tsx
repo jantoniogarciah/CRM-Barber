@@ -1,17 +1,48 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
+import { Box, CircularProgress } from '@mui/material';
 import Login from '../pages/Login';
 import Dashboard from '../pages/Dashboard';
 import Profile from '../pages/Profile';
 import Clients from '../pages/Clients';
 import Services from '../pages/Services';
 import Appointments from '../pages/Appointments';
-import Barbers from '../pages/Barbers';
 import NotFound from '../pages/NotFound';
 import { PrivateRoute } from '../components/PrivateRoute';
 import { AdminRoute } from '../components/AdminRoute';
 
+// Lazy load the Barbers component
+const BarbersPage = lazy(() => {
+  console.log('Router - Loading BarbersPage component');
+  return import('../pages/Barbers').then((module) => {
+    console.log('Router - BarbersPage component loaded:', module);
+    return module;
+  });
+});
+
+// Loading component for suspense fallback
+const LoadingComponent = () => {
+  console.log('Router - Rendering LoadingComponent');
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '400px',
+        gap: 2,
+      }}
+    >
+      <CircularProgress />
+      <Box>Cargando página de barberos...</Box>
+    </Box>
+  );
+};
+
 const AppRoutes: React.FC = () => {
+  console.log('Router - Rendering AppRoutes');
+
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
@@ -65,7 +96,9 @@ const AppRoutes: React.FC = () => {
         path="/barbers"
         element={
           <AdminRoute>
-            <Barbers />
+            <Suspense fallback={<LoadingComponent />}>
+              <BarbersPage />
+            </Suspense>
           </AdminRoute>
         }
       />

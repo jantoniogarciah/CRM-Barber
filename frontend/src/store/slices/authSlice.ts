@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { User } from '../../types';
+import { RootState } from '../../store';
 
 interface AuthState {
   user: User | null;
@@ -22,7 +23,7 @@ const authSlice = createSlice({
     setCredentials: (state, action: PayloadAction<{ user: User; token: string }>) => {
       state.user = {
         ...action.payload.user,
-        role: action.payload.user.role?.toUpperCase() // Normalize role to uppercase
+        role: action.payload.user.role?.toUpperCase(), // Normalize role to uppercase
       };
       state.token = action.payload.token;
       state.error = null;
@@ -45,7 +46,7 @@ const authSlice = createSlice({
 });
 
 export const { setCredentials, clearCredentials, setLoading, setError } = authSlice.actions;
-export const selectUser = (state: { auth: AuthState }) => state.auth.user;
+export const selectUser = (state: RootState) => state.auth.user;
 export const selectLoading = (state: { auth: AuthState }) => state.auth.loading;
 export const selectError = (state: { auth: AuthState }) => state.auth.error;
 
