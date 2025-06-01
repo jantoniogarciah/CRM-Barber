@@ -1,26 +1,27 @@
 {
   "name": "crm-barber",
-  "version": "1.0.0",
-  "description": "Clipper Cut Barber Sports CRM",
+  "version": "1.1.0-beta",
+  "description": "CRM system for barbershops",
+  "main": "index.js",
   "private": true,
   "workspaces": [
     "frontend",
     "backend"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm run dev\"",
     "dev:frontend": "cd frontend && npm start",
     "dev:backend": "cd backend && npm run dev",
-    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start": "node dist/index.js",
     "start:frontend": "cd frontend && npm start",
     "start:backend": "cd backend && npm run dev",
     "install:all": "npm install && npm run install:frontend && npm run install:backend",
     "install:frontend": "cd frontend && npm install",
     "install:backend": "cd backend && npm install",
-    "build": "npm run build:frontend && npm run build:backend",
+    "build": "tsc",
     "build:frontend": "cd frontend && npm run build",
     "build:backend": "cd backend && npm run build",
-    "test": "npm run test:frontend && npm run test:backend",
+    "test": "jest",
     "test:frontend": "cd frontend && npm test",
     "test:backend": "cd backend && npm test",
     "lint": "npm run lint:frontend && npm run lint:backend",
@@ -33,10 +34,16 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "author": "",
-  "license": "MIT",
+  "author": "Jose Garcia",
+  "license": "ISC",
   "dependencies": {
     "dotenv": "^16.5.0",
     "pg": "^8.16.0"
-  }
+  },
+  "keywords": [
+    "crm",
+    "barbershop",
+    "appointment",
+    "management"
+  ]
 }

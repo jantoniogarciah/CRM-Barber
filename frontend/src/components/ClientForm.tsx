@@ -40,7 +40,7 @@ const validationSchema = Yup.object({
   notes: Yup.string(),
 });
 
-const ClientForm: React.FC<ClientFormProps> = ({ open, onClose, onSuccess, onError, client }) => {
+const ClientForm = ({ open, onClose, onSuccess, onError, client }: ClientFormProps): React.ReactElement => {
   const [createClient] = useCreateClientMutation();
   const [updateClient] = useUpdateClientMutation();
 
@@ -90,7 +90,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ open, onClose, onSuccess, onErr
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>{client ? 'Editar Cliente' : 'Nuevo Cliente'}</DialogTitle>
-      <form onSubmit={formik.handleSubmit}>
+      <Box component="form" onSubmit={formik.handleSubmit}>
         <DialogContent>
           <Box sx={{ mt: 2 }}>
             <Grid container spacing={2}>
@@ -165,7 +165,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ open, onClose, onSuccess, onErr
             {client ? 'Actualizar' : 'Crear'}
           </Button>
         </DialogActions>
-      </form>
+      </Box>
     </Dialog>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Box,
   Typography,
@@ -25,25 +25,42 @@ import {
   useGetClientsQuery,
   useToggleClientStatusMutation,
   useDeleteClientMutation,
+  useGetLastCompletedAppointmentsQuery,
 } from '../services/api';
 import ClientForm from '../components/ClientForm';
-import { format } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
-import { Client } from '../types';
+import { Client, Appointment } from '../types';
 import { toast } from 'react-hot-toast';
 
-const Clients: React.FC = () => {
-  const [showInactive, setShowInactive] = useState(false);
+interface ChangeEvent {
+  target: {
+    checked: boolean;
+  };
+}
+
+interface ApiError {
+  data?: {
+    message?: string;
+  };
+  error?: string;
+  message?: string;
+  status?: string;
+}
+
+const Clients = () => {
+  const [showInactive, setShowInactive] = React.useState(false);
   const { data: clients = [], isLoading, refetch } = useGetClientsQuery({ showInactive });
+  const { data: lastAppointments = {} } = useGetLastCompletedAppointmentsQuery();
   const [toggleClientStatus] = useToggleClientStatusMutation();
   const [deleteClient] = useDeleteClientMutation();
-  const [selectedClient, setSelectedClient] = useState<Client | undefined>(undefined);
-  const [formOpen, setFormOpen] = useState(false);
-  const [togglingId, setTogglingId] = useState<string | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+  const [selectedClient, setSelectedClient] = React.useState<Client | undefined>(undefined);
+  const [formOpen, setFormOpen] = React.useState(false);
+  const [togglingId, setTogglingId] = React.useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [clientToDelete, setClientToDelete] = React.useState<Client | null>(null);
 
   const handleEdit = (client: Client) => {
     setSelectedClient(client);
@@ -80,8 +97,11 @@ const Clients: React.FC = () => {
         await deleteClient(clientToDelete.id).unwrap();
         await refetch();
         toast.success('Cliente eliminado exitosamente');
-      } catch (error: any) {
-        toast.error(error.data?.message || 'Error al eliminar el cliente');
+      } catch (error: unknown) {
+        const err = error as ApiError;
+        const message =
+          err.data?.message || err.error || err.message || 'Error al eliminar el cliente';
+        toast.error(message);
       }
     }
     setDeleteDialogOpen(false);
@@ -89,44 +109,44 @@ const Clients: React.FC = () => {
   };
 
   const handleToggleStatus = async (client: Client) => {
+    setTogglingId(client.id);
     try {
-      setTogglingId(client.id);
       await toggleClientStatus(client.id).unwrap();
       await refetch();
       toast.success(`Cliente ${client.isActive ? 'desactivado' : 'activado'} exitosamente`);
-    } catch (error: any) {
-      console.error('Error toggling client status:', error);
-      toast.error(error.data?.message || 'Error al actualizar el estado del cliente');
-    } finally {
-      setTogglingId(null);
+    } catch (error: unknown) {
+      const err = error as ApiError;
+      const message =
+        err.data?.message || err.error || err.message || 'Error al cambiar el estado del cliente';
+      toast.error(message);
     }
+    setTogglingId(null);
   };
 
   if (isLoading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
         <CircularProgress />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Box>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4">Clientes</Typography>
-        <Box display="flex" alignItems="center" gap={2}>
+        <Box>
           <FormControlLabel
             control={
               <Switch
                 checked={showInactive}
-                onChange={(e) => setShowInactive(e.target.checked)}
-                color="primary"
+                onChange={(e: ChangeEvent) => setShowInactive(e.target.checked)}
               />
             }
-            label="Mostrar Clientes Inactivos"
+            label="Mostrar inactivos"
           />
-          <Button variant="contained" startIcon={<AddIcon />} onClick={handleAdd}>
-            Agregar Cliente
+          <Button variant="contained" startIcon={<AddIcon />} onClick={handleAdd} sx={{ ml: 2 }}>
+            Nuevo Cliente
           </Button>
         </Box>
       </Box>
@@ -139,81 +159,90 @@ const Clients: React.FC = () => {
               <TableCell>Email</TableCell>
               <TableCell>Teléfono</TableCell>
               <TableCell>Notas</TableCell>
+              <TableCell>Días desde última cita</TableCell>
               <TableCell>Creado</TableCell>
               <TableCell>Estado</TableCell>
               <TableCell align="right">Acciones</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {clients.map((client) => (
-              <TableRow
-                key={client.id}
-                sx={{
-                  opacity: client.isActive ? 1 : 0.6,
-                  backgroundColor: client.isActive ? 'inherit' : 'action.hover',
-                  transition: 'all 0.3s ease',
-                }}
-              >
-                <TableCell>{`${client.firstName} ${client.lastName}`}</TableCell>
-                <TableCell>{client.email || '-'}</TableCell>
-                <TableCell>{client.phone}</TableCell>
-                <TableCell>{client.notes || '-'}</TableCell>
-                <TableCell>
-                  {client.createdAt ? format(new Date(client.createdAt), 'yyyy-MM-dd') : ''}
-                </TableCell>
-                <TableCell>
-                  <Tooltip title={client.isActive ? 'Click para desactivar' : 'Click para activar'}>
-                    <Switch
-                      checked={client.isActive}
-                      onChange={() => handleToggleStatus(client)}
-                      disabled={togglingId === client.id}
-                      color="primary"
-                    />
-                  </Tooltip>
-                </TableCell>
-                <TableCell align="right">
-                  <IconButton color="primary" onClick={() => handleEdit(client)}>
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton color="error" onClick={() => handleDelete(client)}>
-                    <DeleteIcon />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
+            {clients.map((client) => {
+              const lastAppointment = lastAppointments[client.id];
+              const daysSinceLastAppointment = lastAppointment
+                ? differenceInDays(new Date(), new Date(lastAppointment.date))
+                : null;
+
+              return (
+                <TableRow
+                  key={client.id}
+                  sx={{
+                    opacity: client.isActive ? 1 : 0.6,
+                    backgroundColor: client.isActive ? 'inherit' : 'action.hover',
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  <TableCell>{`${client.firstName} ${client.lastName}`}</TableCell>
+                  <TableCell>{client.email || '-'}</TableCell>
+                  <TableCell>{client.phone}</TableCell>
+                  <TableCell>{client.notes || '-'}</TableCell>
+                  <TableCell>
+                    <Typography
+                      component="span"
+                      sx={{
+                        color: daysSinceLastAppointment && daysSinceLastAppointment > 20 ? 'error.main' : 'inherit',
+                      }}
+                    >
+                      {daysSinceLastAppointment !== null ? `${daysSinceLastAppointment} días` : 'Sin citas'}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    {client.createdAt ? format(new Date(client.createdAt), 'dd/MM/yyyy') : ''}
+                  </TableCell>
+                  <TableCell>
+                    <Tooltip title={client.isActive ? 'Click para desactivar' : 'Click para activar'}>
+                      <Switch
+                        checked={client.isActive}
+                        onChange={() => handleToggleStatus(client)}
+                        disabled={togglingId === client.id}
+                        color="primary"
+                      />
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell align="right">
+                    <IconButton onClick={() => handleEdit(client)} size="small">
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton onClick={() => handleDelete(client)} size="small">
+                      <DeleteIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>
 
-      <Dialog open={formOpen} onClose={handleFormClose} maxWidth="md" fullWidth>
-        {formOpen && (
-          <ClientForm
-            client={selectedClient}
-            open={formOpen}
-            onSuccess={async () => {
-              await handleFormSuccess();
-              toast.success('Cliente guardado exitosamente');
-            }}
-            onClose={handleFormClose}
-            onError={(error) => toast.error(error)}
-          />
-        )}
-      </Dialog>
+      {formOpen && (
+        <ClientForm
+          open={formOpen}
+          onClose={handleFormClose}
+          client={selectedClient}
+          onSuccess={(message: string) => toast.success(message)}
+          onError={(message: string) => toast.error(message)}
+        />
+      )}
 
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Confirmar Eliminación</DialogTitle>
+        <DialogTitle>Confirmar eliminación</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            ¿Estás seguro de que deseas eliminar a{' '}
-            {clientToDelete
-              ? `${clientToDelete.firstName} ${clientToDelete.lastName}`
-              : 'este cliente'}
-            ? Esta acción no se puede deshacer.
+            ¿Estás seguro de que deseas eliminar este cliente? Esta acción no se puede deshacer.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
-          <Button onClick={handleDeleteConfirm} color="error" variant="contained">
+          <Button onClick={handleDeleteConfirm} color="error" autoFocus>
             Eliminar
           </Button>
         </DialogActions>

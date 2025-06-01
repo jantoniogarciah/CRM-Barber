@@ -20,6 +20,7 @@ import {
   useGetBarbersQuery,
 } from '../services/api';
 import { Appointment, Client, Service, Barber } from '../types';
+import { format, parseISO } from 'date-fns';
 
 interface AppointmentFormProps {
   open: boolean;
@@ -76,7 +77,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
       clientId: appointment?.clientId || '',
       serviceId: appointment?.serviceId || '',
       barberId: appointment?.barberId || '',
-      date: appointment?.date || new Date().toISOString().split('T')[0],
+      date: appointment?.date || format(new Date(), 'yyyy-MM-dd'),
       time: appointment?.time || '',
       status: (appointment?.status as AppointmentFormValues['status']) || 'pending',
       notes: appointment?.notes || '',
@@ -84,7 +85,6 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
     validationSchema,
     onSubmit: async (values) => {
       try {
-        // Validate client and service selection
         if (!values.clientId) {
           throw new Error('Por favor seleccione un cliente');
         }
@@ -94,38 +94,19 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
         if (!values.barberId) {
           throw new Error('Por favor seleccione un barbero');
         }
-
-        // Validate and format date
         if (!values.date) {
           throw new Error('Por favor seleccione una fecha');
         }
-        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-        if (!dateRegex.test(values.date)) {
-          throw new Error('Formato de fecha inválido. Use YYYY-MM-DD');
-        }
 
-        console.log('Form values before submission:', {
-          values,
-          clients,
-          selectedClient: clients.find((c) => c.id === values.clientId),
-          services,
-          selectedService: services.find((s) => s.id === values.serviceId),
-          selectedBarber: barbers.find((b) => b.id === values.barberId),
-        });
-
-        const timeValue = values.time;
-        const [hours, minutes] = timeValue.split(':');
-        const hour = parseInt(hours, 10);
-        const period = hour >= 12 ? 'p.m.' : 'a.m.';
-        const formattedHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-        const formattedTime = `${formattedHour}:${minutes} ${period}`;
+        // Ensure the date is in YYYY-MM-DD format without any timezone adjustments
+        const formattedDate = format(parseISO(values.date), 'yyyy-MM-dd');
 
         const appointmentData = {
           clientId: values.clientId,
           serviceId: values.serviceId,
           barberId: values.barberId,
-          date: values.date,
-          time: formattedTime,
+          date: formattedDate,
+          time: values.time,
           status: values.status,
           notes: values.notes,
         };
@@ -162,32 +143,15 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
 
   useEffect(() => {
     if (open) {
-      // Convert time from "10:15 a.m." format to "10:15" format for the time input
-      const convertTimeToInputFormat = (time12h: string) => {
-        if (!time12h) return '';
-        const [time, period] = time12h.toLowerCase().split(/\s+/);
-        const [hours, minutes] = time.split(':').map((num) => parseInt(num, 10));
-
-        // Convert to 24-hour format for the input
-        const adjustedHours =
-          period === 'p.m.' && hours !== 12
-            ? hours + 12
-            : period === 'a.m.' && hours === 12
-            ? 0
-            : hours;
-
-        return `${adjustedHours.toString().padStart(2, '0')}:${minutes
-          .toString()
-          .padStart(2, '0')}`;
-      };
-
+      console.log('Appointment data received:', appointment);
+      
       formik.resetForm({
         values: {
           clientId: appointment?.clientId || '',
           serviceId: appointment?.serviceId || '',
           barberId: appointment?.barberId || '',
-          date: appointment?.date || new Date().toISOString().split('T')[0],
-          time: appointment?.time ? convertTimeToInputFormat(appointment.time) : '',
+          date: appointment?.date || format(new Date(), 'yyyy-MM-dd'),
+          time: appointment?.time || '',
           status: (appointment?.status as AppointmentFormValues['status']) || 'pending',
           notes: appointment?.notes || '',
         },
@@ -197,7 +161,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{appointment ? 'Edit Appointment' : 'New Appointment'}</DialogTitle>
+      <DialogTitle>{appointment ? 'Editar Cita' : 'Nueva Cita'}</DialogTitle>
       <form onSubmit={formik.handleSubmit}>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
@@ -205,14 +169,14 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
               fullWidth
               id="clientId"
               name="clientId"
-              label="Client"
+              label="Cliente"
               select
               value={formik.values.clientId}
               onChange={formik.handleChange}
               error={formik.touched.clientId && Boolean(formik.errors.clientId)}
               helperText={formik.touched.clientId && formik.errors.clientId}
             >
-              <MenuItem value="">Select a client</MenuItem>
+              <MenuItem value="">Seleccionar cliente</MenuItem>
               {clients.map((client) => (
                 <MenuItem key={client.id} value={client.id}>
                   {`${client.firstName} ${client.lastName}`}
@@ -224,14 +188,14 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
               fullWidth
               id="serviceId"
               name="serviceId"
-              label="Service"
+              label="Servicio"
               select
               value={formik.values.serviceId}
               onChange={formik.handleChange}
               error={formik.touched.serviceId && Boolean(formik.errors.serviceId)}
               helperText={formik.touched.serviceId && formik.errors.serviceId}
             >
-              <MenuItem value="">Select a service</MenuItem>
+              <MenuItem value="">Seleccionar servicio</MenuItem>
               {services.map((service) => (
                 <MenuItem key={service.id} value={service.id}>
                   {service.name}
@@ -243,14 +207,14 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
               fullWidth
               id="barberId"
               name="barberId"
-              label="Barber"
+              label="Barbero"
               select
               value={formik.values.barberId}
               onChange={formik.handleChange}
               error={formik.touched.barberId && Boolean(formik.errors.barberId)}
               helperText={formik.touched.barberId && formik.errors.barberId}
             >
-              <MenuItem value="">Select a barber</MenuItem>
+              <MenuItem value="">Seleccionar barbero</MenuItem>
               {barbers.map((barber) => (
                 <MenuItem key={barber.id} value={barber.id}>
                   {`${barber.firstName} ${barber.lastName}`}
@@ -262,7 +226,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
               fullWidth
               id="date"
               name="date"
-              label="Date"
+              label="Fecha"
               type="date"
               value={formik.values.date}
               onChange={formik.handleChange}
@@ -277,7 +241,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
               fullWidth
               id="time"
               name="time"
-              label="Time"
+              label="Hora"
               type="time"
               value={formik.values.time}
               onChange={formik.handleChange}
@@ -292,24 +256,24 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
               fullWidth
               id="status"
               name="status"
-              label="Status"
+              label="Estado"
               select
               value={formik.values.status}
               onChange={formik.handleChange}
               error={formik.touched.status && Boolean(formik.errors.status)}
               helperText={formik.touched.status && formik.errors.status}
             >
-              <MenuItem value="pending">Pending</MenuItem>
-              <MenuItem value="confirmed">Confirmed</MenuItem>
-              <MenuItem value="completed">Completed</MenuItem>
-              <MenuItem value="cancelled">Cancelled</MenuItem>
+              <MenuItem value="pending">Pendiente</MenuItem>
+              <MenuItem value="confirmed">Confirmada</MenuItem>
+              <MenuItem value="completed">Completada</MenuItem>
+              <MenuItem value="cancelled">Cancelada</MenuItem>
             </TextField>
 
             <TextField
               fullWidth
               id="notes"
               name="notes"
-              label="Notes"
+              label="Notas"
               multiline
               rows={4}
               value={formik.values.notes}
@@ -320,7 +284,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={onClose}>Cancelar</Button>
           <Button
             type="submit"
             variant="contained"
@@ -330,9 +294,9 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
             {formik.isSubmitting ? (
               <CircularProgress size={24} />
             ) : appointment ? (
-              'Update'
+              'Actualizar'
             ) : (
-              'Create'
+              'Crear'
             )}
           </Button>
         </DialogActions>

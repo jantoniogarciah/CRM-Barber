@@ -6,6 +6,7 @@ import {
   createAppointment,
   updateAppointment,
   deleteAppointment,
+  getLastCompletedAppointments,
 } from "../controllers/appointment.controller";
 import { validateRequest } from "../middleware/validateRequest";
 import { authenticateToken } from "../middleware/auth";
@@ -17,6 +18,9 @@ router.use(authenticateToken);
 
 // Get all appointments
 router.get("/", getAppointments);
+
+// Get last completed appointment for each client
+router.get("/last-completed", getLastCompletedAppointments);
 
 // Get single appointment
 router.get("/:id", getAppointment);

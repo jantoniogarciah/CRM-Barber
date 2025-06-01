@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import { AppError } from "../utils/appError";
+import { parseISO } from "date-fns";
 
 const prisma = new PrismaClient();
 
@@ -27,6 +28,7 @@ export const getAppointments = async (req: Request, res: Response) => {
         },
       ],
     });
+
     res.json(appointments);
   } catch (error) {
     console.error("Error getting appointments:", error);
@@ -61,8 +63,9 @@ export const getAppointment = async (req: Request, res: Response) => {
 // Create appointment
 export const createAppointment = async (req: Request, res: Response) => {
   try {
-    const { clientId, serviceId, barberId, date, time, status, notes } =
-      req.body;
+    const { clientId, serviceId, barberId, date, time, status, notes } = req.body;
+
+    console.log('Creating appointment with date:', date);
 
     // Validate that client, service, and barber exist
     const client = await prisma.client.findUnique({ where: { id: clientId } });
@@ -110,8 +113,18 @@ export const createAppointment = async (req: Request, res: Response) => {
 export const updateAppointment = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { clientId, serviceId, barberId, date, time, status, notes } =
-      req.body;
+    const { clientId, serviceId, barberId, date, time, status, notes } = req.body;
+
+    console.log('Updating appointment with data:', {
+      id,
+      clientId,
+      serviceId,
+      barberId,
+      date,
+      time,
+      status,
+      notes
+    });
 
     // Check if appointment exists
     const existingAppointment = await prisma.appointment.findUnique({
@@ -152,17 +165,22 @@ export const updateAppointment = async (req: Request, res: Response) => {
       }
     }
 
+    // Prepare update data - use the date directly without any manipulation
+    const updateData = {
+      ...(clientId && { clientId }),
+      ...(serviceId && { serviceId }),
+      ...(barberId && { barberId }),
+      ...(date && { date }),
+      ...(time && { time }),
+      ...(status && { status }),
+      ...(notes !== undefined && { notes }),
+    };
+
+    console.log('Update data:', updateData);
+
     const appointment = await prisma.appointment.update({
       where: { id },
-      data: {
-        clientId,
-        serviceId,
-        barberId,
-        date,
-        time,
-        status,
-        notes,
-      },
+      data: updateData,
       include: {
         client: true,
         service: true,
@@ -170,10 +188,18 @@ export const updateAppointment = async (req: Request, res: Response) => {
       },
     });
 
+    console.log('Updated appointment:', appointment);
+
     res.json(appointment);
   } catch (error) {
     console.error("Error updating appointment:", error);
-    throw new AppError("Error updating appointment", 500);
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new AppError(
+      `Error updating appointment: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      500
+    );
   }
 };
 
@@ -200,4 +226,64 @@ export const deleteAppointment = async (req: Request, res: Response) => {
     console.error("Error deleting appointment:", error);
     throw new AppError("Error deleting appointment", 500);
   }
+};
+
+// Get last completed appointment for each client
+export const getLastCompletedAppointments = async (req: Request, res: Response) => {
+  try {
+    // Get all clients
+    const clients = await prisma.client.findMany({
+      where: {
+        isActive: true,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    // Get the last completed appointment for each client
+    const lastAppointments = await Promise.all(
+      clients.map(async (client) => {
+        const lastAppointment = await prisma.appointment.findFirst({
+          where: {
+            clientId: client.id,
+            status: "completed",
+          },
+          orderBy: {
+            date: "desc",
+          },
+          include: {
+            service: true,
+            barber: true,
+          },
+        });
+        return {
+          clientId: client.id,
+          appointment: lastAppointment,
+        };
+      })
+    );
+
+    // Convert array to object with clientId as key
+    const appointmentsMap = lastAppointments.reduce((acc, curr) => {
+      if (curr.appointment) {
+        acc[curr.clientId] = curr.appointment;
+      }
+      return acc;
+    }, {} as { [key: string]: any });
+
+    res.json(appointmentsMap);
+  } catch (error) {
+    console.error("Error getting last completed appointments:", error);
+    throw new AppError("Error getting last completed appointments", 500);
+  }
+};
+
+export default {
+  getAppointments,
+  getAppointment,
+  createAppointment,
+  updateAppointment,
+  deleteAppointment,
+  getLastCompletedAppointments,
 };
