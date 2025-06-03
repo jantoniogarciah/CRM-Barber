@@ -20,6 +20,7 @@ import {
   FormControlLabel,
   CircularProgress,
   Tooltip,
+  Link,
 } from '@mui/material';
 import {
   useGetClientsQuery,
@@ -32,6 +33,7 @@ import { format, differenceInDays } from 'date-fns';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import { Client, Appointment } from '../types';
 import { toast } from 'react-hot-toast';
 
@@ -60,7 +62,6 @@ const Clients = () => {
   const [formOpen, setFormOpen] = React.useState(false);
   const [togglingId, setTogglingId] = React.useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
-  const [clientToDelete, setClientToDelete] = React.useState<Client | null>(null);
 
   const handleEdit = (client: Client) => {
     setSelectedClient(client);
@@ -87,40 +88,44 @@ const Clients = () => {
   };
 
   const handleDelete = (client: Client) => {
-    setClientToDelete(client);
+    setSelectedClient(client);
     setDeleteDialogOpen(true);
   };
 
   const handleDeleteConfirm = async () => {
-    if (clientToDelete) {
-      try {
-        await deleteClient(clientToDelete.id).unwrap();
-        await refetch();
-        toast.success('Cliente eliminado exitosamente');
-      } catch (error: unknown) {
-        const err = error as ApiError;
-        const message =
-          err.data?.message || err.error || err.message || 'Error al eliminar el cliente';
-        toast.error(message);
-      }
+    if (!selectedClient) return;
+
+    try {
+      await deleteClient(selectedClient.id);
+      toast.success('Cliente eliminado exitosamente');
+      setDeleteDialogOpen(false);
+      setSelectedClient(undefined);
+    } catch (error: unknown) {
+      const err = error as ApiError;
+      const message =
+        err.data?.message || err.error || err.message || 'Error al eliminar el cliente';
+      toast.error(message);
     }
-    setDeleteDialogOpen(false);
-    setClientToDelete(null);
   };
 
   const handleToggleStatus = async (client: Client) => {
-    setTogglingId(client.id);
     try {
-      await toggleClientStatus(client.id).unwrap();
-      await refetch();
+      setTogglingId(client.id);
+      await toggleClientStatus(client.id);
       toast.success(`Cliente ${client.isActive ? 'desactivado' : 'activado'} exitosamente`);
     } catch (error: unknown) {
       const err = error as ApiError;
       const message =
         err.data?.message || err.error || err.message || 'Error al cambiar el estado del cliente';
       toast.error(message);
+    } finally {
+      setTogglingId(null);
     }
-    setTogglingId(null);
+  };
+
+  const formatPhoneForWhatsApp = (phone: string) => {
+    // Remove any non-numeric characters
+    return phone.replace(/\D/g, '');
   };
 
   if (isLoading) {
@@ -183,23 +188,45 @@ const Clients = () => {
                 >
                   <TableCell>{`${client.firstName} ${client.lastName}`}</TableCell>
                   <TableCell>{client.email || '-'}</TableCell>
-                  <TableCell>{client.phone}</TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      {client.phone}
+                      <Tooltip title="Enviar mensaje por WhatsApp">
+                        <Link
+                          href={`https://wa.me/${formatPhoneForWhatsApp(client.phone)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <IconButton size="small" color="success">
+                            <WhatsAppIcon />
+                          </IconButton>
+                        </Link>
+                      </Tooltip>
+                    </Box>
+                  </TableCell>
                   <TableCell>{client.notes || '-'}</TableCell>
                   <TableCell>
                     <Typography
                       component="span"
                       sx={{
-                        color: daysSinceLastAppointment && daysSinceLastAppointment > 20 ? 'error.main' : 'inherit',
+                        color:
+                          daysSinceLastAppointment && daysSinceLastAppointment > 20
+                            ? 'error.main'
+                            : 'inherit',
                       }}
                     >
-                      {daysSinceLastAppointment !== null ? `${daysSinceLastAppointment} días` : 'Sin citas'}
+                      {daysSinceLastAppointment !== null
+                        ? `${daysSinceLastAppointment} días`
+                        : 'Sin citas'}
                     </Typography>
                   </TableCell>
                   <TableCell>
                     {client.createdAt ? format(new Date(client.createdAt), 'dd/MM/yyyy') : ''}
                   </TableCell>
                   <TableCell>
-                    <Tooltip title={client.isActive ? 'Click para desactivar' : 'Click para activar'}>
+                    <Tooltip
+                      title={client.isActive ? 'Click para desactivar' : 'Click para activar'}
+                    >
                       <Switch
                         checked={client.isActive}
                         onChange={() => handleToggleStatus(client)}
@@ -228,7 +255,7 @@ const Clients = () => {
           open={formOpen}
           onClose={handleFormClose}
           client={selectedClient}
-          onSuccess={(message: string) => toast.success(message)}
+          onSuccess={handleFormSuccess}
           onError={(message: string) => toast.error(message)}
         />
       )}

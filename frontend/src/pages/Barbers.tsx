@@ -15,8 +15,14 @@ import {
   FormControlLabel,
   CircularProgress,
   Tooltip,
+  Link,
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  WhatsApp as WhatsAppIcon,
+} from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import {
   useGetBarbersQuery,
@@ -127,6 +133,11 @@ const BarbersPage: React.FC = () => {
     }
   };
 
+  const formatPhoneForWhatsApp = (phone: string) => {
+    // Remove any non-numeric characters
+    return phone.replace(/\D/g, '');
+  };
+
   if (isLoading) {
     console.log('BarbersPage - Loading state');
     return <LoadingScreen />;
@@ -193,7 +204,22 @@ const BarbersPage: React.FC = () => {
                 }}
               >
                 <TableCell>{`${barber.firstName} ${barber.lastName}`}</TableCell>
-                <TableCell>{barber.phone}</TableCell>
+                <TableCell>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {barber.phone}
+                    <Tooltip title="Enviar mensaje por WhatsApp">
+                      <Link
+                        href={`https://wa.me/${formatPhoneForWhatsApp(barber.phone)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <IconButton size="small" color="success">
+                          <WhatsAppIcon />
+                        </IconButton>
+                      </Link>
+                    </Tooltip>
+                  </Box>
+                </TableCell>
                 <TableCell>{barber.email || '-'}</TableCell>
                 <TableCell>{barber.instagram || '-'}</TableCell>
                 <TableCell>

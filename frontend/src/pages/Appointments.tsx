@@ -136,8 +136,9 @@ export const Appointments = () => {
     try {
       const appointmentDate = new Date(appointment.date + 'T00:00:00');
       const compareDate = new Date(format(selectedDate, 'yyyy-MM-dd') + 'T00:00:00');
-      
-      const isDateMatch = format(appointmentDate, 'yyyy-MM-dd') === format(compareDate, 'yyyy-MM-dd');
+
+      const isDateMatch =
+        format(appointmentDate, 'yyyy-MM-dd') === format(compareDate, 'yyyy-MM-dd');
       const isBarberMatch = !selectedBarber || appointment.barberId === selectedBarber;
       return isDateMatch && isBarberMatch;
     } catch (error) {

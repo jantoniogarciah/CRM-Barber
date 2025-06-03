@@ -40,7 +40,13 @@ const validationSchema = Yup.object({
   notes: Yup.string(),
 });
 
-const ClientForm = ({ open, onClose, onSuccess, onError, client }: ClientFormProps): React.ReactElement => {
+const ClientForm = ({
+  open,
+  onClose,
+  onSuccess,
+  onError,
+  client,
+}: ClientFormProps): React.ReactElement => {
   const [createClient] = useCreateClientMutation();
   const [updateClient] = useUpdateClientMutation();
 

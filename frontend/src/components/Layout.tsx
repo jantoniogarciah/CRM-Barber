@@ -77,16 +77,36 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const menuItems = useMemo(() => {
     const items = [
-      { text: 'Dashboard', icon: <Dashboard sx={{ fontSize: 24, width: 24, height: 24 }} />, path: '/' },
-      { text: 'Citas', icon: <Event sx={{ fontSize: 24, width: 24, height: 24 }} />, path: '/appointments' },
-      { text: 'Clientes', icon: <People sx={{ fontSize: 24, width: 24, height: 24 }} />, path: '/clients' },
+      {
+        text: 'Dashboard',
+        icon: <Dashboard sx={{ fontSize: 24, width: 24, height: 24 }} />,
+        path: '/',
+      },
+      {
+        text: 'Citas',
+        icon: <Event sx={{ fontSize: 24, width: 24, height: 24 }} />,
+        path: '/appointments',
+      },
+      {
+        text: 'Clientes',
+        icon: <People sx={{ fontSize: 24, width: 24, height: 24 }} />,
+        path: '/clients',
+      },
     ];
 
     // Only show Services and Barbers for admin users
     if (user?.role?.toUpperCase() === 'ADMIN') {
       items.push(
-        { text: 'Servicios', icon: <ContentCut sx={{ fontSize: 24, width: 24, height: 24 }} />, path: '/services' },
-        { text: 'Barberos', icon: <People sx={{ fontSize: 24, width: 24, height: 24 }} />, path: '/barbers' }
+        {
+          text: 'Servicios',
+          icon: <ContentCut sx={{ fontSize: 24, width: 24, height: 24 }} />,
+          path: '/services',
+        },
+        {
+          text: 'Barberos',
+          icon: <People sx={{ fontSize: 24, width: 24, height: 24 }} />,
+          path: '/barbers',
+        }
       );
     }
 
@@ -115,8 +135,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     justifyContent: 'center',
                     alignItems: 'center',
                     '& > svg': {
-                      margin: '12px'
-                    }
+                      margin: '12px',
+                    },
                   },
                 }}
               >

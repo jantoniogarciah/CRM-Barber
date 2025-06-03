@@ -144,7 +144,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
   useEffect(() => {
     if (open) {
       console.log('Appointment data received:', appointment);
-      
+
       formik.resetForm({
         values: {
           clientId: appointment?.clientId || '',

@@ -17,6 +17,8 @@ import {
   ListItemIcon,
   IconButton,
   Alert,
+  Link,
+  Tooltip,
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -28,6 +30,7 @@ import {
   CheckCircle as CompletedIcon,
   Cancel as CancelledIcon,
   EventBusy as NoShowIcon,
+  WhatsApp as WhatsAppIcon,
 } from '@mui/icons-material';
 import { format, parseISO, isToday, isTomorrow } from 'date-fns';
 import axios from 'axios';
@@ -74,6 +77,11 @@ const AppointmentDetails = ({ appointment, onClose, onEdit }) => {
       return 'Tomorrow';
     }
     return format(parsedDate, 'MMMM d, yyyy');
+  };
+
+  const formatPhoneForWhatsApp = (phone) => {
+    // Remove any non-numeric characters
+    return phone.replace(/\D/g, '');
   };
 
   const handleStatusChange = async (newStatus) => {
@@ -147,7 +155,25 @@ const AppointmentDetails = ({ appointment, onClose, onEdit }) => {
                   <ListItemIcon>
                     <TimeIcon />
                   </ListItemIcon>
-                  <ListItemText primary="Phone" secondary={appointment.client.phone} />
+                  <ListItemText 
+                    primary="Teléfono" 
+                    secondary={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {appointment.client.phone}
+                        <Tooltip title="Enviar mensaje por WhatsApp">
+                          <Link
+                            href={`https://wa.me/${formatPhoneForWhatsApp(appointment.client.phone)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <IconButton size="small" color="success">
+                              <WhatsAppIcon />
+                            </IconButton>
+                          </Link>
+                        </Tooltip>
+                      </Box>
+                    }
+                  />
                 </ListItem>
               </List>
             </Paper>

@@ -9,7 +9,7 @@
     "backend"
   ],
   "scripts": {
-    "dev": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm run dev\"",
+    "dev": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm start\"",
     "dev:frontend": "cd frontend && npm start",
     "dev:backend": "cd backend && npm run dev",
     "start": "node dist/index.js",
