@@ -4,7 +4,7 @@ services:
     env: node
     region: oregon
     plan: free
-    buildCommand: npm install && cd backend && npm install && chmod +x build.sh && ./build.sh && cd ..
+    buildCommand: npm install && cd backend && npm install && chmod +x build.sh && ./build.sh && cd .. && rm -rf node_modules/@prisma/client && cp -r backend/node_modules/@prisma/client node_modules/@prisma/
     startCommand: cd backend && npm run start
     envVars:
       - key: NODE_ENV
