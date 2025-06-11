@@ -2,7 +2,9 @@ services:
   - type: web
     name: crm-barber
     env: node
-    buildCommand: cd backend && chmod +x build.sh && ./build.sh
+    region: oregon
+    plan: free
+    buildCommand: npm install && cd backend && npm install && chmod +x build.sh && ./build.sh
     startCommand: cd backend && npm run start
     envVars:
       - key: NODE_ENV

@@ -4,6 +4,7 @@
 echo "Current directory: $(pwd)"
 
 # Install dependencies
+echo "Installing dependencies..."
 npm install
 
 # Generate Prisma Client with absolute path
@@ -12,6 +13,6 @@ npx prisma generate --schema=$(pwd)/prisma/schema.prisma
 
 # Run TypeScript compilation
 echo "Compiling TypeScript..."
-npm run build
+npx tsc
 
 echo "Build process completed" 
