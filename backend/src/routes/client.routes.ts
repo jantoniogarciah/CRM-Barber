@@ -11,7 +11,7 @@ import {
 import { validateRequest } from "../middleware/validate-request";
 import { requireAuth } from "../middleware/require-auth";
 
-const router = Router();
+const router: Router = Router();
 
 // All routes require authentication
 router.use(requireAuth);

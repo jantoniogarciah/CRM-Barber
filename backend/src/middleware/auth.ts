@@ -1,47 +1,29 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { AppError } from "../utils/appError";
+import { JWTPayload } from "../types/jwt";
 
-interface JwtPayload {
-  userId: string;
-  role: string;
-}
-
-declare global {
-  namespace Express {
-    interface Request {
-      user?: JwtPayload;
-    }
-  }
-}
-
-export const authenticateToken = (
+export const authenticateToken = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const authHeader = req.headers["authorization"];
-    const token = authHeader && authHeader.split(" ")[1];
+    const authHeader = req.headers.authorization;
 
-    if (!token) {
-      throw new AppError("No token provided", 401);
+    if (!authHeader?.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "No token provided" });
     }
 
-    const secret = process.env.JWT_SECRET;
-    if (!secret) {
-      throw new AppError("JWT secret not configured", 500);
+    const token = authHeader.split(" ")[1];
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JWTPayload;
+      req.user = decoded;
+      return next();
+    } catch (err) {
+      return res.status(401).json({ message: "Invalid token" });
     }
-
-    jwt.verify(token, secret, (err: any, decoded: any) => {
-      if (err) {
-        throw new AppError("Invalid token", 403);
-      }
-
-      req.user = decoded as JwtPayload;
-      next();
-    });
   } catch (error) {
-    next(error);
+    return res.status(500).json({ message: "Error authenticating user" });
   }
 };

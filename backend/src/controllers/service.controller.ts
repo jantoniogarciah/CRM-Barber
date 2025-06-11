@@ -57,16 +57,18 @@ export const getService = async (req: Request, res: Response) => {
 
     const service = await prisma.service.findUnique({
       where: { id },
+      include: {
+        category: true,
+      },
     });
 
     if (!service) {
       return res.status(404).json({ message: "Service not found" });
     }
 
-    res.json(service);
+    return res.json(service);
   } catch (error) {
-    console.error("Error fetching service:", error);
-    res.status(500).json({ message: "Error fetching service" });
+    return res.status(500).json({ message: "Error fetching service" });
   }
 };
 
@@ -133,7 +135,7 @@ export const toggleServiceStatus = async (req: Request, res: Response) => {
     });
 
     if (!service) {
-      return res.status(404).json({ message: "Servicio no encontrado" });
+      return res.status(404).json({ message: "Service not found" });
     }
 
     const updatedService = await prisma.service.update({
@@ -141,17 +143,11 @@ export const toggleServiceStatus = async (req: Request, res: Response) => {
       data: {
         isActive: !service.isActive,
       },
-      include: {
-        category: true,
-      },
     });
 
-    res.json(updatedService);
+    return res.json(updatedService);
   } catch (error) {
-    console.error("Error toggling service status:", error);
-    res
-      .status(500)
-      .json({ message: "Error al actualizar el estado del servicio" });
+    return res.status(500).json({ message: "Error toggling service status" });
   }
 };
 

@@ -9,7 +9,7 @@ import {
 import { validateRequest } from "../middleware/validate-request";
 import { requireAuth } from "../middleware/require-auth";
 
-const router = Router();
+const router: Router = Router();
 
 // Get current user (requires authentication)
 router.get("/me", requireAuth, getCurrentUser);

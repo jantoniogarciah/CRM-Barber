@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { prisma } from "../config/database";
+import { UserStatus } from "@prisma/client";
 
 // Get all clients
 export const getClients = async (req: Request, res: Response) => {
@@ -29,18 +30,20 @@ export const getClient = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const client = await prisma.client.findUnique({
-      where: { id },
+    const client = await prisma.user.findUnique({
+      where: {
+        id,
+        role: "CLIENT"
+      },
     });
 
     if (!client) {
-      return res.status(404).json({ message: "Cliente no encontrado" });
+      return res.status(404).json({ message: "Client not found" });
     }
 
-    res.json(client);
+    return res.json(client);
   } catch (error) {
-    console.error("Error fetching client:", error);
-    res.status(500).json({ message: "Error al obtener el cliente" });
+    return res.status(500).json({ message: "Error fetching client" });
   }
 };
 
@@ -96,27 +99,27 @@ export const toggleClientStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const client = await prisma.client.findUnique({
-      where: { id },
-    });
-
-    if (!client) {
-      return res.status(404).json({ message: "Cliente no encontrado" });
-    }
-
-    const updatedClient = await prisma.client.update({
-      where: { id },
-      data: {
-        isActive: !client.isActive,
+    const client = await prisma.user.findUnique({
+      where: {
+        id,
+        role: "CLIENT"
       },
     });
 
-    res.json(updatedClient);
+    if (!client) {
+      return res.status(404).json({ message: "Client not found" });
+    }
+
+    const updatedClient = await prisma.user.update({
+      where: { id },
+      data: {
+        status: client.status === UserStatus.ACTIVE ? UserStatus.INACTIVE : UserStatus.ACTIVE,
+      },
+    });
+
+    return res.json(updatedClient);
   } catch (error) {
-    console.error("Error toggling client status:", error);
-    res
-      .status(500)
-      .json({ message: "Error al actualizar el estado del cliente" });
+    return res.status(500).json({ message: "Error toggling client status" });
   }
 };
 

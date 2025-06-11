@@ -29,18 +29,20 @@ export const getBarber = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const barber = await prisma.barber.findUnique({
-      where: { id },
+    const barber = await prisma.user.findUnique({
+      where: {
+        id,
+        role: "BARBER",
+      },
     });
 
     if (!barber) {
-      return res.status(404).json({ message: "Barbero no encontrado" });
+      return res.status(404).json({ message: "Barber not found" });
     }
 
-    res.json(barber);
+    return res.json(barber);
   } catch (error) {
-    console.error("Error fetching barber:", error);
-    res.status(500).json({ message: "Error al obtener el barbero" });
+    return res.status(500).json({ message: "Error fetching barber" });
   }
 };
 
@@ -106,27 +108,27 @@ export const toggleBarberStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const barber = await prisma.barber.findUnique({
-      where: { id },
-    });
-
-    if (!barber) {
-      return res.status(404).json({ message: "Barbero no encontrado" });
-    }
-
-    const updatedBarber = await prisma.barber.update({
-      where: { id },
-      data: {
-        isActive: !barber.isActive,
+    const barber = await prisma.user.findUnique({
+      where: {
+        id,
+        role: "BARBER",
       },
     });
 
-    res.json(updatedBarber);
+    if (!barber) {
+      return res.status(404).json({ message: "Barber not found" });
+    }
+
+    const updatedBarber = await prisma.user.update({
+      where: { id },
+      data: {
+        status: barber.status === "ACTIVE" ? "INACTIVE" : "ACTIVE",
+      },
+    });
+
+    return res.json(updatedBarber);
   } catch (error) {
-    console.error("Error toggling barber status:", error);
-    res
-      .status(500)
-      .json({ message: "Error al actualizar el estado del barbero" });
+    return res.status(500).json({ message: "Error toggling barber status" });
   }
 };
 

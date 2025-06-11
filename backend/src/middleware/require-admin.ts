@@ -1,13 +1,17 @@
 import { Request, Response, NextFunction } from "express";
+import { UserRole } from "@prisma/client";
 
 export const requireAdmin = (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-  if (!req.currentUser || req.currentUser.role.toUpperCase() !== "ADMIN") {
-    return res.status(403).json({ message: "Not authorized" });
+  try {
+    if (req.user?.role !== UserRole.ADMIN) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+    return next();
+  } catch (error) {
+    return res.status(500).json({ message: "Error checking admin status" });
   }
-
-  next();
 };

@@ -11,7 +11,7 @@ import {
 import { validateRequest } from "../middleware/validateRequest";
 import { authenticateToken } from "../middleware/auth";
 
-const router = Router();
+const router: Router = Router();
 
 // Apply authentication middleware to all routes
 router.use(authenticateToken);

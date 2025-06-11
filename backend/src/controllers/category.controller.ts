@@ -24,21 +24,18 @@ export const getCategories = async (req: Request, res: Response) => {
 export const getCategory = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+
     const category = await prisma.category.findUnique({
       where: { id },
-      include: {
-        services: true,
-      },
     });
 
     if (!category) {
       return res.status(404).json({ message: "Category not found" });
     }
 
-    res.json(category);
+    return res.json(category);
   } catch (error) {
-    console.error("Error fetching category:", error);
-    res.status(500).json({ message: "Error fetching category" });
+    return res.status(500).json({ message: "Error fetching category" });
   }
 };
 
@@ -98,6 +95,7 @@ export const deleteCategory = async (req: Request, res: Response) => {
 export const toggleCategoryStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+
     const category = await prisma.category.findUnique({
       where: { id },
     });
@@ -113,9 +111,8 @@ export const toggleCategoryStatus = async (req: Request, res: Response) => {
       },
     });
 
-    res.json(updatedCategory);
+    return res.json(updatedCategory);
   } catch (error) {
-    console.error("Error toggling category status:", error);
-    res.status(500).json({ message: "Error toggling category status" });
+    return res.status(500).json({ message: "Error toggling category status" });
   }
 };
