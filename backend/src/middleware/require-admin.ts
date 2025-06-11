@@ -1,17 +1,22 @@
 import { Request, Response, NextFunction } from "express";
-import { UserRole } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
-export const requireAdmin = (
+type UserRole = Prisma.UserCreateInput['role'];
+
+export const requireAdmin = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    if (req.user?.role !== UserRole.ADMIN) {
-      return res.status(403).json({ message: "Admin access required" });
+    const user = req.user;
+
+    if (!user || user.role !== 'ADMIN') {
+      return res.status(403).json({ message: "Access denied. Admin role required." });
     }
+
     return next();
   } catch (error) {
-    return res.status(500).json({ message: "Error checking admin status" });
+    return res.status(500).json({ message: "Error checking admin role" });
   }
 };

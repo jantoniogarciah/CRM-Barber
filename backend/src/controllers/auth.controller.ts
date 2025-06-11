@@ -1,9 +1,14 @@
 import { Request, Response } from "express";
-import { PrismaClient, UserRole, UserStatus } from "@prisma/client";
-import bcrypt from "bcryptjs";
+import { PrismaClient, Prisma } from "@prisma/client";
+import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { AppError } from "../utils/appError";
 
 const prisma = new PrismaClient();
+
+// Use the generated Prisma types
+type UserRole = Prisma.UserCreateInput['role'];
+type UserStatus = Prisma.UserCreateInput['status'];
 
 // Get current user
 export const getCurrentUser = async (req: Request, res: Response) => {

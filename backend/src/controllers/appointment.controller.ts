@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Client } from "@prisma/client";
 import { AppError } from "../utils/appError";
 import { parseISO } from "date-fns";
 
@@ -277,6 +277,10 @@ export const getLastCompletedAppointments = async (req: Request, res: Response) 
     console.error("Error getting last completed appointments:", error);
     throw new AppError("Error getting last completed appointments", 500);
   }
+};
+
+const getClientAppointments = async (client: Client) => {
+  // ... rest of the function
 };
 
 export default {

@@ -1,6 +1,10 @@
 import { Request, Response } from "express";
-import { prisma } from "../config/database";
-import { Service } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
+import { AppError } from "../utils/appError";
+
+const prisma = new PrismaClient();
+
+type Service = Prisma.ServiceCreateInput;
 
 // Get all services
 export const getServices = async (req: Request, res: Response) => {

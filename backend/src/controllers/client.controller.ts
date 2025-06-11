@@ -1,6 +1,11 @@
 import { Request, Response } from "express";
-import { prisma } from "../config/database";
-import { UserStatus } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
+import { AppError } from "../utils/appError";
+
+const prisma = new PrismaClient();
+
+// Use the generated Prisma types
+type UserStatus = Prisma.UserCreateInput['status'];
 
 // Get all clients
 export const getClients = async (req: Request, res: Response) => {
