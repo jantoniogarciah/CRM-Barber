@@ -9,7 +9,7 @@ npm install
 
 # Generate Prisma Client with absolute path
 echo "Generating Prisma Client..."
-npx prisma generate --schema=$(pwd)/prisma/schema.prisma
+npx prisma generate --schema=./prisma/schema.prisma
 
 # Run TypeScript compilation
 echo "Compiling TypeScript..."
