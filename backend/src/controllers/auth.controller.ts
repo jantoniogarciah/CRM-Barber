@@ -56,7 +56,7 @@ export const register = async (req: Request, res: Response) => {
         firstName,
         lastName,
         role: role as UserRole,
-        status: UserStatus.ACTIVE,
+        status: 'ACTIVE',
       },
     });
 

@@ -118,7 +118,7 @@ export const toggleClientStatus = async (req: Request, res: Response) => {
     const updatedClient = await prisma.user.update({
       where: { id },
       data: {
-        status: client.status === UserStatus.ACTIVE ? UserStatus.INACTIVE : UserStatus.ACTIVE,
+        status: client.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE',
       },
     });
 
