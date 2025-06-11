@@ -7,8 +7,8 @@
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
+    "prisma:generate": "prisma generate --schema=./prisma/schema.prisma",
+    "prisma:migrate": "prisma migrate dev --schema=./prisma/schema.prisma",
     "test": "jest",
     "lint": "eslint . --ext .ts"
   },
@@ -45,6 +45,7 @@
     "typescript": "^5.3.3"
   },
   "prisma": {
+    "schema": "./prisma/schema.prisma",
     "seed": "ts-node prisma/seed.ts"
   }
 }
