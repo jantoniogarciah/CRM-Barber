@@ -8,6 +8,9 @@
     "frontend",
     "backend"
   ],
+  "prisma": {
+    "schema": "backend/prisma/schema.prisma"
+  },
   "scripts": {
     "dev": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm start\"",
     "dev:frontend": "cd frontend && npm start",
@@ -18,7 +21,7 @@
     "install:all": "npm install && npm run install:frontend && npm run install:backend",
     "install:frontend": "cd frontend && npm install",
     "install:backend": "cd backend && npm install",
-    "build": "cd backend && npm install && chmod +x build.sh && ./build.sh",
+    "build": "cd backend && npm install && chmod +x build.sh && ./build.sh && cd .. && npx prisma generate --schema=backend/prisma/schema.prisma",
     "test": "jest",
     "test:frontend": "cd frontend && npm test",
     "test:backend": "cd backend && npm test",
