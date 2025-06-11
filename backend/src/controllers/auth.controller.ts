@@ -79,6 +79,17 @@ export const login = async (req: Request, res: Response) => {
       where: {
         email,
       },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+        password: true,
+      },
     });
 
     if (!user) {
@@ -96,8 +107,15 @@ export const login = async (req: Request, res: Response) => {
       process.env.JWT_SECRET as string
     );
 
-    return res.json({ token });
+    // Remove password from user object before sending
+    const { password: _, ...userWithoutPassword } = user;
+
+    return res.json({
+      user: userWithoutPassword,
+      token
+    });
   } catch (error) {
+    console.error('Login error:', error);
     return res.status(500).json({ message: "Error logging in" });
   }
 };
