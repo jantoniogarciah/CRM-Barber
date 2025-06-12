@@ -139,10 +139,30 @@ export const updateUser = async (req: Request, res: Response) => {
         id: req.user.id,
       },
       data: updates,
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
 
-    return res.json(user);
+    // Generate new token with updated user info
+    const token = jwt.sign(
+      { id: user.id, role: user.role },
+      process.env.JWT_SECRET as string
+    );
+
+    return res.json({
+      user,
+      token
+    });
   } catch (error) {
+    console.error('Update user error:', error);
     return res.status(500).json({ message: "Error updating user" });
   }
 };
