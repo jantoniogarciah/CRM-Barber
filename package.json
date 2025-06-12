@@ -21,7 +21,7 @@
     "install:all": "npm install && npm run install:frontend && npm run install:backend",
     "install:frontend": "cd frontend && npm install",
     "install:backend": "cd backend && npm install",
-    "build": "cd backend && npm install && chmod +x build.sh && ./build.sh && cd .. && npx prisma generate --schema=backend/prisma/schema.prisma",
+    "build": "cd backend && npm install && chmod +x build.sh && ./build.sh",
     "test": "jest",
     "test:frontend": "cd frontend && npm test",
     "test:backend": "cd backend && npm test",

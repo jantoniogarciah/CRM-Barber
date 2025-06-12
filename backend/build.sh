@@ -15,4 +15,12 @@ npx prisma generate --schema=./prisma/schema.prisma
 echo "Compiling TypeScript..."
 npx tsc
 
+# Copy Prisma files to dist
+echo "Copying Prisma files..."
+cp -r prisma dist/
+
+# Run database migrations
+echo "Running database migrations..."
+NODE_ENV=production node dist/prisma/migrate.js
+
 echo "Build process completed" 
