@@ -4,7 +4,6 @@ import morgan from "morgan";
 import dotenv from "dotenv";
 import { createServer } from "http";
 import { Server } from "socket.io";
-import path from "path";
 import { authRouter } from "./routes/auth.routes";
 import { barberRouter } from "./routes/barber.routes";
 import { serviceRouter } from "./routes/service.routes";
@@ -39,6 +38,15 @@ const port = process.env.PORT || 3001;
 // Other middleware
 app.use(morgan('dev'));
 app.use(express.json());
+
+// Root route
+app.get('/', (req, res) => {
+  res.json({
+    message: 'CRM Barber API',
+    version: '1.0.0',
+    docs: '/api'
+  });
+});
 
 // Health check and API info route
 app.get('/api', async (req, res) => {
@@ -76,23 +84,6 @@ app.use("/api/services", serviceRouter);
 app.use("/api/categories", categoryRouter);
 app.use("/api/clients", clientRouter);
 app.use("/api/appointments", appointmentRoutes);
-
-// Serve static files from the React app
-app.use(express.static(path.join(__dirname, '../../frontend/build')));
-
-// Serve React's index.html for any other routes
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../../frontend/build/index.html'));
-});
-
-// Socket.IO connection handling
-io.on("connection", (socket) => {
-  console.log("Client connected:", socket.id);
-
-  socket.on("disconnect", () => {
-    console.log("Client disconnected:", socket.id);
-  });
-});
 
 // Error handling middleware
 app.use(
