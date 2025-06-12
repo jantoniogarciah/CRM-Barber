@@ -1,27 +1,16 @@
 import { PrismaClient } from '@prisma/client';
 import { execSync } from 'child_process';
-import * as path from 'path';
-import * as fs from 'fs';
 import * as bcrypt from 'bcrypt';
 
 async function main() {
   console.log('Starting database migration...');
 
   try {
-    // Create migrations directory if it doesn't exist
-    const migrationsDir = path.join(__dirname, 'migrations');
-    if (!fs.existsSync(migrationsDir)) {
-      fs.mkdirSync(migrationsDir);
-    }
-
-    // Write migration SQL to file
-    const migrationSQL = fs.readFileSync(path.join(__dirname, 'migrations/migration.sql'), 'utf8');
+    console.log('Running Prisma migrations...');
+    execSync('npx prisma migrate deploy', { stdio: 'inherit' });
     
     // Execute the migration
     const prisma = new PrismaClient();
-    
-    console.log('Executing migration...');
-    await prisma.$executeRawUnsafe(migrationSQL);
     
     console.log('Creating admin user...');
     const adminExists = await prisma.user.findUnique({
