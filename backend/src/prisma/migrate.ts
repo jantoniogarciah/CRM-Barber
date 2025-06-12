@@ -1,13 +1,23 @@
 import { PrismaClient } from '@prisma/client';
 import { execSync } from 'child_process';
 import * as bcrypt from 'bcrypt';
+import * as path from 'path';
 
 async function main() {
   console.log('Starting database migration...');
 
   try {
+    const schemaPath = path.resolve(__dirname, '../../prisma/schema.prisma');
+    console.log('Using schema path:', schemaPath);
+    
     console.log('Running Prisma migrations...');
-    execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+    execSync(`npx prisma migrate deploy --schema="${schemaPath}"`, { 
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        DATABASE_URL: process.env.DATABASE_URL
+      }
+    });
     
     // Execute the migration
     const prisma = new PrismaClient();
@@ -39,6 +49,10 @@ async function main() {
     console.log('Migration completed successfully');
   } catch (error) {
     console.error('Migration failed:', error);
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
     process.exit(1);
   }
 }
