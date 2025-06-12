@@ -23,4 +23,8 @@ cp -r prisma dist/
 echo "Running database migrations..."
 NODE_ENV=production node dist/prisma/migrate.js
 
+# Run category seeds
+echo "Creating initial categories..."
+NODE_ENV=production ts-node prisma/seeds/categories.ts
+
 echo "Build process completed" 
