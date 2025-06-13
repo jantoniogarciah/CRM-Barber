@@ -89,6 +89,10 @@ const theme = createTheme({
         root: {
           borderRadius: 12,
           boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+          '@media screen and (orientation: landscape)': {
+            maxHeight: 'calc(100vh - 32px)',
+            overflowY: 'auto',
+          },
         },
       },
     },
@@ -112,9 +116,28 @@ const theme = createTheme({
         }),
       },
     },
+    MuiContainer: {
+      styleOverrides: {
+        root: {
+          '@media screen and (orientation: landscape)': {
+            maxHeight: '100vh',
+            overflowY: 'auto',
+          },
+        },
+      },
+    },
   },
   shape: {
     borderRadius: 8,
+  },
+  breakpoints: {
+    values: {
+      xs: 0,
+      sm: 600,
+      md: 960,
+      lg: 1280,
+      xl: 1920,
+    },
   },
 });
 

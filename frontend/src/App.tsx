@@ -8,10 +8,46 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { es } from 'date-fns/locale';
 import { SnackbarProvider } from 'notistack';
 import { Toaster } from 'react-hot-toast';
+import { Box, useMediaQuery } from '@mui/material';
 import theme from './theme';
 import Layout from './components/Layout';
 import Routes from './routes';
 import AuthInitializer from './components/AuthInitializer';
+import { useOrientation } from './hooks/useOrientation';
+
+const AppContent: React.FC = () => {
+  const orientation = useOrientation();
+  const isMobile = useMediaQuery('(max-width:600px)');
+
+  return (
+    <Box
+      sx={{
+        height: '100%',
+        width: '100%',
+        overflow: 'auto',
+        WebkitOverflowScrolling: 'touch',
+        display: 'flex',
+        flexDirection: 'column',
+        ...(isMobile && orientation === 'landscape' && {
+          transform: 'rotate(-90deg)',
+          transformOrigin: 'left top',
+          width: '100vh',
+          height: '100vw',
+          position: 'absolute',
+          top: '100%',
+          left: 0,
+        }),
+      }}
+    >
+      <AuthInitializer>
+        <Layout>
+          <Routes />
+        </Layout>
+      </AuthInitializer>
+      <Toaster position="top-right" />
+    </Box>
+  );
+};
 
 const App: React.FC = () => {
   return (
@@ -29,12 +65,7 @@ const App: React.FC = () => {
         >
           <SnackbarProvider maxSnack={3}>
             <Router>
-              <AuthInitializer>
-                <Layout>
-                  <Routes />
-                </Layout>
-              </AuthInitializer>
-              <Toaster position="top-right" />
+              <AppContent />
             </Router>
           </SnackbarProvider>
         </LocalizationProvider>
