@@ -23,10 +23,11 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "orientation": "portrait",
+  "orientation": "any",
   "theme_color": "#000000",
   "background_color": "#ffffff",
   "prefer_related_applications": false,
+  "display_override": ["standalone", "fullscreen"],
   "categories": ["business", "productivity"],
   "shortcuts": [
     {

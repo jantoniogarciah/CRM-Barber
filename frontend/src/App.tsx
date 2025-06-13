@@ -18,6 +18,24 @@ import { useOrientation } from './hooks/useOrientation';
 const AppContent: React.FC = () => {
   const orientation = useOrientation();
   const isMobile = useMediaQuery('(max-width:600px)');
+  const isPWA = window.matchMedia('(display-mode: standalone)').matches;
+
+  const getRotationStyles = () => {
+    if (!isMobile || !isPWA) return {};
+
+    if (orientation === 'landscape') {
+      return {
+        transform: 'rotate(-90deg)',
+        transformOrigin: 'left top',
+        width: '100vh',
+        height: '100vw',
+        position: 'absolute',
+        top: '100%',
+        left: 0,
+      };
+    }
+    return {};
+  };
 
   return (
     <Box
@@ -28,15 +46,8 @@ const AppContent: React.FC = () => {
         WebkitOverflowScrolling: 'touch',
         display: 'flex',
         flexDirection: 'column',
-        ...(isMobile && orientation === 'landscape' && {
-          transform: 'rotate(-90deg)',
-          transformOrigin: 'left top',
-          width: '100vh',
-          height: '100vw',
-          position: 'absolute',
-          top: '100%',
-          left: 0,
-        }),
+        transition: 'transform 0.3s ease-in-out',
+        ...getRotationStyles(),
       }}
     >
       <AuthInitializer>
