@@ -7,8 +7,13 @@ services:
     buildCommand: |
       cd backend && 
       npm install &&
+      echo "Current directory: $(pwd)" &&
+      echo "TypeScript version: $(npx tsc --version)" &&
       npm run build &&
-      ls -la dist/
+      echo "Dist directory contents:" &&
+      ls -la dist/ &&
+      echo "Dist/prisma contents:" &&
+      ls -la dist/prisma/
     startCommand: cd backend && npm run start
     envVars:
       - key: NODE_ENV
