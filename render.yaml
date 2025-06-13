@@ -6,8 +6,9 @@ services:
     plan: free
     buildCommand: |
       cd backend && 
-      npm install && 
-      npm run build
+      npm install &&
+      npm run build &&
+      ls -la dist/
     startCommand: cd backend && npm run start
     envVars:
       - key: NODE_ENV
