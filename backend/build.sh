@@ -15,6 +15,12 @@ npx prisma generate --schema=./prisma/schema.prisma
 echo "Compiling TypeScript..."
 npx tsc
 
+# Compilar seeds manualmente
+npx tsc prisma/seeds/categories.ts --outDir dist/prisma/seeds
+
+# Ejecutar seeds
+NODE_ENV=production node dist/prisma/seeds/categories.js
+
 # Copy Prisma files to dist
 echo "Copying Prisma files..."
 cp -r prisma/schema.prisma dist/prisma/
@@ -22,9 +28,5 @@ cp -r prisma/schema.prisma dist/prisma/
 # Run database migrations
 echo "Running database migrations..."
 NODE_ENV=production node dist/prisma/migrate.js
-
-# Run category seeds
-echo "Creating initial categories..."
-NODE_ENV=production node dist/prisma/seeds/categories.js
 
 echo "Build process completed" 
