@@ -16,7 +16,7 @@ echo "Compiling TypeScript..."
 npx tsc
 
 # Compilar seeds manualmente
-npx tsc prisma/seeds/categories.ts --outDir dist/prisma/seeds
+npx tsc src/prisma/seeds/categories.ts --outDir dist/prisma/seeds
 
 # Ejecutar seeds
 NODE_ENV=production node dist/prisma/seeds/categories.js

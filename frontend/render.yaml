@@ -3,11 +3,16 @@ services:
     name: crm-barber-frontend
     env: static
     buildCommand: npm install && npm run build
-    staticPublishPath: ./build
+    staticPublishPath: /opt/render/project/src/build
     envVars:
       - key: REACT_APP_API_URL
         value: https://crm-barber-backend.onrender.com/api
     routes:
       - type: rewrite
         source: /*
-        destination: /index.html 
+        destination: /index.html
+    headers:
+      - source: /*
+        headers:
+          - key: Cache-Control
+            value: no-cache 
