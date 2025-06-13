@@ -37,7 +37,7 @@ registerRoute(
     // Return true to signal that we want to use the handler.
     return true;
   },
-  createHandlerBoundToURL(process.env.PUBLIC_URL + '/index.html')
+  createHandlerBoundToURL((process.env.PUBLIC_URL || '') + '/index.html')
 );
 
 // Cache the Google Fonts stylesheets with a stale-while-revalidate strategy.

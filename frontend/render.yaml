@@ -3,10 +3,13 @@ services:
     name: crm-barber-frontend
     env: static
     buildCommand: |
+      export PUBLIC_URL=https://crm-barber.onrender.com &&
       npm install &&
       npm run build
     staticPublishPath: /opt/render/project/src/build
     envVars:
+      - key: PUBLIC_URL
+        value: https://crm-barber.onrender.com
       - key: REACT_APP_API_URL
         value: https://crm-barber-backend.onrender.com/api
       - key: REACT_APP_SOCKET_URL
