@@ -17,7 +17,7 @@ npx tsc
 
 # Copy Prisma files to dist
 echo "Copying Prisma files..."
-cp -r prisma dist/
+cp -r prisma/schema.prisma dist/prisma/
 
 # Run database migrations
 echo "Running database migrations..."
@@ -25,6 +25,6 @@ NODE_ENV=production node dist/prisma/migrate.js
 
 # Run category seeds
 echo "Creating initial categories..."
-NODE_ENV=production ts-node prisma/seeds/categories.ts
+NODE_ENV=production node dist/prisma/seeds/categories.js
 
 echo "Build process completed" 
