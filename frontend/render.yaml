@@ -2,11 +2,15 @@ services:
   - type: web
     name: crm-barber-frontend
     env: static
-    buildCommand: npm install && npm run build
+    buildCommand: |
+      npm install &&
+      npm run build
     staticPublishPath: /opt/render/project/src/build
     envVars:
       - key: REACT_APP_API_URL
         value: https://crm-barber-backend.onrender.com/api
+      - key: REACT_APP_SOCKET_URL
+        value: https://crm-barber-backend.onrender.com
     routes:
       - type: rewrite
         source: /*

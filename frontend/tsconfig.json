@@ -29,9 +29,14 @@
     "typeRoots": [
       "./node_modules/@types",
       "./src/types"
-    ]
+    ],
+    "types": ["node", "react", "react-dom"]
   },
-  "include": ["src", "src/types/*.d.ts"],
+  "include": [
+    "src",
+    "src/types/*.d.ts",
+    "src/types/env.d.ts"
+  ],
   "exclude": [
     "node_modules",
     "build",
