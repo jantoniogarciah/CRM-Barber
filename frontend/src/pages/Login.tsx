@@ -54,11 +54,22 @@ const Login: React.FC = () => {
         // Update Redux state
         dispatch(setCredentials(result));
 
+        // Show success message
+        toast.success('¡Bienvenido!');
+
         // Navigate to dashboard
         navigate('/');
       } catch (error: any) {
         console.error('Login error:', error);
-        toast.error(error.data?.message || 'Error al iniciar sesión');
+        
+        // Handle different types of errors
+        if (error.status === 'FETCH_ERROR') {
+          toast.error('Error de conexión. Por favor, verifica tu conexión a internet.');
+        } else if (error.data?.message) {
+          toast.error(error.data.message);
+        } else {
+          toast.error('Error al iniciar sesión. Por favor, intenta nuevamente.');
+        }
       }
     },
   });

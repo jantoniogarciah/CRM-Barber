@@ -9,52 +9,56 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 const baseQuery = fetchBaseQuery({
   baseUrl: API_URL,
   prepareHeaders: (headers, { getState }) => {
-    // Get token from localStorage
     const token = localStorage.getItem('token');
     if (token) {
       headers.set('authorization', `Bearer ${token}`);
-      console.log('Setting auth header:', `Bearer ${token}`); // Debug log
     }
     headers.set('Content-Type', 'application/json');
     return headers;
   },
-  credentials: 'include',
 });
 
 const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
-  const result = await baseQuery(args, api, extraOptions);
+  try {
+    const result = await baseQuery(args, api, extraOptions);
 
-  if (result.error) {
-    const error = result.error as any;
-    console.log('API Error:', error);
+    if (result.error) {
+      const error = result.error as any;
+      
+      // Handle authentication errors
+      if (error.status === 401) {
+        localStorage.clear();
+        sessionStorage.clear();
+        api.dispatch(clearCredentials());
+        toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+        window.location.href = '/login';
+        return result;
+      }
 
-    // Handle authentication errors
-    if (error.status === 401) {
-      // Clear all auth data
-      localStorage.clear();
-      sessionStorage.clear();
-      api.dispatch(clearCredentials());
+      // Handle server errors
+      if (error.status === 500) {
+        toast.error('Error en el servidor. Por favor, intenta más tarde.');
+      }
 
-      // Show error message
-      toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+      // Handle network errors
+      if (error.status === 'FETCH_ERROR') {
+        toast.error('Error de conexión. Por favor, verifica tu conexión a internet.');
+      }
 
-      // Use navigate instead of window.location for a smoother transition
-      window.location.href = '/login';
-      return result;
+      // Handle other errors
+      if (error.data?.message) {
+        toast.error(error.data.message);
+      } else {
+        toast.error('Error inesperado. Por favor, intenta nuevamente.');
+      }
     }
 
-    // Handle server errors
-    if (error.status === 500) {
-      toast.error('Error en el servidor. Por favor, intenta más tarde.');
-    }
-
-    // Handle network errors
-    if (error.status === 'FETCH_ERROR') {
-      toast.error('Error de conexión. Por favor, verifica tu conexión a internet.');
-    }
+    return result;
+  } catch (error) {
+    console.error('API Error:', error);
+    toast.error('Error inesperado. Por favor, intenta nuevamente.');
+    return { error };
   }
-
-  return result;
 };
 
 export const api = createApi({
