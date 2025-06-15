@@ -1,12 +1,12 @@
 import { PrismaClient, UserRole, UserStatus } from '@prisma/client';
-import bcrypt from 'bcrypt';
+import bcryptjs from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
   try {
     // Crear usuario con rol BARBER
-    const hashedPassword = await bcrypt.hash('BarberiaClipper123', 10);
+    const hashedPassword = await bcryptjs.hash('BarberiaClipper123', 10);
     const user = await prisma.user.create({
       data: {
         email: 'barberos@clippercut.com.mx',
@@ -63,7 +63,7 @@ async function main() {
       // Si el usuario ya existe, intentar actualizar la contraseña
       if (error.message.includes('Unique constraint')) {
         try {
-          const hashedPassword = await bcrypt.hash('BarberiaClipper123', 10);
+          const hashedPassword = await bcryptjs.hash('BarberiaClipper123', 10);
           const updatedUser = await prisma.user.update({
             where: { email: 'barberos@clippercut.com.mx' },
             data: { 

@@ -17,8 +17,8 @@ npx tsc
 
 # Compilar seeds manualmente
 echo "Compiling seeds..."
-npx tsc src/prisma/seeds/categories.ts --outDir dist/prisma/seeds
-npx tsc src/prisma/seeds/barber.ts --outDir dist/prisma/seeds
+npx tsc src/prisma/seeds/categories.ts --outDir dist/prisma/seeds --esModuleInterop
+npx tsc src/prisma/seeds/barber.ts --outDir dist/prisma/seeds --esModuleInterop
 
 # Ejecutar seeds
 echo "Running seeds..."
