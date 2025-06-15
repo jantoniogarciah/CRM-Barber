@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { store } from './store';
 import { ThemeProvider } from '@mui/material/styles';
@@ -11,10 +11,9 @@ import { Toaster } from 'react-hot-toast';
 import { Box, useMediaQuery } from '@mui/material';
 import theme from './theme';
 import Layout from './components/Layout';
-import Routes from './routes';
+import AppRoutes from './router';
 import AuthInitializer from './components/AuthInitializer';
 import { useOrientation } from './hooks/useOrientation';
-import BarberProfile from './pages/BarberProfile';
 
 const AppContent: React.FC = () => {
   const orientation = useOrientation();
@@ -53,18 +52,7 @@ const AppContent: React.FC = () => {
     >
       <AuthInitializer>
         <Layout>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
-              <Route index element={<Dashboard />} />
-              <Route path="clients" element={<Clients />} />
-              <Route path="services" element={<Services />} />
-              <Route path="categories" element={<Categories />} />
-              <Route path="appointments" element={<Appointments />} />
-              <Route path="barbers" element={<Barbers />} />
-              <Route path="barbers/:id" element={<BarberProfile />} />
-            </Route>
-          </Routes>
+          <AppRoutes />
         </Layout>
       </AuthInitializer>
       <Toaster position="top-right" />
@@ -75,24 +63,24 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <Provider store={store}>
-      <ThemeProvider theme={theme}>
-        <LocalizationProvider
-          dateAdapter={AdapterDateFns}
-          adapterLocale={es}
-          localeText={{
-            cancelButtonLabel: 'Cancelar',
-            clearButtonLabel: 'Limpiar',
-            okButtonLabel: 'Aceptar',
-            todayButtonLabel: 'Hoy',
-          }}
-        >
-          <SnackbarProvider maxSnack={3}>
-            <Router>
+      <Router>
+        <ThemeProvider theme={theme}>
+          <LocalizationProvider 
+            dateAdapter={AdapterDateFns} 
+            adapterLocale={es}
+            localeText={{
+              cancelButtonLabel: 'Cancelar',
+              clearButtonLabel: 'Limpiar',
+              okButtonLabel: 'Aceptar',
+              todayButtonLabel: 'Hoy',
+            }}
+          >
+            <SnackbarProvider maxSnack={3}>
               <AppContent />
-            </Router>
-          </SnackbarProvider>
-        </LocalizationProvider>
-      </ThemeProvider>
+            </SnackbarProvider>
+          </LocalizationProvider>
+        </ThemeProvider>
+      </Router>
     </Provider>
   );
 };
