@@ -1,3 +1,16 @@
+-- Drop existing constraints if they exist
+DO $$ BEGIN
+    ALTER TABLE IF EXISTS "service_logs" DROP CONSTRAINT IF EXISTS "service_logs_barberId_fkey";
+    ALTER TABLE IF EXISTS "service_logs" DROP CONSTRAINT IF EXISTS "service_logs_serviceId_fkey";
+    ALTER TABLE IF EXISTS "service_logs" DROP CONSTRAINT IF EXISTS "service_logs_clientId_fkey";
+EXCEPTION
+    WHEN undefined_table THEN
+        NULL;
+END $$;
+
+-- Drop table if exists and create it
+DROP TABLE IF EXISTS "service_logs";
+
 -- CreateTable
 CREATE TABLE "service_logs" (
     "id" TEXT NOT NULL,
