@@ -40,8 +40,19 @@ import AppointmentForm from './AppointmentForm';
 import AppointmentDetails from './AppointmentDetails';
 import AppointmentCalendar from './AppointmentCalendar';
 
-const AppointmentList = () => {
-  const [appointments, setAppointments] = useState([]);
+interface AppointmentListProps {
+  barberId?: string;
+}
+
+interface Appointment {
+  id: string;
+  status: 'scheduled' | 'completed' | 'cancelled' | 'no-show';
+  date: string;
+  // Add other appointment properties as needed
+}
+
+const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
@@ -51,11 +62,11 @@ const AppointmentList = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
-  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [openForm, setOpenForm] = useState(false);
   const [openDetails, setOpenDetails] = useState(false);
-  const [formMode, setFormMode] = useState('add');
-  const [viewMode, setViewMode] = useState('list'); // 'list' or 'calendar'
+  const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
 
   const fetchAppointments = async () => {
     try {
@@ -65,6 +76,7 @@ const AppointmentList = () => {
       const response = await axios.get('/api/appointments', {
         headers: { Authorization: `Bearer ${token}` },
         params: {
+          barberId,
           search,
           status,
           startDate,
@@ -76,7 +88,7 @@ const AppointmentList = () => {
 
       setAppointments(response.data.appointments);
       setTotalCount(response.data.total);
-    } catch (error) {
+    } catch (error: any) {
       setError(error.response?.data?.message || 'An error occurred while fetching appointments');
     } finally {
       setLoading(false);
@@ -85,28 +97,28 @@ const AppointmentList = () => {
 
   useEffect(() => {
     fetchAppointments();
-  }, [page, rowsPerPage, search, status, startDate, endDate]);
+  }, [page, rowsPerPage, search, status, startDate, endDate, barberId]);
 
-  const handleChangePage = (event, newPage) => {
+  const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
   };
 
-  const handleChangeRowsPerPage = (event) => {
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
 
-  const handleSearchChange = (event) => {
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(event.target.value);
     setPage(0);
   };
 
-  const handleStatusChange = (event) => {
+  const handleStatusChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setStatus(event.target.value);
     setPage(0);
   };
 
-  const handleDateChange = (type, value) => {
+  const handleDateChange = (type: 'start' | 'end', value: string) => {
     if (type === 'start') {
       setStartDate(value);
     } else {
@@ -121,18 +133,18 @@ const AppointmentList = () => {
     setOpenForm(true);
   };
 
-  const handleEditClick = (appointment) => {
+  const handleEditClick = (appointment: Appointment) => {
     setFormMode('edit');
     setSelectedAppointment(appointment);
     setOpenForm(true);
   };
 
-  const handleViewClick = (appointment) => {
+  const handleViewClick = (appointment: Appointment) => {
     setSelectedAppointment(appointment);
     setOpenDetails(true);
   };
 
-  const handleDeleteClick = async (appointment) => {
+  const handleDeleteClick = async (appointment: Appointment) => {
     if (window.confirm('Are you sure you want to delete this appointment?')) {
       try {
         const token = localStorage.getItem('token');
@@ -140,7 +152,7 @@ const AppointmentList = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
         fetchAppointments();
-      } catch (error) {
+      } catch (error: any) {
         setError(
           error.response?.data?.message || 'An error occurred while deleting the appointment'
         );
@@ -163,7 +175,7 @@ const AppointmentList = () => {
     handleFormClose();
   };
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case 'scheduled':
         return 'info';
@@ -178,7 +190,7 @@ const AppointmentList = () => {
     }
   };
 
-  const getDateLabel = (date) => {
+  const getDateLabel = (date: string) => {
     const parsedDate = parseISO(date);
     if (isToday(parsedDate)) {
       return 'Today';

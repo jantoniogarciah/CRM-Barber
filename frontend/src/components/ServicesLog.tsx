@@ -16,21 +16,44 @@ import {
 import { Add as AddIcon, Search as SearchIcon } from '@mui/icons-material';
 import ServiceForm from './ServiceForm';
 import { useGetServicesLogQuery } from '../services/api';
-import { formatCurrency } from '../utils/format';
+import { formatPrice } from '../utils/format';
 
 interface ServicesLogProps {
   barberId: string;
 }
 
-const ServicesLog = ({ barberId }: ServicesLogProps) => {
+interface ServiceLog {
+  id: string;
+  barberId: string;
+  serviceId: string;
+  clientId: string;
+  notes?: string;
+  createdAt: string;
+  service: {
+    id: string;
+    name: string;
+    price: number;
+  };
+  client: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
+}
+
+const ServicesLog: React.FC<ServicesLogProps> = ({ barberId }) => {
   const [openServiceForm, setOpenServiceForm] = useState(false);
-  const { data: services = [], isLoading } = useGetServicesLogQuery(barberId);
+  const { data: servicesLog = [], isLoading } = useGetServicesLogQuery(barberId);
 
   const handleOpenServiceForm = () => {
     setOpenServiceForm(true);
   };
 
   const handleCloseServiceForm = () => {
+    setOpenServiceForm(false);
+  };
+
+  const handleServiceSuccess = () => {
     setOpenServiceForm(false);
   };
 
@@ -63,7 +86,7 @@ const ServicesLog = ({ barberId }: ServicesLogProps) => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {services.map((service) => (
+            {servicesLog.map((service: ServiceLog) => (
               <TableRow key={service.id}>
                 <TableCell>{new Date(service.createdAt).toLocaleDateString()}</TableCell>
                 <TableCell>
@@ -76,7 +99,7 @@ const ServicesLog = ({ barberId }: ServicesLogProps) => {
                   </IconButton>
                 </TableCell>
                 <TableCell>{service.service.name}</TableCell>
-                <TableCell align="right">{formatCurrency(service.service.price)}</TableCell>
+                <TableCell align="right">{formatPrice(service.service.price)}</TableCell>
                 <TableCell>{service.notes}</TableCell>
               </TableRow>
             ))}
@@ -93,10 +116,7 @@ const ServicesLog = ({ barberId }: ServicesLogProps) => {
         <ServiceForm
           barberId={barberId}
           onClose={handleCloseServiceForm}
-          onSuccess={() => {
-            handleCloseServiceForm();
-            // TODO: Refetch services
-          }}
+          onSuccess={handleServiceSuccess}
         />
       </Dialog>
     </Box>

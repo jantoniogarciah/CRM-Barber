@@ -148,8 +148,8 @@ export const api = createApi({
     }),
 
     // Service endpoints
-    getServices: builder.query<Service[], { showInactive?: boolean }>({
-      query: ({ showInactive }) => `/services${showInactive ? '?showInactive=true' : ''}`,
+    getServices: builder.query<Service[], { showInactive?: boolean } | void>({
+      query: (params) => `/services${params?.showInactive ? '?showInactive=true' : ''}`,
       providesTags: ['Service'],
     }),
     getService: builder.query<Service, string>({
