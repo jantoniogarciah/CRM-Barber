@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: crm-barber
+    name: crm-barber-backend
     env: node
     region: oregon
     plan: free
@@ -10,10 +10,12 @@ services:
       echo "Current directory: $(pwd)" &&
       echo "TypeScript version: $(npx tsc --version)" &&
       npm run build &&
-      echo "Dist directory contents:" &&
-      ls -la dist/ &&
-      echo "Dist/prisma contents:" &&
-      ls -la dist/prisma/
+      echo "Running Prisma migrations..." &&
+      npx prisma migrate deploy &&
+      echo "Running seeds..." &&
+      node dist/prisma/seeds/categories.js &&
+      node dist/prisma/seeds/barber.js &&
+      echo "Build process completed successfully"
     startCommand: cd backend && npm run start
     envVars:
       - key: NODE_ENV

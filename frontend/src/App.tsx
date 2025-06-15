@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { store } from './store';
 import { ThemeProvider } from '@mui/material/styles';
@@ -14,6 +14,7 @@ import Layout from './components/Layout';
 import Routes from './routes';
 import AuthInitializer from './components/AuthInitializer';
 import { useOrientation } from './hooks/useOrientation';
+import BarberProfile from './pages/BarberProfile';
 
 const AppContent: React.FC = () => {
   const orientation = useOrientation();
@@ -52,7 +53,18 @@ const AppContent: React.FC = () => {
     >
       <AuthInitializer>
         <Layout>
-          <Routes />
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
+              <Route index element={<Dashboard />} />
+              <Route path="clients" element={<Clients />} />
+              <Route path="services" element={<Services />} />
+              <Route path="categories" element={<Categories />} />
+              <Route path="appointments" element={<Appointments />} />
+              <Route path="barbers" element={<Barbers />} />
+              <Route path="barbers/:id" element={<BarberProfile />} />
+            </Route>
+          </Routes>
         </Layout>
       </AuthInitializer>
       <Toaster position="top-right" />

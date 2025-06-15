@@ -64,7 +64,7 @@ const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
 export const api = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithRetry,
-  tagTypes: ['User', 'Client', 'Service', 'Appointment', 'Notification', 'Category', 'Barber'],
+  tagTypes: ['User', 'Client', 'Service', 'Appointment', 'Notification', 'Category', 'Barber', 'Services', 'Categories', 'Clients', 'Barbers', 'ServicesLog'],
   endpoints: (builder) => ({
     // Auth endpoints
     login: builder.mutation<{ user: User; token: string }, { email: string; password: string }>({
@@ -319,6 +319,27 @@ export const api = createApi({
       }),
       invalidatesTags: ['Barber'],
     }),
+
+    // Servicios realizados
+    getServicesLog: builder.query({
+      query: (barberId) => `/services-log/${barberId}`,
+      providesTags: ['ServicesLog'],
+    }),
+
+    createServiceLog: builder.mutation({
+      query: (serviceLog) => ({
+        url: '/services-log',
+        method: 'POST',
+        body: serviceLog,
+      }),
+      invalidatesTags: ['ServicesLog'],
+    }),
+
+    // Búsqueda de cliente por teléfono
+    getClientByPhone: builder.query({
+      query: (phone) => `/clients/search?phone=${encodeURIComponent(phone)}`,
+      providesTags: ['Clients'],
+    }),
   }),
 });
 
@@ -359,4 +380,7 @@ export const {
   useUpdateBarberMutation,
   useDeleteBarberMutation,
   useToggleBarberStatusMutation,
+  useGetServicesLogQuery,
+  useCreateServiceLogMutation,
+  useGetClientByPhoneQuery,
 } = api;

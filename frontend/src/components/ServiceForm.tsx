@@ -1,232 +1,182 @@
-import React from 'react';
-import { useFormik } from 'formik';
-import * as Yup from 'yup';
+import React, { useState } from 'react';
 import {
   Box,
   Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
   DialogTitle,
+  DialogContent,
+  DialogActions,
   TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  CircularProgress,
+  Autocomplete,
+  Grid,
+  Typography,
+  Alert,
 } from '@mui/material';
-import {
-  useCreateServiceMutation,
-  useUpdateServiceMutation,
-  useGetCategoriesQuery,
-} from '../services/api';
-import { Service } from '../types';
-import { toast } from 'react-hot-toast';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
+import { useGetServicesQuery, useGetClientByPhoneQuery, useCreateServiceLogMutation } from '../services/api';
+import ClientForm from './ClientForm';
 
 interface ServiceFormProps {
-  open: boolean;
+  barberId: string;
   onClose: () => void;
-  service?: Service;
-  onSuccess: (message: string) => void;
-  onError: (message: string) => void;
+  onSuccess: () => void;
 }
 
 interface ServiceFormValues {
-  name: string;
-  description: string;
-  price: number;
-  duration: number;
-  categoryId: string;
-  isActive: boolean;
+  serviceId: string;
+  clientPhone: string;
+  notes: string;
 }
 
 const validationSchema = Yup.object({
-  name: Yup.string()
-    .min(3, 'El nombre debe tener al menos 3 caracteres')
-    .required('El nombre es requerido'),
-  description: Yup.string()
-    .min(10, 'La descripción debe tener al menos 10 caracteres')
-    .required('La descripción es requerida'),
-  price: Yup.number().min(0, 'El precio no puede ser negativo').required('El precio es requerido'),
-  duration: Yup.number()
-    .min(1, 'La duración debe ser mayor a 0')
-    .required('La duración es requerida'),
-  categoryId: Yup.string().required('La categoría es requerida'),
-  isActive: Yup.boolean(),
+  serviceId: Yup.string().required('Debes seleccionar un servicio'),
+  clientPhone: Yup.string().required('El teléfono del cliente es requerido'),
+  notes: Yup.string(),
 });
 
-const CATEGORIES = [
-  'Cabello Hombre',
-  'Barba',
-  'Producto',
-  'Cabello Mujer',
-  'Cabello Niño',
-  'Promoción',
-];
-
-const ServiceForm: React.FC<ServiceFormProps> = ({
-  open,
-  onClose,
-  service,
-  onSuccess,
-  onError,
-}) => {
-  const [createService] = useCreateServiceMutation();
-  const [updateService] = useUpdateServiceMutation();
-  const { data: categories = [], isLoading: isLoadingCategories } = useGetCategoriesQuery({
-    showInactive: false,
-  });
+const ServiceForm = ({ barberId, onClose, onSuccess }: ServiceFormProps) => {
+  const [openClientForm, setOpenClientForm] = useState(false);
+  const { data: services = [] } = useGetServicesQuery();
+  const [createServiceLog] = useCreateServiceLogMutation();
+  const [searchPhone, setSearchPhone] = useState('');
+  const { data: foundClient, isLoading: isSearchingClient } = useGetClientByPhoneQuery(
+    searchPhone,
+    { skip: !searchPhone }
+  );
 
   const formik = useFormik<ServiceFormValues>({
     initialValues: {
-      name: service?.name || '',
-      description: service?.description || '',
-      price: service?.price || 0,
-      duration: service?.duration || 30,
-      categoryId: service?.categoryId || '',
-      isActive: service?.isActive ?? true,
+      serviceId: '',
+      clientPhone: '',
+      notes: '',
     },
     validationSchema,
-    enableReinitialize: true,
     onSubmit: async (values) => {
       try {
-        const serviceData = {
-          name: values.name,
-          description: values.description,
-          price: values.price,
-          duration: values.duration,
-          categoryId: values.categoryId,
-          isActive: values.isActive,
-        };
-
-        if (service?.id) {
-          await updateService({
-            id: service.id.toString(),
-            service: serviceData,
-          }).unwrap();
-        } else {
-          await createService(serviceData).unwrap();
-        }
-        onSuccess('Servicio guardado exitosamente');
-        onClose();
-      } catch (error: any) {
-        console.error('Error saving service:', error);
-        let errorMessage = 'Error al guardar el servicio. ';
-
-        if (error.data?.message) {
-          errorMessage += error.data.message;
-        } else if (error.message) {
-          errorMessage += error.message;
-        } else if (error.data?.errors) {
-          errorMessage += error.data.errors.map((e: any) => e.msg).join(', ');
-        }
-
-        onError(errorMessage);
+        await createServiceLog({
+          barberId,
+          serviceId: values.serviceId,
+          clientPhone: values.clientPhone,
+          notes: values.notes,
+        }).unwrap();
+        onSuccess();
+      } catch (error) {
+        console.error('Error creating service log:', error);
       }
     },
   });
 
-  if (isLoadingCategories) {
-    return (
-      <Dialog open={open} onClose={onClose}>
-        <DialogContent>
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-            <CircularProgress />
-          </Box>
-        </DialogContent>
-      </Dialog>
-    );
-  }
+  const handlePhoneSearch = (phone: string) => {
+    setSearchPhone(phone);
+    formik.setFieldValue('clientPhone', phone);
+  };
+
+  const handleCreateClient = () => {
+    setOpenClientForm(true);
+  };
+
+  const handleClientCreated = (phone: string) => {
+    setOpenClientForm(false);
+    handlePhoneSearch(phone);
+  };
+
+  const selectedService = services.find(
+    (service) => service.id === formik.values.serviceId
+  );
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{service ? 'Editar Servicio' : 'Nuevo Servicio'}</DialogTitle>
-      <form onSubmit={formik.handleSubmit}>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-            <TextField
-              fullWidth
-              id="name"
-              name="name"
-              label="Nombre"
-              value={formik.values.name}
-              onChange={formik.handleChange}
-              error={formik.touched.name && Boolean(formik.errors.name)}
-              helperText={formik.touched.name && formik.errors.name}
+    <Box component="form" onSubmit={formik.handleSubmit}>
+      <DialogTitle>Registrar Nuevo Servicio</DialogTitle>
+      <DialogContent>
+        <Grid container spacing={2} sx={{ mt: 1 }}>
+          <Grid item xs={12}>
+            <Autocomplete
+              options={services}
+              getOptionLabel={(option) => `${option.name} - ${option.price}`}
+              onChange={(_, value) => formik.setFieldValue('serviceId', value?.id || '')}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Servicio"
+                  error={formik.touched.serviceId && Boolean(formik.errors.serviceId)}
+                  helperText={formik.touched.serviceId && formik.errors.serviceId}
+                />
+              )}
             />
+          </Grid>
 
-            <TextField
-              fullWidth
-              id="price"
-              name="price"
-              label="Precio"
-              type="number"
-              value={formik.values.price}
-              onChange={formik.handleChange}
-              error={formik.touched.price && Boolean(formik.errors.price)}
-              helperText={formik.touched.price && formik.errors.price}
-            />
-
-            <TextField
-              fullWidth
-              id="duration"
-              name="duration"
-              label="Duración (minutos)"
-              type="number"
-              value={formik.values.duration}
-              onChange={formik.handleChange}
-              error={formik.touched.duration && Boolean(formik.errors.duration)}
-              helperText={formik.touched.duration && formik.errors.duration}
-            />
-
-            <FormControl fullWidth>
-              <InputLabel id="category-label">Categoría</InputLabel>
-              <Select
-                labelId="category-label"
-                id="categoryId"
-                name="categoryId"
-                value={formik.values.categoryId}
-                onChange={formik.handleChange}
-                label="Categoría"
-                error={formik.touched.categoryId && Boolean(formik.errors.categoryId)}
+          <Grid item xs={12}>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <TextField
+                fullWidth
+                label="Teléfono del Cliente"
+                value={formik.values.clientPhone}
+                onChange={(e) => handlePhoneSearch(e.target.value)}
+                error={formik.touched.clientPhone && Boolean(formik.errors.clientPhone)}
+                helperText={formik.touched.clientPhone && formik.errors.clientPhone}
+              />
+              <Button
+                variant="outlined"
+                onClick={handleCreateClient}
+                sx={{ whiteSpace: 'nowrap' }}
               >
-                <MenuItem value="">Ninguna</MenuItem>
-                {categories.map((category) => (
-                  <MenuItem key={category.id} value={category.id}>
-                    {category.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+                Nuevo Cliente
+              </Button>
+            </Box>
+          </Grid>
 
+          {foundClient && (
+            <Grid item xs={12}>
+              <Alert severity="info">
+                Cliente encontrado: {foundClient.firstName} {foundClient.lastName}
+              </Alert>
+            </Grid>
+          )}
+
+          <Grid item xs={12}>
             <TextField
               fullWidth
-              id="description"
-              name="description"
-              label="Descripción"
               multiline
               rows={4}
-              value={formik.values.description}
+              label="Notas"
+              name="notes"
+              value={formik.values.notes}
               onChange={formik.handleChange}
-              error={formik.touched.description && Boolean(formik.errors.description)}
-              helperText={formik.touched.description && formik.errors.description}
+              error={formik.touched.notes && Boolean(formik.errors.notes)}
+              helperText={formik.touched.notes && formik.errors.notes}
             />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={onClose}>Cancelar</Button>
-          <Button type="submit" variant="contained" disabled={formik.isSubmitting}>
-            {formik.isSubmitting ? (
-              <CircularProgress size={24} />
-            ) : service ? (
-              'Actualizar'
-            ) : (
-              'Crear'
-            )}
-          </Button>
-        </DialogActions>
-      </form>
-    </Dialog>
+          </Grid>
+
+          {selectedService && (
+            <Grid item xs={12}>
+              <Typography variant="subtitle1" gutterBottom>
+                Precio del servicio: ${selectedService.price}
+              </Typography>
+            </Grid>
+          )}
+        </Grid>
+      </DialogContent>
+
+      <DialogActions>
+        <Button onClick={onClose}>Cancelar</Button>
+        <Button
+          type="submit"
+          variant="contained"
+          disabled={!formik.isValid || formik.isSubmitting}
+        >
+          Registrar Servicio
+        </Button>
+      </DialogActions>
+
+      {openClientForm && (
+        <ClientForm
+          open={openClientForm}
+          onClose={() => setOpenClientForm(false)}
+          onSuccess={(phone) => handleClientCreated(phone)}
+          onError={() => {}}
+        />
+      )}
+    </Box>
   );
 };
 
