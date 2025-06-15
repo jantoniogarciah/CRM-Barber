@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { getServicesLog, createServiceLog } from '../controllers/servicesLog.controller';
 import { authenticateToken } from '../middleware/auth';
 
-const router = Router();
+const router: Router = Router();
 
 // Proteger todas las rutas con autenticación
 router.use(authenticateToken);

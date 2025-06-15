@@ -58,7 +58,7 @@ export const createClient = async (req: Request, res: Response) => {
     const { firstName, lastName, email, phone, notes } = req.body;
 
     // Verificar si ya existe un cliente con ese teléfono
-    const existingClient = await prisma.client.findUnique({
+    const existingClient = await prisma.client.findFirst({
       where: { phone },
     });
 
@@ -84,7 +84,7 @@ export const createClient = async (req: Request, res: Response) => {
       },
     });
 
-    res.status(201).json(client);
+    return res.status(201).json(client);
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       // El error P2002 es para violaciones de unicidad
@@ -95,7 +95,7 @@ export const createClient = async (req: Request, res: Response) => {
       }
     }
     console.error("Error creating client:", error);
-    res.status(500).json({ message: "Error al crear el cliente" });
+    return res.status(500).json({ message: "Error al crear el cliente" });
   }
 };
 

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { AppError } from '../utils/appError';
 
 const prisma = new PrismaClient();
@@ -39,10 +39,10 @@ export const getServicesLog = async (req: Request, res: Response) => {
       },
     });
 
-    res.json(servicesLog);
+    return res.json(servicesLog);
   } catch (error) {
     console.error('Error fetching services log:', error);
-    res.status(500).json({ message: 'Error al obtener el registro de servicios' });
+    return res.status(500).json({ message: 'Error al obtener el registro de servicios' });
   }
 };
 
@@ -52,7 +52,7 @@ export const createServiceLog = async (req: Request, res: Response) => {
     const { barberId, serviceId, clientPhone, notes } = req.body;
 
     // Verificar que el cliente existe
-    const client = await prisma.client.findUnique({
+    const client = await prisma.client.findFirst({
       where: { phone: clientPhone },
     });
 
@@ -109,9 +109,9 @@ export const createServiceLog = async (req: Request, res: Response) => {
       },
     });
 
-    res.status(201).json(serviceLog);
+    return res.status(201).json(serviceLog);
   } catch (error) {
     console.error('Error creating service log:', error);
-    res.status(500).json({ message: 'Error al registrar el servicio' });
+    return res.status(500).json({ message: 'Error al registrar el servicio' });
   }
 }; 
