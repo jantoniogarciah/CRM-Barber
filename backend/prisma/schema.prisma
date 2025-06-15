@@ -74,7 +74,7 @@ model Client {
   firstName   String
   lastName    String
   email       String?
-  phone       String
+  phone       String        @unique
   notes       String?
   isActive    Boolean       @default(true)
   createdAt   DateTime      @default(now())

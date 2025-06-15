@@ -10,6 +10,7 @@ import {
   TextField,
   Grid,
   Box,
+  Alert,
 } from '@mui/material';
 import { Client } from '../types';
 import { useCreateClientMutation, useUpdateClientMutation } from '../services/api';
@@ -49,6 +50,11 @@ const ClientForm = ({
 }: ClientFormProps): React.ReactElement => {
   const [createClient] = useCreateClientMutation();
   const [updateClient] = useUpdateClientMutation();
+  const [existingClient, setExistingClient] = React.useState<{
+    firstName: string;
+    lastName: string;
+    phone: string;
+  } | null>(null);
 
   const formik = useFormik<ClientFormValues>({
     initialValues: {
@@ -68,13 +74,18 @@ const ClientForm = ({
           }).unwrap();
           onSuccess('Cliente actualizado exitosamente');
         } else {
-          await createClient(values).unwrap();
+          const result = await createClient(values).unwrap();
           onSuccess('Cliente creado exitosamente');
         }
+        setExistingClient(null);
         onClose();
       } catch (error: any) {
         console.error('Error saving client:', error);
-        onError(error.data?.message || 'Error al guardar el cliente');
+        if (error.data?.existingClient) {
+          setExistingClient(error.data.existingClient);
+        } else {
+          onError(error.data?.message || 'Error al guardar el cliente');
+        }
       }
     },
   });
@@ -90,6 +101,7 @@ const ClientForm = ({
           notes: client?.notes || '',
         },
       });
+      setExistingClient(null);
     }
   }, [open, client]);
 
@@ -98,6 +110,15 @@ const ClientForm = ({
       <DialogTitle>{client ? 'Editar Cliente' : 'Nuevo Cliente'}</DialogTitle>
       <Box component="form" onSubmit={formik.handleSubmit}>
         <DialogContent>
+          {existingClient && (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              Ya existe un cliente con este número de teléfono:
+              <br />
+              Nombre: {existingClient.firstName} {existingClient.lastName}
+              <br />
+              Teléfono: {existingClient.phone}
+            </Alert>
+          )}
           <Box sx={{ mt: 2 }}>
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6}>
@@ -131,7 +152,10 @@ const ClientForm = ({
                   name="phone"
                   label="Teléfono"
                   value={formik.values.phone}
-                  onChange={formik.handleChange}
+                  onChange={(e) => {
+                    formik.handleChange(e);
+                    setExistingClient(null);
+                  }}
                   error={formik.touched.phone && Boolean(formik.errors.phone)}
                   helperText={formik.touched.phone && formik.errors.phone}
                 />
