@@ -10,19 +10,25 @@ import {
 } from "../controllers/barber.controller";
 import { validateRequest } from "../middleware/validate-request";
 import { requireAuth } from "../middleware/require-auth";
+import { requireBarber } from "../middleware/require-barber";
 import { requireAdmin } from "../middleware/require-admin";
 
 const router: Router = Router();
 
 // Apply authentication middleware to all routes
 router.use(requireAuth);
-router.use(requireAdmin);
+
+// Solo requerir admin para operaciones de modificación
+router.post("/", requireAdmin);
+router.put("/:id", requireAdmin);
+router.patch("/:id/toggle-status", requireAdmin);
+router.delete("/:id", requireAdmin);
 
 // Get all barbers
-router.get("/", getBarbers);
+router.get("/", requireBarber, getBarbers);
 
 // Get specific barber
-router.get("/:id", getBarber);
+router.get("/:id", requireBarber, getBarber);
 
 // Create barber
 router.post(

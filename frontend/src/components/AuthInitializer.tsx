@@ -13,8 +13,10 @@ const AuthInitializer: React.FC<AuthInitializerProps> = ({ children }) => {
   const dispatch = useAppDispatch();
   const reduxUser = useAppSelector(selectUser);
   const [isInitializing, setIsInitializing] = useState(true);
+  const storedToken = localStorage.getItem('token');
+  
   const { data: currentUser, error } = useGetCurrentUserQuery(undefined, {
-    skip: !localStorage.getItem('token') || !!reduxUser,
+    skip: !storedToken || !!reduxUser,
   });
 
   useEffect(() => {
@@ -33,11 +35,13 @@ const AuthInitializer: React.FC<AuthInitializerProps> = ({ children }) => {
                 token: storedToken,
               })
             );
+          } else {
+            throw new Error('Invalid user data in localStorage');
           }
         }
       } catch (error) {
         console.error('Error restoring user from localStorage:', error);
-        handleAuthError();
+        handleAuthError('Error al restaurar la sesión');
       } finally {
         setIsInitializing(false);
       }
@@ -49,26 +53,36 @@ const AuthInitializer: React.FC<AuthInitializerProps> = ({ children }) => {
   useEffect(() => {
     if (error) {
       console.error('Error fetching current user:', error);
-      handleAuthError();
+      handleAuthError('Error al verificar la sesión actual');
     } else if (currentUser) {
       const token = localStorage.getItem('token');
       if (token) {
         dispatch(
           setCredentials({
-            user: currentUser,
+            user: {
+              ...currentUser,
+              role: currentUser.role?.toUpperCase(),
+            },
             token,
           })
         );
+      } else {
+        handleAuthError('Token no encontrado');
       }
     }
   }, [currentUser, error, dispatch]);
 
-  const handleAuthError = () => {
+  const handleAuthError = (message: string) => {
+    // Limpiar datos de autenticación
     localStorage.clear();
     sessionStorage.clear();
     dispatch(clearCredentials());
-    toast.error('Error al restaurar la sesión. Por favor, inicia sesión nuevamente.');
-    window.location.href = '/login';
+
+    // Solo mostrar mensaje y redirigir si no estamos en la página de login
+    if (window.location.pathname !== '/login') {
+      toast.error(message);
+      window.location.href = '/login';
+    }
   };
 
   if (isInitializing) {

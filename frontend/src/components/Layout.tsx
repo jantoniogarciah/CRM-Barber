@@ -87,16 +87,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         icon: <Event sx={{ fontSize: 24, width: 24, height: 24 }} />,
         path: '/appointments',
       },
-      {
-        text: 'Clientes',
-        icon: <People sx={{ fontSize: 24, width: 24, height: 24 }} />,
-        path: '/clients',
-      },
     ];
 
-    // Only show Services and Barbers for admin users
+    // Only show Clients, Services and Barbers for admin users
     if (user?.role?.toUpperCase() === 'ADMIN') {
       items.push(
+        {
+          text: 'Clientes',
+          icon: <People sx={{ fontSize: 24, width: 24, height: 24 }} />,
+          path: '/clients',
+        },
         {
           text: 'Servicios',
           icon: <ContentCut sx={{ fontSize: 24, width: 24, height: 24 }} />,

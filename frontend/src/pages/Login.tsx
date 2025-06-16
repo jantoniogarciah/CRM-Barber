@@ -26,8 +26,8 @@ interface LoginFormValues {
 }
 
 const validationSchema = Yup.object({
-  email: Yup.string().email('Invalid email address').required('Required'),
-  password: Yup.string().required('Required'),
+  email: Yup.string().email('Correo electrónico inválido').required('El correo es requerido'),
+  password: Yup.string().required('La contraseña es requerida'),
 });
 
 const Login: React.FC = () => {
@@ -37,6 +37,12 @@ const Login: React.FC = () => {
   const [error, setError] = React.useState<string | null>(null);
   const theme = useTheme();
 
+  React.useEffect(() => {
+    // Limpiar cualquier token anterior al montar el componente
+    localStorage.clear();
+    sessionStorage.clear();
+  }, []);
+
   const formik = useFormik<LoginFormValues>({
     initialValues: {
       email: '',
@@ -45,30 +51,39 @@ const Login: React.FC = () => {
     validationSchema,
     onSubmit: async (values) => {
       try {
+        setError(null);
         const result = await login(values).unwrap();
 
-        // Store token and user in localStorage
+        if (!result.token || !result.user) {
+          throw new Error('Respuesta de login inválida');
+        }
+
+        // Almacenar token y usuario
         localStorage.setItem('token', result.token);
         localStorage.setItem('user', JSON.stringify(result.user));
 
-        // Update Redux state
+        // Actualizar estado de Redux
         dispatch(setCredentials(result));
 
-        // Show success message
+        // Mostrar mensaje de éxito
         toast.success('¡Bienvenido!');
 
-        // Navigate to dashboard
-        navigate('/');
-      } catch (error: any) {
-        console.error('Login error:', error);
+        // Navegar al dashboard
+        navigate('/', { replace: true });
+      } catch (err: any) {
+        console.error('Login error:', err);
         
-        // Handle different types of errors
-        if (error.status === 'FETCH_ERROR') {
-          toast.error('Error de conexión. Por favor, verifica tu conexión a internet.');
-        } else if (error.data?.message) {
-          toast.error(error.data.message);
+        // Limpiar datos de autenticación en caso de error
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // Manejar diferentes tipos de errores
+        if (err.status === 'FETCH_ERROR') {
+          setError('Error de conexión. Por favor, verifica tu conexión a internet.');
+        } else if (err.data?.message) {
+          setError(err.data.message);
         } else {
-          toast.error('Error al iniciar sesión. Por favor, intenta nuevamente.');
+          setError('Error al iniciar sesión. Por favor, intenta nuevamente.');
         }
       }
     },
@@ -100,7 +115,7 @@ const Login: React.FC = () => {
             Clipper Cut Barber Sports
           </Typography>
           <Typography component="h2" variant="h6" sx={{ mt: 2 }} color="textSecondary">
-            Sign in
+            Iniciar Sesión
           </Typography>
           {error && (
             <Alert severity="error" sx={{ mt: 2, width: '100%' }}>
@@ -112,7 +127,7 @@ const Login: React.FC = () => {
               fullWidth
               id="email"
               name="email"
-              label="Email"
+              label="Correo electrónico"
               value={formik.values.email}
               onChange={formik.handleChange}
               error={formik.touched.email && Boolean(formik.errors.email)}
@@ -120,28 +135,13 @@ const Login: React.FC = () => {
               margin="normal"
               autoComplete="email"
               autoFocus
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '& fieldset': {
-                    borderColor:
-                      theme.palette.mode === 'dark'
-                        ? 'rgba(255, 255, 255, 0.23)'
-                        : 'rgba(0, 0, 0, 0.23)',
-                  },
-                  '&:hover fieldset': {
-                    borderColor:
-                      theme.palette.mode === 'dark'
-                        ? 'rgba(255, 255, 255, 0.5)'
-                        : 'rgba(0, 0, 0, 0.5)',
-                  },
-                },
-              }}
+              disabled={isLoading}
             />
             <TextField
               fullWidth
               id="password"
               name="password"
-              label="Password"
+              label="Contraseña"
               type="password"
               value={formik.values.password}
               onChange={formik.handleChange}
@@ -149,22 +149,7 @@ const Login: React.FC = () => {
               helperText={formik.touched.password && formik.errors.password}
               margin="normal"
               autoComplete="current-password"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '& fieldset': {
-                    borderColor:
-                      theme.palette.mode === 'dark'
-                        ? 'rgba(255, 255, 255, 0.23)'
-                        : 'rgba(0, 0, 0, 0.23)',
-                  },
-                  '&:hover fieldset': {
-                    borderColor:
-                      theme.palette.mode === 'dark'
-                        ? 'rgba(255, 255, 255, 0.5)'
-                        : 'rgba(0, 0, 0, 0.5)',
-                  },
-                },
-              }}
+              disabled={isLoading}
             />
             <Button
               type="submit"
@@ -173,14 +158,14 @@ const Login: React.FC = () => {
               sx={{ mt: 3, mb: 2 }}
               disabled={isLoading}
             >
-              {isLoading ? <CircularProgress size={24} /> : 'Login'}
+              {isLoading ? <CircularProgress size={24} /> : 'Iniciar Sesión'}
             </Button>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Link href="/forgot-password" variant="body2" color="primary">
-                Forgot password?
+                ¿Olvidaste tu contraseña?
               </Link>
               <Link href="/register" variant="body2" color="primary">
-                Don&apos;t have an account? Sign up
+                ¿No tienes cuenta? Regístrate
               </Link>
             </Box>
           </Box>

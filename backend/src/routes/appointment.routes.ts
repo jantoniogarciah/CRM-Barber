@@ -9,12 +9,14 @@ import {
   getLastCompletedAppointments,
 } from "../controllers/appointment.controller";
 import { validateRequest } from "../middleware/validateRequest";
-import { authenticateToken } from "../middleware/auth";
+import { requireAuth } from "../middleware/require-auth";
+import { requireBarber } from "../middleware/require-barber";
 
 const router: Router = Router();
 
 // Apply authentication middleware to all routes
-router.use(authenticateToken);
+router.use(requireAuth);
+router.use(requireBarber);
 
 // Get all appointments
 router.get("/", getAppointments);

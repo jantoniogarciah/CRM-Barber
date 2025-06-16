@@ -68,9 +68,9 @@ const AppRoutes: React.FC = () => {
       <Route
         path="/clients"
         element={
-          <PrivateRoute>
+          <AdminRoute>
             <Clients />
-          </PrivateRoute>
+          </AdminRoute>
         }
       />
 
