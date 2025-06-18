@@ -22,15 +22,20 @@ import {
   TableHead,
   TableRow,
   Paper,
+  IconButton,
+  Tooltip,
+  Dialog as ConfirmDialog,
+  DialogContentText,
 } from '@mui/material';
-import { Add as AddIcon, Search as SearchIcon } from '@mui/icons-material';
+import { Add as AddIcon, Search as SearchIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { 
   useGetServicesQuery, 
   useGetClientByPhoneQuery, 
   useCreateSaleMutation, 
   useGetBarbersQuery, 
   useGetSalesQuery,
-  useCreateClientMutation 
+  useCreateClientMutation,
+  useDeleteSaleMutation
 } from '../services/api';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
@@ -42,6 +47,7 @@ const Sales: React.FC = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [selectedService, setSelectedService] = useState('');
   const [selectedBarber, setSelectedBarber] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'EFECTIVO' | 'DEBITO' | 'CREDITO'>('EFECTIVO');
   const [notes, setNotes] = useState('');
   const [showNewClientForm, setShowNewClientForm] = useState(false);
   const [newClient, setNewClient] = useState({
@@ -50,6 +56,8 @@ const Sales: React.FC = () => {
     email: '',
     phone: '',
   });
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [saleToDelete, setSaleToDelete] = useState<string | null>(null);
 
   const { data: services = [], isLoading: isLoadingServices } = useGetServicesQuery({ showInactive: false });
   const { data: barbers = [], isLoading: isLoadingBarbers } = useGetBarbersQuery({ showInactive: false });
@@ -59,6 +67,7 @@ const Sales: React.FC = () => {
   const [createSale] = useCreateSaleMutation();
   const { data: sales = [], isLoading: isLoadingSales } = useGetSalesQuery();
   const [createClient] = useCreateClientMutation();
+  const [deleteSale] = useDeleteSaleMutation();
 
   const handleNewSale = () => {
     setOpenNewSale(true);
@@ -69,6 +78,7 @@ const Sales: React.FC = () => {
     setPhoneNumber('');
     setSelectedService('');
     setSelectedBarber('');
+    setPaymentMethod('EFECTIVO');
     setNotes('');
     setShowNewClientForm(false);
     setNewClient({
@@ -130,6 +140,7 @@ const Sales: React.FC = () => {
         serviceId: selectedService,
         barberId: selectedBarber,
         amount: service.price,
+        paymentMethod,
         notes: notes || undefined,
       }).unwrap();
 
@@ -139,6 +150,30 @@ const Sales: React.FC = () => {
       console.error('Error al registrar la venta:', error);
       toast.error('Error al registrar la venta');
     }
+  };
+
+  const handleDeleteClick = (saleId: string) => {
+    setSaleToDelete(saleId);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!saleToDelete) return;
+
+    try {
+      await deleteSale(saleToDelete).unwrap();
+      toast.success('Venta eliminada exitosamente');
+      setDeleteConfirmOpen(false);
+      setSaleToDelete(null);
+    } catch (error) {
+      console.error('Error al eliminar la venta:', error);
+      toast.error('Error al eliminar la venta');
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteConfirmOpen(false);
+    setSaleToDelete(null);
   };
 
   if (isLoadingSales) {
@@ -172,8 +207,10 @@ const Sales: React.FC = () => {
               <TableCell>Servicio</TableCell>
               <TableCell>Barbero</TableCell>
               <TableCell>Monto</TableCell>
+              <TableCell>Método de Pago</TableCell>
               <TableCell>Estado</TableCell>
               <TableCell>Notas</TableCell>
+              <TableCell>Acciones</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -190,6 +227,7 @@ const Sales: React.FC = () => {
                   {sale.barber.firstName} {sale.barber.lastName}
                 </TableCell>
                 <TableCell>${sale.amount}</TableCell>
+                <TableCell>{sale.paymentMethod}</TableCell>
                 <TableCell>
                   <Alert 
                     severity={
@@ -201,168 +239,192 @@ const Sales: React.FC = () => {
                   >
                     {sale.status === 'completed' ? 'Completada' :
                      sale.status === 'cancelled' ? 'Cancelada' :
-                     sale.status === 'refunded' ? 'Reembolsada' : 
-                     'Desconocido'}
+                     'Reembolsada'}
                   </Alert>
                 </TableCell>
-                <TableCell>{sale.notes || '-'}</TableCell>
-              </TableRow>
-            ))}
-            {sales.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={7} align="center">
-                  No hay ventas registradas
+                <TableCell>{sale.notes}</TableCell>
+                <TableCell>
+                  <Tooltip title="Eliminar venta">
+                    <IconButton
+                      color="error"
+                      onClick={() => handleDeleteClick(sale.id)}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Tooltip>
                 </TableCell>
               </TableRow>
-            )}
+            ))}
           </TableBody>
         </Table>
       </TableContainer>
 
-      <Dialog open={openNewSale} onClose={handleClose} maxWidth="sm" fullWidth>
+      <Dialog open={openNewSale} onClose={handleClose} maxWidth="md" fullWidth>
         <DialogTitle>Nueva Venta</DialogTitle>
         <DialogContent>
-          <Box sx={{ mt: 2 }}>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <TextField
-                    label="Teléfono del Cliente"
-                    value={phoneNumber}
-                    onChange={handlePhoneChange}
-                    fullWidth
-                    helperText={phoneNumber && phoneNumber.length < 10 ? 
-                      'Ingresa al menos 10 dígitos' : 
-                      phoneNumber.length >= 10 && !client && !isSearchingClient ? 
-                      'Cliente no encontrado' : ''}
-                    error={phoneNumber.length >= 10 && !client && !isSearchingClient}
-                  />
-                </Box>
-              </Grid>
-
-              {phoneNumber.length >= 10 && !client && !isSearchingClient && !showNewClientForm && (
-                <Grid item xs={12}>
-                  <Alert severity="info" action={
-                    <Button color="inherit" size="small" onClick={() => setShowNewClientForm(true)}>
-                      Registrar
-                    </Button>
-                  }>
-                    Cliente no encontrado. ¿Deseas registrarlo?
-                  </Alert>
-                </Grid>
-              )}
-
-              {showNewClientForm && (
-                <>
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle1" gutterBottom>
-                      Registrar Nuevo Cliente
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <TextField
-                      label="Nombre"
-                      value={newClient.firstName}
-                      onChange={(e) => setNewClient(prev => ({ ...prev, firstName: e.target.value }))}
-                      fullWidth
-                      required
-                    />
-                  </Grid>
-                  <Grid item xs={6}>
-                    <TextField
-                      label="Apellido"
-                      value={newClient.lastName}
-                      onChange={(e) => setNewClient(prev => ({ ...prev, lastName: e.target.value }))}
-                      fullWidth
-                      required
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <TextField
-                      label="Email"
-                      type="email"
-                      value={newClient.email}
-                      onChange={(e) => setNewClient(prev => ({ ...prev, email: e.target.value }))}
-                      fullWidth
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      fullWidth
-                      onClick={handleCreateClient}
-                    >
-                      Guardar Cliente
-                    </Button>
-                  </Grid>
-                </>
-              )}
-
-              {client && (
-                <Grid item xs={12}>
-                  <Alert severity="success">
-                    Cliente encontrado: {client.firstName} {client.lastName}
-                  </Alert>
-                </Grid>
-              )}
-
-              <Grid item xs={12}>
-                <FormControl fullWidth>
-                  <InputLabel>Servicio</InputLabel>
-                  <Select
-                    value={selectedService}
-                    onChange={(e) => setSelectedService(e.target.value)}
-                    label="Servicio"
-                  >
-                    {services?.map((service) => (
-                      <MenuItem key={service.id} value={service.id}>
-                        {service.name} - ${service.price}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-
-              <Grid item xs={12}>
-                <FormControl fullWidth>
-                  <InputLabel>Barbero</InputLabel>
-                  <Select
-                    value={selectedBarber}
-                    onChange={(e) => setSelectedBarber(e.target.value)}
-                    label="Barbero"
-                  >
-                    {barbers?.map((barber) => (
-                      <MenuItem key={barber.id} value={barber.id}>
-                        {barber.firstName} {barber.lastName}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-
-              <Grid item xs={12}>
-                <TextField
-                  label="Notas"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  fullWidth
-                  multiline
-                  rows={2}
-                />
-              </Grid>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Teléfono del cliente"
+                value={phoneNumber}
+                onChange={handlePhoneChange}
+                InputProps={{
+                  endAdornment: isSearchingClient && (
+                    <CircularProgress size={20} />
+                  ),
+                }}
+              />
             </Grid>
-          </Box>
+
+            {!client && phoneNumber.length >= 10 && !isSearchingClient && (
+              <Grid item xs={12}>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  onClick={() => setShowNewClientForm(true)}
+                >
+                  Registrar Nuevo Cliente
+                </Button>
+              </Grid>
+            )}
+
+            {showNewClientForm && (
+              <>
+                <Grid item xs={6}>
+                  <TextField
+                    fullWidth
+                    label="Nombre"
+                    value={newClient.firstName}
+                    onChange={(e) =>
+                      setNewClient((prev) => ({ ...prev, firstName: e.target.value }))
+                    }
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    fullWidth
+                    label="Apellido"
+                    value={newClient.lastName}
+                    onChange={(e) =>
+                      setNewClient((prev) => ({ ...prev, lastName: e.target.value }))
+                    }
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Email"
+                    type="email"
+                    value={newClient.email}
+                    onChange={(e) =>
+                      setNewClient((prev) => ({ ...prev, email: e.target.value }))
+                    }
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handleCreateClient}
+                  >
+                    Registrar Cliente
+                  </Button>
+                </Grid>
+              </>
+            )}
+
+            {client && (
+              <Grid item xs={12}>
+                <Alert severity="success">
+                  Cliente: {client.firstName} {client.lastName}
+                </Alert>
+              </Grid>
+            )}
+
+            <Grid item xs={12}>
+              <FormControl fullWidth>
+                <InputLabel>Servicio</InputLabel>
+                <Select
+                  value={selectedService}
+                  onChange={(e) => setSelectedService(e.target.value)}
+                  label="Servicio"
+                >
+                  {services.map((service) => (
+                    <MenuItem key={service.id} value={service.id}>
+                      {service.name} - ${service.price}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12}>
+              <FormControl fullWidth>
+                <InputLabel>Barbero</InputLabel>
+                <Select
+                  value={selectedBarber}
+                  onChange={(e) => setSelectedBarber(e.target.value)}
+                  label="Barbero"
+                >
+                  {barbers.map((barber) => (
+                    <MenuItem key={barber.id} value={barber.id}>
+                      {barber.firstName} {barber.lastName}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12}>
+              <FormControl fullWidth>
+                <InputLabel>Método de Pago</InputLabel>
+                <Select
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value as 'EFECTIVO' | 'DEBITO' | 'CREDITO')}
+                  label="Método de Pago"
+                >
+                  <MenuItem value="EFECTIVO">Efectivo</MenuItem>
+                  <MenuItem value="DEBITO">Débito</MenuItem>
+                  <MenuItem value="CREDITO">Crédito</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Notas"
+                multiline
+                rows={4}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              />
+            </Grid>
+          </Grid>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancelar</Button>
-          <Button 
-            onClick={handleSaleSubmit} 
-            variant="contained" 
-            color="primary"
-            disabled={!client || !selectedService || !selectedBarber}
-          >
+          <Button onClick={handleSaleSubmit} variant="contained" color="primary">
             Registrar Venta
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={deleteConfirmOpen}
+        onClose={handleDeleteCancel}
+      >
+        <DialogTitle>Confirmar Eliminación</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            ¿Estás seguro de que deseas eliminar esta venta? Esta acción no se puede deshacer.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteCancel}>Cancelar</Button>
+          <Button onClick={handleDeleteConfirm} color="error" variant="contained">
+            Eliminar
           </Button>
         </DialogActions>
       </Dialog>

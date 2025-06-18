@@ -5,6 +5,7 @@ import {
   getSale,
   createSale,
   updateSale,
+  deleteSale,
 } from "../controllers/sale.controller";
 import { validateRequest } from "../middleware/validate-request";
 import { requireAuth } from "../middleware/require-auth";
@@ -28,6 +29,10 @@ router.post(
     body("serviceId").notEmpty().withMessage("El servicio es requerido"),
     body("barberId").notEmpty().withMessage("El barbero es requerido"),
     body("amount").optional().isFloat().withMessage("El monto debe ser un número"),
+    body("paymentMethod")
+      .optional()
+      .isIn(["EFECTIVO", "DEBITO", "CREDITO"])
+      .withMessage("Método de pago inválido"),
     body("notes").optional().isString().withMessage("Las notas deben ser texto"),
     body("newClient").optional().isObject().withMessage("Los datos del nuevo cliente deben ser un objeto"),
     body("newClient.firstName").optional().isString().withMessage("El nombre debe ser texto"),
@@ -47,10 +52,17 @@ router.put(
       .optional()
       .isIn(["completed", "cancelled", "refunded"])
       .withMessage("Estado inválido"),
+    body("paymentMethod")
+      .optional()
+      .isIn(["EFECTIVO", "DEBITO", "CREDITO"])
+      .withMessage("Método de pago inválido"),
     body("notes").optional().isString().withMessage("Las notas deben ser texto"),
     validateRequest,
   ],
   updateSale
 );
+
+// Delete sale
+router.delete("/:id", deleteSale);
 
 export { router as saleRouter }; 

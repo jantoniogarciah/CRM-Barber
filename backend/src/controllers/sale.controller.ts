@@ -53,7 +53,7 @@ export const getSale = async (req: Request, res: Response) => {
 // Create sale
 export const createSale = async (req: Request, res: Response) => {
   try {
-    const { clientId, serviceId, barberId, amount, notes } = req.body;
+    const { clientId, serviceId, barberId, amount, notes, paymentMethod } = req.body;
 
     // Validate that client exists or create new one
     let client = await prisma.client.findFirst({
@@ -95,6 +95,12 @@ export const createSale = async (req: Request, res: Response) => {
       throw new AppError("Barbero no encontrado", 404);
     }
 
+    // Validate payment method
+    const validPaymentMethods = ["EFECTIVO", "DEBITO", "CREDITO"];
+    if (paymentMethod && !validPaymentMethods.includes(paymentMethod)) {
+      throw new AppError("Método de pago inválido", 400);
+    }
+
     const sale = await prisma.sale.create({
       data: {
         clientId: client.id,
@@ -102,6 +108,7 @@ export const createSale = async (req: Request, res: Response) => {
         barberId,
         amount: amount || service.price,
         status: "completed",
+        paymentMethod: paymentMethod || "EFECTIVO",
         notes,
       },
       include: {
@@ -125,12 +132,21 @@ export const createSale = async (req: Request, res: Response) => {
 export const updateSale = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { status, notes } = req.body;
+    const { status, notes, paymentMethod } = req.body;
+
+    // Validate payment method if provided
+    if (paymentMethod) {
+      const validPaymentMethods = ["EFECTIVO", "DEBITO", "CREDITO"];
+      if (!validPaymentMethods.includes(paymentMethod)) {
+        throw new AppError("Método de pago inválido", 400);
+      }
+    }
 
     const sale = await prisma.sale.update({
       where: { id },
       data: {
         status: status as "completed" | "cancelled" | "refunded",
+        paymentMethod,
         notes,
       },
       include: {
@@ -144,5 +160,31 @@ export const updateSale = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error updating sale:", error);
     throw new AppError("Error al actualizar la venta", 500);
+  }
+};
+
+// Delete sale
+export const deleteSale = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // Check if sale exists
+    const existingSale = await prisma.sale.findUnique({
+      where: { id },
+    });
+
+    if (!existingSale) {
+      throw new AppError("Venta no encontrada", 404);
+    }
+
+    // Delete the sale
+    await prisma.sale.delete({
+      where: { id },
+    });
+
+    return res.json({ message: "Venta eliminada correctamente" });
+  } catch (error) {
+    console.error("Error deleting sale:", error);
+    throw new AppError("Error al eliminar la venta", 500);
   }
 }; 

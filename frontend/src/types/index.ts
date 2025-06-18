@@ -95,6 +95,7 @@ export interface Sale {
   barberId: string;
   amount: number;
   status: 'completed' | 'cancelled' | 'refunded';
+  paymentMethod: 'EFECTIVO' | 'DEBITO' | 'CREDITO';
   notes?: string;
   createdAt: string;
   updatedAt: string;

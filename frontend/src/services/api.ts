@@ -349,22 +349,7 @@ export const api = createApi({
       query: (id) => `/sales/${id}`,
       providesTags: (_result, _error, id) => [{ type: 'Sales', id }],
     }),
-    createSale: builder.mutation<
-      Sale,
-      {
-        clientId: string;
-        serviceId: string;
-        barberId: string;
-        amount?: number;
-        notes?: string;
-        newClient?: {
-          firstName: string;
-          lastName: string;
-          phone: string;
-          email?: string;
-        };
-      }
-    >({
+    createSale: builder.mutation<Sale, Partial<Sale>>({
       query: (sale) => ({
         url: '/sales',
         method: 'POST',
@@ -372,20 +357,20 @@ export const api = createApi({
       }),
       invalidatesTags: ['Sales'],
     }),
-    updateSale: builder.mutation<
-      Sale,
-      {
-        id: string;
-        status?: 'completed' | 'cancelled' | 'refunded';
-        notes?: string;
-      }
-    >({
-      query: ({ id, ...sale }) => ({
+    updateSale: builder.mutation<Sale, { id: string; sale: Partial<Sale> }>({
+      query: ({ id, sale }) => ({
         url: `/sales/${id}`,
         method: 'PUT',
         body: sale,
       }),
-      invalidatesTags: (_result, _error, { id }) => [{ type: 'Sales', id }],
+      invalidatesTags: ['Sales'],
+    }),
+    deleteSale: builder.mutation<{ message: string }, string>({
+      query: (id) => ({
+        url: `/sales/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Sales'],
     }),
   }),
 });
@@ -434,4 +419,5 @@ export const {
   useGetSaleQuery,
   useCreateSaleMutation,
   useUpdateSaleMutation,
+  useDeleteSaleMutation,
 } = api;
