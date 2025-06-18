@@ -18,10 +18,10 @@ export const getBarbers = async (req: Request, res: Response) => {
       },
     });
 
-    res.json(barbers);
+    return res.json(barbers);
   } catch (error) {
     console.error("Error fetching barbers:", error);
-    res.status(500).json({ message: "Error al obtener los barberos" });
+    return res.status(500).json({ message: "Error al obtener los barberos" });
   }
 };
 
@@ -30,20 +30,18 @@ export const getBarber = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const barber = await prisma.user.findUnique({
-      where: {
-        id,
-        role: "BARBER",
-      },
+    const barber = await prisma.barber.findUnique({
+      where: { id },
     });
 
     if (!barber) {
-      return res.status(404).json({ message: "Barber not found" });
+      return res.status(404).json({ message: "Barbero no encontrado" });
     }
 
     return res.json(barber);
   } catch (error) {
-    return res.status(500).json({ message: "Error fetching barber" });
+    console.error("Error fetching barber:", error);
+    return res.status(500).json({ message: "Error al obtener el barbero" });
   }
 };
 
@@ -105,7 +103,7 @@ export const createBarber = async (req: Request, res: Response) => {
     });
 
     // Devolver la información del barbero junto con la contraseña temporal
-    res.status(201).json({
+    return res.status(201).json({
       ...barber,
       temporaryPassword,
       message: "Barbero creado exitosamente. Por favor, guarda la contraseña temporal."
@@ -113,7 +111,7 @@ export const createBarber = async (req: Request, res: Response) => {
 
   } catch (error) {
     console.error("Error creating barber:", error);
-    res.status(500).json({ message: "Error al crear el barbero" });
+    return res.status(500).json({ message: "Error al crear el barbero" });
   }
 };
 
@@ -134,10 +132,10 @@ export const updateBarber = async (req: Request, res: Response) => {
       },
     });
 
-    res.json(barber);
+    return res.json(barber);
   } catch (error) {
     console.error("Error updating barber:", error);
-    res.status(500).json({ message: "Error al actualizar el barbero" });
+    return res.status(500).json({ message: "Error al actualizar el barbero" });
   }
 };
 
@@ -146,27 +144,25 @@ export const toggleBarberStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const barber = await prisma.user.findUnique({
-      where: {
-        id,
-        role: "BARBER",
-      },
+    const barber = await prisma.barber.findUnique({
+      where: { id }
     });
 
     if (!barber) {
-      return res.status(404).json({ message: "Barber not found" });
+      return res.status(404).json({ message: "Barbero no encontrado" });
     }
 
-    const updatedBarber = await prisma.user.update({
+    const updatedBarber = await prisma.barber.update({
       where: { id },
       data: {
-        status: barber.status === "ACTIVE" ? "INACTIVE" : "ACTIVE",
+        isActive: !barber.isActive
       },
     });
 
     return res.json(updatedBarber);
   } catch (error) {
-    return res.status(500).json({ message: "Error toggling barber status" });
+    console.error("Error toggling barber status:", error);
+    return res.status(500).json({ message: "Error al cambiar el estado del barbero" });
   }
 };
 
@@ -175,13 +171,30 @@ export const deleteBarber = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
+    // Primero encontrar el barbero para obtener su email
+    const barber = await prisma.barber.findUnique({
+      where: { id }
+    });
+
+    if (!barber) {
+      return res.status(404).json({ message: "Barbero no encontrado" });
+    }
+
+    // Eliminar el usuario asociado
+    if (barber.email) {
+      await prisma.user.delete({
+        where: { email: barber.email }
+      });
+    }
+
+    // Eliminar el barbero
     await prisma.barber.delete({
       where: { id },
     });
 
-    res.json({ message: "Barbero eliminado correctamente" });
+    return res.json({ message: "Barbero eliminado correctamente" });
   } catch (error) {
     console.error("Error deleting barber:", error);
-    res.status(500).json({ message: "Error al eliminar el barbero" });
+    return res.status(500).json({ message: "Error al eliminar el barbero" });
   }
 };
