@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { prisma } from "../config/database";
+import bcryptjs from "bcryptjs";
 
 // Get all barbers
 export const getBarbers = async (req: Request, res: Response) => {
@@ -52,15 +53,46 @@ export const createBarber = async (req: Request, res: Response) => {
     console.log("Create barber request body:", req.body);
     const { firstName, lastName, phone, email, instagram } = req.body;
 
-    // Log individual fields
-    console.log("Extracted fields:", {
-      firstName,
-      lastName,
-      phone,
-      email,
-      instagram,
+    // Validar campos requeridos
+    if (!firstName || !lastName || !phone || !email) {
+      return res.status(400).json({ 
+        message: "Todos los campos son requeridos excepto Instagram" 
+      });
+    }
+
+    // Verificar si ya existe un barbero con ese email o teléfono
+    const existingBarber = await prisma.barber.findFirst({
+      where: {
+        OR: [
+          { email },
+          { phone }
+        ]
+      }
     });
 
+    if (existingBarber) {
+      return res.status(400).json({ 
+        message: "Ya existe un barbero con ese email o teléfono" 
+      });
+    }
+
+    // Generar una contraseña temporal
+    const temporaryPassword = Math.random().toString(36).slice(-8);
+    const hashedPassword = await bcryptjs.hash(temporaryPassword, 10);
+
+    // Crear el usuario primero
+    const user = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        firstName,
+        lastName,
+        role: "BARBER",
+        status: "ACTIVE"
+      }
+    });
+
+    // Crear el registro del barbero
     const barber = await prisma.barber.create({
       data: {
         firstName,
@@ -68,11 +100,17 @@ export const createBarber = async (req: Request, res: Response) => {
         phone,
         email,
         instagram,
-        isActive: true,
-      },
+        isActive: true
+      }
     });
 
-    res.status(201).json(barber);
+    // Devolver la información del barbero junto con la contraseña temporal
+    res.status(201).json({
+      ...barber,
+      temporaryPassword,
+      message: "Barbero creado exitosamente. Por favor, guarda la contraseña temporal."
+    });
+
   } catch (error) {
     console.error("Error creating barber:", error);
     res.status(500).json({ message: "Error al crear el barbero" });
