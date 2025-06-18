@@ -21,24 +21,17 @@ npx prisma generate --schema=./prisma/schema.prisma || handle_error "Failed to g
 echo "Compiling TypeScript..."
 npx tsc || handle_error "Failed to compile TypeScript"
 
-# Compilar seeds manualmente
-echo "Compiling seeds..."
-npx tsc src/prisma/seeds/categories.ts --outDir dist/prisma/seeds --esModuleInterop || handle_error "Failed to compile categories seed"
-npx tsc src/prisma/seeds/barber.ts --outDir dist/prisma/seeds --esModuleInterop || handle_error "Failed to compile barber seed"
-
-# Ejecutar seeds
-echo "Running seeds..."
-NODE_ENV=production node dist/prisma/seeds/categories.js
-NODE_ENV=production node dist/prisma/seeds/barber.js
+# Compile migration script
+echo "Compiling migration script..."
+npx tsc prisma/migrate.ts --outDir dist/prisma --esModuleInterop || handle_error "Failed to compile migration script"
 
 # Copy Prisma files to dist
 echo "Copying Prisma files..."
 cp -r prisma/schema.prisma dist/prisma/
 
-# Run database migrations
+# Run database migrations and seeds
 echo "Running database migrations..."
-npx prisma migrate reset --force --skip-seed || handle_error "Failed to reset database"
-npx prisma migrate deploy || handle_error "Failed to deploy migrations"
+NODE_ENV=production node dist/prisma/migrate.js || handle_error "Failed to run migrations"
 
 echo "Build process completed"
 
