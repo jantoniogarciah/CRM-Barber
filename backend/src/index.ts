@@ -12,6 +12,7 @@ import { clientRouter } from "./routes/client.routes";
 import appointmentRoutes from "./routes/appointment.routes";
 import { PrismaClient } from "@prisma/client";
 import servicesLogRoutes from './routes/servicesLog.routes';
+import { saleRouter } from "./routes/sale.routes";
 
 dotenv.config();
 
@@ -86,6 +87,7 @@ app.use("/api/categories", categoryRouter);
 app.use("/api/clients", clientRouter);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/services-log", servicesLogRoutes);
+app.use("/api/sales", saleRouter);
 
 // Error handling middleware
 app.use(

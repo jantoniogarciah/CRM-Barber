@@ -20,9 +20,16 @@ export const getServices = async (req: Request, res: Response) => {
       include: {
         category: true,
       },
-      orderBy: {
-        createdAt: "desc",
-      },
+      orderBy: [
+        {
+          category: {
+            name: "asc",
+          },
+        },
+        {
+          name: "asc",
+        },
+      ],
     });
 
     res.json(services);

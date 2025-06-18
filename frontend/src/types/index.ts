@@ -87,3 +87,18 @@ export interface Barber {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface Sale {
+  id: string;
+  clientId: string;
+  serviceId: string;
+  barberId: string;
+  amount: number;
+  status: 'completed' | 'cancelled' | 'refunded';
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+  client: Client;
+  service: Service;
+  barber: Barber;
+}

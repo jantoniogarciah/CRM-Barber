@@ -129,6 +129,9 @@ export const updateAppointment = async (req: Request, res: Response) => {
     // Check if appointment exists
     const existingAppointment = await prisma.appointment.findUnique({
       where: { id },
+      include: {
+        service: true,
+      },
     });
 
     if (!existingAppointment) {
@@ -178,19 +181,39 @@ export const updateAppointment = async (req: Request, res: Response) => {
 
     console.log('Update data:', updateData);
 
-    const appointment = await prisma.appointment.update({
-      where: { id },
-      data: updateData,
-      include: {
-        client: true,
-        service: true,
-        barber: true,
-      },
+    // Start a transaction to handle both appointment update and sale creation
+    const result = await prisma.$transaction(async (prisma) => {
+      const updatedAppointment = await prisma.appointment.update({
+        where: { id },
+        data: updateData,
+        include: {
+          client: true,
+          service: true,
+          barber: true,
+        },
+      });
+
+      // If the appointment is being marked as completed, create a sale
+      if (status === 'completed' && existingAppointment.status !== 'completed') {
+        const serviceToUse = updatedAppointment.service;
+        
+        await prisma.sale.create({
+          data: {
+            clientId: updatedAppointment.clientId,
+            serviceId: updatedAppointment.serviceId,
+            barberId: updatedAppointment.barberId,
+            amount: serviceToUse.price,
+            notes: `Venta generada automáticamente de la cita #${updatedAppointment.id}`,
+          },
+        });
+      }
+
+      return updatedAppointment;
     });
 
-    console.log('Updated appointment:', appointment);
+    console.log('Updated appointment:', result);
 
-    res.json(appointment);
+    res.json(result);
   } catch (error) {
     console.error("Error updating appointment:", error);
     if (error instanceof AppError) {
@@ -234,7 +257,7 @@ export const getLastCompletedAppointments = async (req: Request, res: Response) 
     // Get all clients
     const clients = await prisma.client.findMany({
       where: {
-        isActive: true,
+        status: "ACTIVE",
       },
       select: {
         id: true,

@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { User, Client, Service, Appointment, Notification, Category, Barber } from '../types';
+import { User, Client, Service, Appointment, Notification, Category, Barber, Sale } from '../types';
 import { RootState } from '../store';
 import { toast } from 'react-hot-toast';
 import { clearCredentials } from '../store/slices/authSlice';
@@ -63,7 +63,7 @@ const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
 export const api = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithRetry,
-  tagTypes: ['User', 'Client', 'Service', 'Appointment', 'Notification', 'Category', 'Barber', 'Services', 'Categories', 'Clients', 'Barbers', 'ServicesLog'],
+  tagTypes: ['User', 'Client', 'Service', 'Appointment', 'Notification', 'Category', 'Barber', 'Services', 'Categories', 'Clients', 'Barbers', 'ServicesLog', 'Sales'],
   endpoints: (builder) => ({
     // Auth endpoints
     login: builder.mutation<{ user: User; token: string }, { email: string; password: string }>({
@@ -212,7 +212,7 @@ export const api = createApi({
         method: 'PUT',
         body: appointment,
       }),
-      invalidatesTags: ['Appointment'],
+      invalidatesTags: ['Appointment', 'Sales'],
     }),
     deleteAppointment: builder.mutation<void, string>({
       query: (id) => ({
@@ -339,6 +339,54 @@ export const api = createApi({
       query: (phone) => `/clients/search?phone=${encodeURIComponent(phone)}`,
       providesTags: ['Clients'],
     }),
+
+    // Sales endpoints
+    getSales: builder.query<Sale[], void>({
+      query: () => '/sales',
+      providesTags: ['Sales'],
+    }),
+    getSale: builder.query<Sale, string>({
+      query: (id) => `/sales/${id}`,
+      providesTags: (_result, _error, id) => [{ type: 'Sales', id }],
+    }),
+    createSale: builder.mutation<
+      Sale,
+      {
+        clientId: string;
+        serviceId: string;
+        barberId: string;
+        amount?: number;
+        notes?: string;
+        newClient?: {
+          firstName: string;
+          lastName: string;
+          phone: string;
+          email?: string;
+        };
+      }
+    >({
+      query: (sale) => ({
+        url: '/sales',
+        method: 'POST',
+        body: sale,
+      }),
+      invalidatesTags: ['Sales'],
+    }),
+    updateSale: builder.mutation<
+      Sale,
+      {
+        id: string;
+        status?: 'completed' | 'cancelled' | 'refunded';
+        notes?: string;
+      }
+    >({
+      query: ({ id, ...sale }) => ({
+        url: `/sales/${id}`,
+        method: 'PUT',
+        body: sale,
+      }),
+      invalidatesTags: (_result, _error, { id }) => [{ type: 'Sales', id }],
+    }),
   }),
 });
 
@@ -382,4 +430,8 @@ export const {
   useGetServicesLogQuery,
   useCreateServiceLogMutation,
   useGetClientByPhoneQuery,
+  useGetSalesQuery,
+  useGetSaleQuery,
+  useCreateSaleMutation,
+  useUpdateSaleMutation,
 } = api;

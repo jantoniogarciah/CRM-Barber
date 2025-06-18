@@ -10,7 +10,11 @@ import {
   DialogTitle,
   TextField,
   MenuItem,
-  CircularProgress,
+  FormControl,
+  InputLabel,
+  Select,
+  Alert,
+  Grid,
 } from '@mui/material';
 import {
   useCreateAppointmentMutation,
@@ -19,8 +23,9 @@ import {
   useGetServicesQuery,
   useGetBarbersQuery,
 } from '../services/api';
-import { Appointment, Client, Service, Barber } from '../types';
+import { Appointment } from '../types';
 import { format, parseISO } from 'date-fns';
+import { toast } from 'react-hot-toast';
 
 interface AppointmentFormProps {
   open: boolean;
@@ -35,7 +40,7 @@ interface AppointmentFormValues {
   barberId: string;
   date: string;
   time: string;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   notes: string;
 }
 
@@ -45,7 +50,7 @@ const validationSchema = Yup.object({
   barberId: Yup.string().required('Por favor seleccione un barbero'),
   date: Yup.string().required('Por favor seleccione una fecha'),
   time: Yup.string().required('Por favor seleccione una hora'),
-  status: Yup.string().oneOf(['pending', 'confirmed', 'cancelled', 'completed']).required(),
+  status: Yup.string().oneOf(['pending', 'confirmed', 'completed', 'cancelled']).required(),
   notes: Yup.string(),
 });
 
@@ -58,101 +63,61 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
   const [createAppointment] = useCreateAppointmentMutation();
   const [updateAppointment] = useUpdateAppointmentMutation();
   const { data: clients = [] } = useGetClientsQuery({ showInactive: false });
+  const { data: services = [] } = useGetServicesQuery({ showInactive: false });
   const { data: barbers = [] } = useGetBarbersQuery({ showInactive: false });
-  const {
-    data: services = [],
-    isLoading: isLoadingServices,
-    error: servicesError,
-  } = useGetServicesQuery({ showInactive: false });
-
-  useEffect(() => {
-    if (servicesError) {
-      console.error('Error loading services:', servicesError);
-      alert('Error al cargar los servicios. Por favor, intente de nuevo.');
-    }
-  }, [servicesError]);
 
   const formik = useFormik<AppointmentFormValues>({
     initialValues: {
       clientId: appointment?.clientId || '',
       serviceId: appointment?.serviceId || '',
       barberId: appointment?.barberId || '',
-      date: appointment?.date || format(new Date(), 'yyyy-MM-dd'),
+      date: appointment?.date ? format(new Date(appointment.date), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
       time: appointment?.time || '',
-      status: (appointment?.status as AppointmentFormValues['status']) || 'pending',
+      status: appointment?.status || 'pending',
       notes: appointment?.notes || '',
     },
     validationSchema,
     onSubmit: async (values) => {
       try {
-        if (!values.clientId) {
-          throw new Error('Por favor seleccione un cliente');
-        }
-        if (!values.serviceId) {
-          throw new Error('Por favor seleccione un servicio');
-        }
-        if (!values.barberId) {
-          throw new Error('Por favor seleccione un barbero');
-        }
-        if (!values.date) {
-          throw new Error('Por favor seleccione una fecha');
-        }
-
-        // Ensure the date is in YYYY-MM-DD format without any timezone adjustments
-        const formattedDate = format(parseISO(values.date), 'yyyy-MM-dd');
-
         const appointmentData = {
           clientId: values.clientId,
           serviceId: values.serviceId,
           barberId: values.barberId,
-          date: formattedDate,
+          date: new Date(values.date).toISOString(),
           time: values.time,
           status: values.status,
-          notes: values.notes,
+          notes: values.notes || undefined,
         };
 
-        console.log('Appointment data to be sent:', appointmentData);
-
-        if (appointment) {
+        if (appointment?.id) {
           await updateAppointment({
-            id: appointment.id.toString(),
+            id: appointment.id,
             appointment: appointmentData,
           }).unwrap();
-          onSuccess();
         } else {
           await createAppointment(appointmentData).unwrap();
-          onSuccess();
         }
+
+        onSuccess();
         onClose();
+        toast.success(appointment ? 'Cita actualizada exitosamente' : 'Cita creada exitosamente');
       } catch (error: any) {
-        console.error('Error saving appointment:', error);
-        let errorMessage = 'Error al guardar la cita. ';
-
-        if (error.data?.message) {
-          errorMessage += error.data.message;
-        } else if (error.message) {
-          errorMessage += error.message;
-        } else if (error.data?.errors) {
-          errorMessage += error.data.errors.map((e: any) => e.msg).join(', ');
-        }
-
-        alert(errorMessage);
+        console.error('Error al guardar la cita:', error);
+        toast.error(error.data?.message || 'Error al guardar la cita');
       }
     },
   });
 
   useEffect(() => {
     if (open) {
-      console.log('Appointment data received:', appointment);
-
       formik.resetForm({
         values: {
           clientId: appointment?.clientId || '',
           serviceId: appointment?.serviceId || '',
           barberId: appointment?.barberId || '',
-          date: appointment?.date || format(new Date(), 'yyyy-MM-dd'),
+          date: appointment?.date ? format(new Date(appointment.date), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
           time: appointment?.time || '',
-          status: (appointment?.status as AppointmentFormValues['status']) || 'pending',
+          status: appointment?.status || 'pending',
           notes: appointment?.notes || '',
         },
       });
@@ -164,140 +129,131 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
       <DialogTitle>{appointment ? 'Editar Cita' : 'Nueva Cita'}</DialogTitle>
       <form onSubmit={formik.handleSubmit}>
         <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-            <TextField
-              fullWidth
-              id="clientId"
-              name="clientId"
-              label="Cliente"
-              select
-              value={formik.values.clientId}
-              onChange={formik.handleChange}
-              error={formik.touched.clientId && Boolean(formik.errors.clientId)}
-              helperText={formik.touched.clientId && formik.errors.clientId}
-            >
-              <MenuItem value="">Seleccionar cliente</MenuItem>
-              {clients.map((client) => (
-                <MenuItem key={client.id} value={client.id}>
-                  {`${client.firstName} ${client.lastName}`}
-                </MenuItem>
-              ))}
-            </TextField>
+          <Box sx={{ mt: 2 }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <FormControl fullWidth>
+                  <InputLabel>Cliente</InputLabel>
+                  <Select
+                    name="clientId"
+                    value={formik.values.clientId}
+                    onChange={formik.handleChange}
+                    error={formik.touched.clientId && Boolean(formik.errors.clientId)}
+                    label="Cliente"
+                  >
+                    {clients.map((client) => (
+                      <MenuItem key={client.id} value={client.id}>
+                        {client.firstName} {client.lastName}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
 
-            <TextField
-              fullWidth
-              id="serviceId"
-              name="serviceId"
-              label="Servicio"
-              select
-              value={formik.values.serviceId}
-              onChange={formik.handleChange}
-              error={formik.touched.serviceId && Boolean(formik.errors.serviceId)}
-              helperText={formik.touched.serviceId && formik.errors.serviceId}
-            >
-              <MenuItem value="">Seleccionar servicio</MenuItem>
-              {services.map((service) => (
-                <MenuItem key={service.id} value={service.id}>
-                  {service.name}
-                </MenuItem>
-              ))}
-            </TextField>
+              <Grid item xs={12}>
+                <FormControl fullWidth>
+                  <InputLabel>Servicio</InputLabel>
+                  <Select
+                    name="serviceId"
+                    value={formik.values.serviceId}
+                    onChange={formik.handleChange}
+                    error={formik.touched.serviceId && Boolean(formik.errors.serviceId)}
+                    label="Servicio"
+                  >
+                    {services.map((service) => (
+                      <MenuItem key={service.id} value={service.id}>
+                        {service.name} - ${service.price}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
 
-            <TextField
-              fullWidth
-              id="barberId"
-              name="barberId"
-              label="Barbero"
-              select
-              value={formik.values.barberId}
-              onChange={formik.handleChange}
-              error={formik.touched.barberId && Boolean(formik.errors.barberId)}
-              helperText={formik.touched.barberId && formik.errors.barberId}
-            >
-              <MenuItem value="">Seleccionar barbero</MenuItem>
-              {barbers.map((barber) => (
-                <MenuItem key={barber.id} value={barber.id}>
-                  {`${barber.firstName} ${barber.lastName}`}
-                </MenuItem>
-              ))}
-            </TextField>
+              <Grid item xs={12}>
+                <FormControl fullWidth>
+                  <InputLabel>Barbero</InputLabel>
+                  <Select
+                    name="barberId"
+                    value={formik.values.barberId}
+                    onChange={formik.handleChange}
+                    error={formik.touched.barberId && Boolean(formik.errors.barberId)}
+                    label="Barbero"
+                  >
+                    {barbers.map((barber) => (
+                      <MenuItem key={barber.id} value={barber.id}>
+                        {barber.firstName} {barber.lastName}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
 
-            <TextField
-              fullWidth
-              id="date"
-              name="date"
-              label="Fecha"
-              type="date"
-              value={formik.values.date}
-              onChange={formik.handleChange}
-              error={formik.touched.date && Boolean(formik.errors.date)}
-              helperText={formik.touched.date && formik.errors.date}
-              InputLabelProps={{
-                shrink: true,
-              }}
-            />
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  type="date"
+                  name="date"
+                  label="Fecha"
+                  value={formik.values.date}
+                  onChange={formik.handleChange}
+                  error={formik.touched.date && Boolean(formik.errors.date)}
+                  helperText={formik.touched.date && formik.errors.date}
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
 
-            <TextField
-              fullWidth
-              id="time"
-              name="time"
-              label="Hora"
-              type="time"
-              value={formik.values.time}
-              onChange={formik.handleChange}
-              error={formik.touched.time && Boolean(formik.errors.time)}
-              helperText={formik.touched.time && formik.errors.time}
-              InputLabelProps={{
-                shrink: true,
-              }}
-            />
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  type="time"
+                  name="time"
+                  label="Hora"
+                  value={formik.values.time}
+                  onChange={formik.handleChange}
+                  error={formik.touched.time && Boolean(formik.errors.time)}
+                  helperText={formik.touched.time && formik.errors.time}
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
 
-            <TextField
-              fullWidth
-              id="status"
-              name="status"
-              label="Estado"
-              select
-              value={formik.values.status}
-              onChange={formik.handleChange}
-              error={formik.touched.status && Boolean(formik.errors.status)}
-              helperText={formik.touched.status && formik.errors.status}
-            >
-              <MenuItem value="pending">Pendiente</MenuItem>
-              <MenuItem value="confirmed">Confirmada</MenuItem>
-              <MenuItem value="completed">Completada</MenuItem>
-              <MenuItem value="cancelled">Cancelada</MenuItem>
-            </TextField>
+              <Grid item xs={12}>
+                <FormControl fullWidth>
+                  <InputLabel>Estado</InputLabel>
+                  <Select
+                    name="status"
+                    value={formik.values.status}
+                    onChange={formik.handleChange}
+                    error={formik.touched.status && Boolean(formik.errors.status)}
+                    label="Estado"
+                  >
+                    <MenuItem value="pending">Pendiente</MenuItem>
+                    <MenuItem value="confirmed">Confirmada</MenuItem>
+                    <MenuItem value="completed">Completada</MenuItem>
+                    <MenuItem value="cancelled">Cancelada</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
 
-            <TextField
-              fullWidth
-              id="notes"
-              name="notes"
-              label="Notas"
-              multiline
-              rows={4}
-              value={formik.values.notes}
-              onChange={formik.handleChange}
-              error={formik.touched.notes && Boolean(formik.errors.notes)}
-              helperText={formik.touched.notes && formik.errors.notes}
-            />
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={3}
+                  name="notes"
+                  label="Notas"
+                  value={formik.values.notes}
+                  onChange={formik.handleChange}
+                  error={formik.touched.notes && Boolean(formik.errors.notes)}
+                  helperText={formik.touched.notes && formik.errors.notes}
+                />
+              </Grid>
+            </Grid>
           </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={onClose}>Cancelar</Button>
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            disabled={formik.isSubmitting || isLoadingServices}
-          >
-            {formik.isSubmitting ? (
-              <CircularProgress size={24} />
-            ) : appointment ? (
-              'Actualizar'
-            ) : (
-              'Crear'
-            )}
+          <Button type="submit" variant="contained" color="primary">
+            {appointment ? 'Actualizar' : 'Crear'}
           </Button>
         </DialogActions>
       </form>

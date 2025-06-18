@@ -1,48 +1,70 @@
-// This is your Prisma schema file
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
 }
 
-enum UserRole {
-  ADMIN
-  BARBER
-  CLIENT
-}
-
-enum UserStatus {
-  ACTIVE
-  INACTIVE
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id        String     @id @default(uuid())
-  email     String     @unique
+  id        String   @id @default(cuid())
+  email     String   @unique
   password  String
   firstName String
   lastName  String
-  role      UserRole
-  status    UserStatus @default(ACTIVE)
-  phone     String?
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-
-  // Additional fields for barbers
-  specialties String[]  @default([])
-  schedule    Json?     // Store working hours and availability
-  rating      Float?    @default(0)
-  isBarber    Boolean   @default(false)
+  role      String   @default("CLIENT") // ADMIN, BARBER, CLIENT
+  status    String   @default("ACTIVE") // ACTIVE, INACTIVE
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("users")
 }
 
+model Client {
+  id        String   @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String?  @unique
+  phone     String   @unique
+  notes     String?
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  appointments Appointment[]
+  servicesLog  ServiceLog[]
+  sales        Sale[]
+
+  @@map("clients")
+}
+
+model Service {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  duration    Int      @default(30)
+  categoryId  String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  category     Category      @relation(fields: [categoryId], references: [id])
+  appointments Appointment[]
+  servicesLog  ServiceLog[]
+  sales        Sale[]
+
+  @@index([categoryId])
+  @@map("services")
+}
+
 model Category {
-  id          String    @id @default(uuid())
-  name        String    @unique
+  id          String    @id @default(cuid())
+  name        String
   description String?
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
@@ -52,86 +74,83 @@ model Category {
   @@map("categories")
 }
 
-model Service {
-  id          String    @id @default(uuid())
-  name        String
-  description String
-  duration    Int      // Duration in minutes
-  price       Float
-  image       String?  // URL to service image
-  isActive    Boolean  @default(true)
-  categoryId  String?
-  category    Category? @relation(fields: [categoryId], references: [id])
-  appointments Appointment[]
-  serviceLogs ServiceLog[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  @@map("services")
-}
-
-model Client {
-  id          String        @id @default(uuid())
-  firstName   String
-  lastName    String
-  email       String?
-  phone       String        @unique
-  notes       String?
-  isActive    Boolean       @default(true)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  appointments Appointment[]
-  serviceLogs ServiceLog[]
-
-  @@map("clients")
-}
-
 model Barber {
-  id          String        @id @default(uuid())
-  firstName   String
-  lastName    String
-  phone       String
-  email       String?
-  instagram   String?
-  isActive    Boolean       @default(true)
+  id        String   @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String?  @unique
+  phone     String
+  instagram String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
   appointments Appointment[]
-  serviceLogs ServiceLog[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  servicesLog  ServiceLog[]
+  sales        Sale[]
 
   @@map("barbers")
 }
 
 model Appointment {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   clientId  String
   serviceId String
   barberId  String
-  date      String
+  date      DateTime
   time      String
-  status    String   @default("pending")
+  status    String   @default("pending") // pending, confirmed, completed, cancelled
   notes     String?
-  client    Client   @relation(fields: [clientId], references: [id])
-  service   Service  @relation(fields: [serviceId], references: [id])
-  barber    Barber   @relation(fields: [barberId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  client  Client  @relation(fields: [clientId], references: [id])
+  service Service @relation(fields: [serviceId], references: [id])
+  barber  Barber  @relation(fields: [barberId], references: [id])
+
+  @@index([clientId])
+  @@index([serviceId])
+  @@index([barberId])
   @@map("appointments")
 }
 
-// Nuevo modelo para registrar servicios realizados
 model ServiceLog {
-  id        String   @id @default(uuid())
-  barberId  String
-  serviceId String
+  id        String   @id @default(cuid())
   clientId  String
+  serviceId String
+  barberId  String
+  date      DateTime
   notes     String?
-  barber    Barber   @relation(fields: [barberId], references: [id])
-  service   Service  @relation(fields: [serviceId], references: [id])
-  client    Client   @relation(fields: [clientId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  client  Client  @relation(fields: [clientId], references: [id])
+  service Service @relation(fields: [serviceId], references: [id])
+  barber  Barber  @relation(fields: [barberId], references: [id])
+
+  @@index([clientId])
+  @@index([serviceId])
+  @@index([barberId])
   @@map("service_logs")
+}
+
+model Sale {
+  id        String   @id @default(cuid())
+  clientId  String
+  serviceId String
+  barberId  String
+  amount    Float
+  status    String   @default("completed") // completed, cancelled, refunded
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  client  Client  @relation(fields: [clientId], references: [id])
+  service Service @relation(fields: [serviceId], references: [id])
+  barber  Barber  @relation(fields: [barberId], references: [id])
+
+  @@index([clientId])
+  @@index([serviceId])
+  @@index([barberId])
+  @@map("sales")
 } 

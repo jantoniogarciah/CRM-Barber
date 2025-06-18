@@ -7,6 +7,7 @@ import Profile from '../pages/Profile';
 import Clients from '../pages/Clients';
 import Services from '../pages/Services';
 import Appointments from '../pages/Appointments';
+import Sales from '../pages/Sales';
 import NotFound from '../pages/NotFound';
 import { PrivateRoute } from '../components/PrivateRoute';
 import { AdminRoute } from '../components/AdminRoute';
@@ -88,6 +89,15 @@ const AppRoutes: React.FC = () => {
         element={
           <PrivateRoute>
             <Appointments />
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/sales"
+        element={
+          <PrivateRoute>
+            <Sales />
           </PrivateRoute>
         }
       />

@@ -15,7 +15,8 @@
     "start": "node dist/index.js",
     "seed:categories": "ts-node prisma/seeds/categories.ts",
     "test": "jest",
-    "lint": "eslint . --ext .ts"
+    "lint": "eslint . --ext .ts",
+    "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

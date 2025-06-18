@@ -11,13 +11,13 @@ type UserStatus = Prisma.UserCreateInput['status'];
 export const getClients = async (req: Request, res: Response) => {
   try {
     const showInactive = req.query.showInactive === "true";
+    const phone = req.query.phone as string;
 
     const clients = await prisma.client.findMany({
-      where: showInactive
-        ? undefined
-        : {
-            isActive: true,
-          },
+      where: {
+        ...(showInactive ? {} : { status: "ACTIVE" }),
+        ...(phone ? { phone: { contains: phone } } : {}),
+      },
       orderBy: {
         createdAt: "desc",
       },
@@ -80,7 +80,7 @@ export const createClient = async (req: Request, res: Response) => {
         email,
         phone,
         notes,
-        isActive: true,
+        status: "ACTIVE",
       },
     });
 
@@ -128,18 +128,15 @@ export const toggleClientStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const client = await prisma.user.findUnique({
-      where: {
-        id,
-        role: "CLIENT"
-      },
+    const client = await prisma.client.findUnique({
+      where: { id }
     });
 
     if (!client) {
       return res.status(404).json({ message: "Client not found" });
     }
 
-    const updatedClient = await prisma.user.update({
+    const updatedClient = await prisma.client.update({
       where: { id },
       data: {
         status: client.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE',
@@ -148,7 +145,8 @@ export const toggleClientStatus = async (req: Request, res: Response) => {
 
     return res.json(updatedClient);
   } catch (error) {
-    return res.status(500).json({ message: "Error toggling client status" });
+    console.error("Error toggling client status:", error);
+    return res.status(500).json({ message: "Error al cambiar el estado del cliente" });
   }
 };
 
@@ -165,5 +163,32 @@ export const deleteClient = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error deleting client:", error);
     res.status(500).json({ message: "Error al eliminar el cliente" });
+  }
+};
+
+// Get client by phone
+export const getClientByPhone = async (req: Request, res: Response) => {
+  try {
+    const { phone } = req.query;
+
+    if (!phone) {
+      return res.status(400).json({ message: "El teléfono es requerido" });
+    }
+
+    const client = await prisma.client.findFirst({
+      where: {
+        phone: phone as string,
+        status: "ACTIVE",
+      },
+    });
+
+    if (!client) {
+      return res.status(404).json({ message: "Cliente no encontrado" });
+    }
+
+    return res.json(client);
+  } catch (error) {
+    console.error("Error searching client by phone:", error);
+    return res.status(500).json({ message: "Error al buscar el cliente" });
   }
 };

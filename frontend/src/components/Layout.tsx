@@ -24,6 +24,7 @@ import {
   People,
   ContentCut,
   AccountCircle,
+  ShoppingCart,
 } from '@mui/icons-material';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { selectUser, clearCredentials } from '../store/slices/authSlice';
@@ -86,6 +87,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         text: 'Citas',
         icon: <Event sx={{ fontSize: 24, width: 24, height: 24 }} />,
         path: '/appointments',
+      },
+      {
+        text: 'Ventas',
+        icon: <ShoppingCart sx={{ fontSize: 24, width: 24, height: 24 }} />,
+        path: '/sales',
       },
     ];
 
