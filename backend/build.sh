@@ -40,4 +40,20 @@ echo "Running database migrations..."
 npx prisma migrate reset --force --skip-seed || handle_error "Failed to reset database"
 npx prisma migrate deploy || handle_error "Failed to deploy migrations"
 
-echo "Build process completed" 
+echo "Build process completed"
+
+# Generar tipos de Prisma
+npx prisma generate
+
+# Limpiar directorio de compilación
+rm -rf dist
+
+# Compilar TypeScript
+npm run compile
+
+# Copiar archivos de Prisma
+mkdir -p dist/prisma
+cp -r prisma/* dist/prisma/
+
+# Ejecutar migraciones
+npm run migrate 

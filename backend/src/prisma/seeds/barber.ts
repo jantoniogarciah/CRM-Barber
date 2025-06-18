@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole, UserStatus } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import bcryptjs from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -13,20 +13,8 @@ async function main() {
         password: hashedPassword,
         firstName: 'Barbero',
         lastName: 'ClipperCut',
-        role: UserRole.BARBER,
-        status: UserStatus.ACTIVE,
-        phone: '5555555555',
-        isBarber: true,
-        specialties: ['Corte de cabello', 'Barba', 'Diseño', 'Tinte'],
-        schedule: {
-          monday: { start: '09:00', end: '20:00' },
-          tuesday: { start: '09:00', end: '20:00' },
-          wednesday: { start: '09:00', end: '20:00' },
-          thursday: { start: '09:00', end: '20:00' },
-          friday: { start: '09:00', end: '20:00' },
-          saturday: { start: '09:00', end: '18:00' },
-          sunday: { start: '09:00', end: '14:00' }
-        }
+        role: 'BARBER',
+        status: 'ACTIVE'
       }
     });
 
@@ -35,8 +23,8 @@ async function main() {
       data: {
         firstName: user.firstName,
         lastName: user.lastName,
-        phone: user.phone || '',
         email: user.email,
+        phone: '5555555555',
         instagram: 'clippercut_barberia',
         isActive: true
       }
@@ -68,8 +56,7 @@ async function main() {
             where: { email: 'barberos@clippercut.com.mx' },
             data: { 
               password: hashedPassword,
-              role: UserRole.BARBER,
-              isBarber: true
+              role: 'BARBER'
             }
           });
           console.log('Contraseña de usuario actualizada exitosamente');

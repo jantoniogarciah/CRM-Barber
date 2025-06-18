@@ -85,6 +85,7 @@ export const createServiceLog = async (req: Request, res: Response) => {
         serviceId,
         clientId: client.id,
         notes,
+        date: new Date(),
       },
       include: {
         client: {

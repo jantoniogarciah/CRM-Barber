@@ -43,7 +43,7 @@ export const getSale = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Venta no encontrada" });
     }
 
-    res.json(sale);
+    return res.json(sale);
   } catch (error) {
     console.error("Error getting sale:", error);
     throw new AppError("Error al obtener la venta", 500);
@@ -101,6 +101,7 @@ export const createSale = async (req: Request, res: Response) => {
         serviceId,
         barberId,
         amount: amount || service.price,
+        status: "completed",
         notes,
       },
       include: {
@@ -129,7 +130,7 @@ export const updateSale = async (req: Request, res: Response) => {
     const sale = await prisma.sale.update({
       where: { id },
       data: {
-        status,
+        status: status as "completed" | "cancelled" | "refunded",
         notes,
       },
       include: {
@@ -139,7 +140,7 @@ export const updateSale = async (req: Request, res: Response) => {
       },
     });
 
-    res.json(sale);
+    return res.json(sale);
   } catch (error) {
     console.error("Error updating sale:", error);
     throw new AppError("Error al actualizar la venta", 500);
