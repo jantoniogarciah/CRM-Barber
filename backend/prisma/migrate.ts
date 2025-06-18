@@ -30,6 +30,64 @@ async function createAdminUser() {
   }
 }
 
+async function createInitialCategories() {
+  try {
+    const categories = [
+      {
+        name: 'Corte Hombre',
+        description: 'Servicios de corte y estilizado para caballeros',
+        isActive: true,
+      },
+      {
+        name: 'Corte Mujer',
+        description: 'Servicios de corte y estilizado para damas',
+        isActive: true,
+      },
+      {
+        name: 'Corte Niño',
+        description: 'Servicios de corte especializados para niños',
+        isActive: true,
+      },
+      {
+        name: 'Barba',
+        description: 'Servicios de arreglo y mantenimiento de barba',
+        isActive: true,
+      },
+      {
+        name: 'Barba y Corte',
+        description: 'Servicio completo de corte de cabello y arreglo de barba',
+        isActive: true,
+      },
+      {
+        name: 'Productos',
+        description: 'Productos para el cuidado del cabello y la barba',
+        isActive: true,
+      },
+    ];
+
+    console.log('Creating initial categories...');
+
+    for (const category of categories) {
+      const existingCategory = await prisma.category.findFirst({
+        where: { name: category.name },
+      });
+
+      if (!existingCategory) {
+        await prisma.category.create({
+          data: category,
+        });
+        console.log(`Category created: ${category.name}`);
+      } else {
+        console.log(`Category ${category.name} already exists`);
+      }
+    }
+
+    console.log('Initial categories created successfully');
+  } catch (error) {
+    console.error('Error creating initial categories:', error);
+  }
+}
+
 async function createInitialBarber() {
   try {
     // Verificar si el barbero ya existe
@@ -81,6 +139,9 @@ async function main() {
   
   console.log('Creating admin user...');
   await createAdminUser();
+  
+  console.log('Creating initial categories...');
+  await createInitialCategories();
   
   console.log('Creating initial barber...');
   await createInitialBarber();

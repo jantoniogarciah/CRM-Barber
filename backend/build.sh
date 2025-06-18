@@ -27,13 +27,15 @@ npx tsc prisma/migrate.ts --outDir dist/prisma --esModuleInterop || handle_error
 
 # Copy Prisma files to dist
 echo "Copying Prisma files..."
-cp -r prisma/schema.prisma dist/prisma/
+mkdir -p dist/prisma
+cp -r prisma/* dist/prisma/
 
 # Run database migrations and seeds
-echo "Running database migrations..."
-NODE_ENV=production node dist/prisma/migrate.js || handle_error "Failed to run migrations"
+echo "Running database migrations and seeds..."
+npx prisma migrate deploy || handle_error "Failed to run migrations"
+NODE_ENV=production node dist/prisma/migrate.js || handle_error "Failed to run seeds"
 
-echo "Build process completed"
+echo "Build process completed successfully"
 
 # Generar tipos de Prisma
 npx prisma generate
