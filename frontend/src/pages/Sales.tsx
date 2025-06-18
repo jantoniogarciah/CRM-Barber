@@ -27,7 +27,12 @@ import {
   Dialog as ConfirmDialog,
   DialogContentText,
 } from '@mui/material';
-import { Add as AddIcon, Search as SearchIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { 
+  Add as AddIcon, 
+  Search as SearchIcon, 
+  Delete as DeleteIcon,
+  Edit as EditIcon 
+} from '@mui/icons-material';
 import { 
   useGetServicesQuery, 
   useGetClientByPhoneQuery, 
@@ -35,15 +40,18 @@ import {
   useGetBarbersQuery, 
   useGetSalesQuery,
   useCreateClientMutation,
-  useDeleteSaleMutation
+  useDeleteSaleMutation,
+  useUpdateSaleMutation
 } from '../services/api';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { debounce } from 'lodash';
+import { Sale } from '../types';
 
 const Sales: React.FC = () => {
   const [openNewSale, setOpenNewSale] = useState(false);
+  const [openEditSale, setOpenEditSale] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [selectedService, setSelectedService] = useState('');
   const [selectedBarber, setSelectedBarber] = useState('');
@@ -58,6 +66,7 @@ const Sales: React.FC = () => {
   });
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [saleToDelete, setSaleToDelete] = useState<string | null>(null);
+  const [saleToEdit, setSaleToEdit] = useState<Sale | null>(null);
 
   const { data: services = [], isLoading: isLoadingServices } = useGetServicesQuery({ showInactive: false });
   const { data: barbers = [], isLoading: isLoadingBarbers } = useGetBarbersQuery({ showInactive: false });
@@ -65,12 +74,47 @@ const Sales: React.FC = () => {
     skip: !phoneNumber || phoneNumber.length < 10,
   });
   const [createSale] = useCreateSaleMutation();
+  const [updateSale] = useUpdateSaleMutation();
   const { data: sales = [], isLoading: isLoadingSales } = useGetSalesQuery();
   const [createClient] = useCreateClientMutation();
   const [deleteSale] = useDeleteSaleMutation();
 
   const handleNewSale = () => {
     setOpenNewSale(true);
+  };
+
+  const handleEditClick = (sale: Sale) => {
+    setSaleToEdit(sale);
+    setPaymentMethod(sale.paymentMethod);
+    setNotes(sale.notes || '');
+    setOpenEditSale(true);
+  };
+
+  const handleEditClose = () => {
+    setOpenEditSale(false);
+    setSaleToEdit(null);
+    setPaymentMethod('EFECTIVO');
+    setNotes('');
+  };
+
+  const handleEditSubmit = async () => {
+    if (!saleToEdit) return;
+
+    try {
+      await updateSale({
+        id: saleToEdit.id,
+        sale: {
+          paymentMethod,
+          notes: notes || undefined,
+        },
+      }).unwrap();
+
+      toast.success('Venta actualizada exitosamente');
+      handleEditClose();
+    } catch (error) {
+      console.error('Error al actualizar la venta:', error);
+      toast.error('Error al actualizar la venta');
+    }
   };
 
   const handleClose = () => {
@@ -244,14 +288,24 @@ const Sales: React.FC = () => {
                 </TableCell>
                 <TableCell>{sale.notes}</TableCell>
                 <TableCell>
-                  <Tooltip title="Eliminar venta">
-                    <IconButton
-                      color="error"
-                      onClick={() => handleDeleteClick(sale.id)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </Tooltip>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Tooltip title="Editar venta">
+                      <IconButton
+                        color="primary"
+                        onClick={() => handleEditClick(sale)}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Eliminar venta">
+                      <IconButton
+                        color="error"
+                        onClick={() => handleDeleteClick(sale.id)}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
                 </TableCell>
               </TableRow>
             ))}
@@ -425,6 +479,57 @@ const Sales: React.FC = () => {
           <Button onClick={handleDeleteCancel}>Cancelar</Button>
           <Button onClick={handleDeleteConfirm} color="error" variant="contained">
             Eliminar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={openEditSale} onClose={handleEditClose} maxWidth="md" fullWidth>
+        <DialogTitle>Editar Venta</DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12}>
+              <Alert severity="info">
+                Cliente: {saleToEdit?.client.firstName} {saleToEdit?.client.lastName}
+                <br />
+                Servicio: {saleToEdit?.service.name}
+                <br />
+                Barbero: {saleToEdit?.barber.firstName} {saleToEdit?.barber.lastName}
+                <br />
+                Monto: ${saleToEdit?.amount}
+              </Alert>
+            </Grid>
+
+            <Grid item xs={12}>
+              <FormControl fullWidth>
+                <InputLabel>Método de Pago</InputLabel>
+                <Select
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value as 'EFECTIVO' | 'DEBITO' | 'CREDITO')}
+                  label="Método de Pago"
+                >
+                  <MenuItem value="EFECTIVO">Efectivo</MenuItem>
+                  <MenuItem value="DEBITO">Débito</MenuItem>
+                  <MenuItem value="CREDITO">Crédito</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Notas"
+                multiline
+                rows={4}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleEditClose}>Cancelar</Button>
+          <Button onClick={handleEditSubmit} variant="contained" color="primary">
+            Guardar Cambios
           </Button>
         </DialogActions>
       </Dialog>
