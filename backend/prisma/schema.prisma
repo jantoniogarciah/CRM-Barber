@@ -28,7 +28,7 @@ model Client {
   id        String   @id @default(cuid())
   firstName String
   lastName  String
-  email     String?  @unique
+  email     String?
   phone     String   @unique
   notes     String?
   status    String   @default("ACTIVE")
