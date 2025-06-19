@@ -111,9 +111,10 @@ const Clients = () => {
   const handleToggleStatus = async (client: Client) => {
     try {
       setTogglingId(client.id);
-      await toggleClientStatus(client.id);
-      toast.success(`Cliente ${client.isActive ? 'desactivado' : 'activado'} exitosamente`);
-    } catch (error: unknown) {
+      await toggleClientStatus(client.id).unwrap();
+      await refetch();
+      toast.success(`Cliente ${client.status === 'ACTIVE' ? 'desactivado' : 'activado'} exitosamente`);
+    } catch (error: any) {
       const err = error as ApiError;
       const message =
         err.data?.message || err.error || err.message || 'Error al cambiar el estado del cliente';
@@ -181,10 +182,10 @@ const Clients = () => {
                 <TableRow
                   key={client.id}
                   sx={{
-                    opacity: client.isActive ? 1 : 0.5,
-                    backgroundColor: client.isActive ? 'transparent' : '#f5f5f5',
+                    opacity: client.status === 'ACTIVE' ? 1 : 0.5,
+                    backgroundColor: client.status === 'ACTIVE' ? 'transparent' : '#f5f5f5',
                     '&:hover': {
-                      backgroundColor: client.isActive ? '#f8f8f8' : '#eeeeee',
+                      backgroundColor: client.status === 'ACTIVE' ? '#f8f8f8' : '#eeeeee',
                     },
                   }}
                 >
@@ -227,10 +228,10 @@ const Clients = () => {
                   </TableCell>
                   <TableCell>
                     <Tooltip
-                      title={client.isActive ? 'Click para desactivar' : 'Click para activar'}
+                      title={client.status === 'ACTIVE' ? 'Click para desactivar' : 'Click para activar'}
                     >
                       <Switch
-                        checked={client.isActive}
+                        checked={client.status === 'ACTIVE'}
                         onChange={() => handleToggleStatus(client)}
                         disabled={togglingId === client.id}
                         color="primary"

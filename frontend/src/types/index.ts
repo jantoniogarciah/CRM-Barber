@@ -11,12 +11,11 @@ export interface Client {
   id: string;
   firstName: string;
   lastName: string;
-  email?: string;
+  email: string | null;
   phone: string;
-  notes?: string;
-  isActive: boolean;
+  notes: string | null;
   createdAt: string;
-  updatedAt: string;
+  status: 'ACTIVE' | 'INACTIVE';
 }
 
 export interface Category {
