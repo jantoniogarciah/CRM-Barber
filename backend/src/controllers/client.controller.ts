@@ -65,48 +65,78 @@ export const createClient = async (req: Request, res: Response) => {
   try {
     const { firstName, lastName, email, phone, notes } = req.body;
 
-    // Verificar si ya existe un cliente con ese teléfono, sin importar su estado
-    const existingClient = await prisma.client.findFirst({
-      where: { phone },
+    console.log('Creating client with data:', { firstName, lastName, email, phone, notes });
+
+    // Verificar formato del teléfono
+    const cleanPhone = phone.replace(/\D/g, '');
+    if (cleanPhone.length !== 10) {
+      console.log('Invalid phone format:', { original: phone, cleaned: cleanPhone });
+      return res.status(400).json({
+        message: "El teléfono debe tener exactamente 10 dígitos",
+      });
+    }
+
+    // Buscar cliente existente con logs detallados
+    console.log('Searching for existing client with phone:', cleanPhone);
+    
+    const existingClients = await prisma.client.findMany({
+      where: {
+        phone: {
+          contains: cleanPhone,
+        },
+      },
     });
 
-    if (existingClient) {
+    console.log('Found clients with similar phone:', existingClients);
+
+    const exactMatch = existingClients.find(c => c.phone === cleanPhone);
+    if (exactMatch) {
+      console.log('Found exact match:', exactMatch);
       return res.status(400).json({
         message: "Ya existe un cliente con este número de teléfono",
         existingClient: {
-          id: existingClient.id,
-          firstName: existingClient.firstName,
-          lastName: existingClient.lastName,
-          phone: existingClient.phone,
-          status: existingClient.status,
-          createdAt: existingClient.createdAt,
+          id: exactMatch.id,
+          firstName: exactMatch.firstName,
+          lastName: exactMatch.lastName,
+          phone: exactMatch.phone,
+          status: exactMatch.status,
+          createdAt: exactMatch.createdAt,
         },
       });
     }
+
+    // Si llegamos aquí, no hay cliente existente con ese teléfono
+    console.log('No existing client found, creating new client');
 
     const client = await prisma.client.create({
       data: {
         firstName,
         lastName,
         email,
-        phone,
+        phone: cleanPhone, // Usar el teléfono limpio
         notes,
         status: "ACTIVE",
       },
     });
 
+    console.log('Client created successfully:', client);
+
     return res.status(201).json(client);
   } catch (error) {
+    console.error('Error in createClient:', error);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       // El error P2002 es para violaciones de unicidad
       if (error.code === 'P2002') {
+        console.log('Unique constraint violation:', error);
         return res.status(400).json({
           message: "Ya existe un cliente con este número de teléfono",
         });
       }
     }
-    console.error("Error creating client:", error);
-    return res.status(500).json({ message: "Error al crear el cliente" });
+    return res.status(500).json({ 
+      message: "Error al crear el cliente",
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 };
 
