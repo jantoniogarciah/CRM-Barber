@@ -63,6 +63,45 @@ const Clients = () => {
   const [togglingId, setTogglingId] = React.useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
 
+  // Efecto para loguear cambios en los clientes y showInactive
+  React.useEffect(() => {
+    console.log('Clients state changed:', { 
+      showInactive, 
+      clientsCount: clients.length,
+      activeClients: clients.filter(c => c.status === 'ACTIVE').length,
+      inactiveClients: clients.filter(c => c.status === 'INACTIVE').length
+    });
+  }, [clients, showInactive]);
+
+  const handleShowExistingClient = async (clientId: string) => {
+    console.log('Showing existing client:', clientId);
+    const client = clients.find(c => c.id === clientId);
+    
+    if (client) {
+      console.log('Found client:', client);
+      if (client.status === 'INACTIVE' && !showInactive) {
+        console.log('Client is inactive, enabling showInactive');
+        setShowInactive(true);
+        // Esperamos a que se actualice el estado y refrescamos
+        await refetch();
+      }
+      // Hacemos scroll al cliente
+      const element = document.getElementById(`client-row-${clientId}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Añadimos un highlight temporal
+        element.style.backgroundColor = '#e3f2fd';
+        setTimeout(() => {
+          element.style.backgroundColor = '';
+        }, 2000);
+      }
+    } else {
+      console.log('Client not found in current list');
+      // Si no encontramos el cliente, forzamos una actualización
+      await refetch();
+    }
+  };
+
   const handleEdit = (client: Client) => {
     setSelectedClient(client);
     setFormOpen(true);
@@ -146,7 +185,10 @@ const Clients = () => {
             control={
               <Switch
                 checked={showInactive}
-                onChange={(e: ChangeEvent) => setShowInactive(e.target.checked)}
+                onChange={(e: ChangeEvent) => {
+                  console.log('Toggling showInactive:', e.target.checked);
+                  setShowInactive(e.target.checked);
+                }}
               />
             }
             label="Mostrar inactivos"
@@ -181,12 +223,14 @@ const Clients = () => {
               return (
                 <TableRow
                   key={client.id}
+                  id={`client-row-${client.id}`}
                   sx={{
                     opacity: client.status === 'ACTIVE' ? 1 : 0.5,
                     backgroundColor: client.status === 'ACTIVE' ? 'transparent' : '#f5f5f5',
                     '&:hover': {
                       backgroundColor: client.status === 'ACTIVE' ? '#f8f8f8' : '#eeeeee',
                     },
+                    transition: 'background-color 0.3s ease',
                   }}
                 >
                   <TableCell>{`${client.firstName} ${client.lastName}`}</TableCell>
@@ -259,7 +303,11 @@ const Clients = () => {
           onClose={handleFormClose}
           client={selectedClient}
           onSuccess={handleFormSuccess}
-          onError={(message: string) => toast.error(message)}
+          onError={(message: string) => {
+            console.log('Form error:', message);
+            toast.error(message);
+          }}
+          onShowExistingClient={handleShowExistingClient}
         />
       )}
 

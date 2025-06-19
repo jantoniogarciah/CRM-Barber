@@ -13,15 +13,23 @@ export const getClients = async (req: Request, res: Response) => {
     const showInactive = req.query.showInactive === "true";
     const phone = req.query.phone as string;
 
+    console.log('Fetching clients with params:', { showInactive, phone });
+
+    const whereClause = {
+      ...(showInactive ? {} : { status: "ACTIVE" }),
+      ...(phone ? { phone: { contains: phone } } : {}),
+    };
+
+    console.log('Where clause:', whereClause);
+
     const clients = await prisma.client.findMany({
-      where: {
-        ...(showInactive ? {} : { status: "ACTIVE" }),
-        ...(phone ? { phone: { contains: phone } } : {}),
-      },
+      where: whereClause,
       orderBy: {
         createdAt: "desc",
       },
     });
+
+    console.log(`Found ${clients.length} clients`);
 
     res.json(clients);
   } catch (error) {
@@ -57,7 +65,7 @@ export const createClient = async (req: Request, res: Response) => {
   try {
     const { firstName, lastName, email, phone, notes } = req.body;
 
-    // Verificar si ya existe un cliente con ese teléfono
+    // Verificar si ya existe un cliente con ese teléfono, sin importar su estado
     const existingClient = await prisma.client.findFirst({
       where: { phone },
     });
@@ -66,9 +74,12 @@ export const createClient = async (req: Request, res: Response) => {
       return res.status(400).json({
         message: "Ya existe un cliente con este número de teléfono",
         existingClient: {
+          id: existingClient.id,
           firstName: existingClient.firstName,
           lastName: existingClient.lastName,
           phone: existingClient.phone,
+          status: existingClient.status,
+          createdAt: existingClient.createdAt,
         },
       });
     }

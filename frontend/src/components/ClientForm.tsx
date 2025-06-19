@@ -11,6 +11,7 @@ import {
   Grid,
   Box,
   Alert,
+  Typography,
 } from '@mui/material';
 import { Client } from '../types';
 import { useCreateClientMutation, useUpdateClientMutation } from '../services/api';
@@ -21,6 +22,7 @@ interface ClientFormProps {
   onSuccess: (message: string) => void;
   onError: (message: string) => void;
   client?: Client;
+  onShowExistingClient?: (clientId: string) => void;
 }
 
 interface ClientFormValues {
@@ -47,13 +49,17 @@ const ClientForm = ({
   onSuccess,
   onError,
   client,
+  onShowExistingClient,
 }: ClientFormProps): React.ReactElement => {
   const [createClient] = useCreateClientMutation();
   const [updateClient] = useUpdateClientMutation();
   const [existingClient, setExistingClient] = React.useState<{
+    id: string;
     firstName: string;
     lastName: string;
     phone: string;
+    status: 'ACTIVE' | 'INACTIVE';
+    createdAt: string;
   } | null>(null);
 
   const formik = useFormik<ClientFormValues>({
@@ -67,6 +73,7 @@ const ClientForm = ({
     validationSchema,
     onSubmit: async (values) => {
       try {
+        console.log('Submitting form with values:', values);
         const cleanPhone = values.phone.replace(/\D/g, '');
         if (cleanPhone.length !== 10) {
           onError('El teléfono debe tener exactamente 10 dígitos');
@@ -93,6 +100,7 @@ const ClientForm = ({
       } catch (error: any) {
         console.error('Error saving client:', error);
         if (error.data?.existingClient) {
+          console.log('Found existing client:', error.data.existingClient);
           setExistingClient(error.data.existingClient);
         } else {
           onError(error.data?.message || 'Error al guardar el cliente');
@@ -106,12 +114,14 @@ const ClientForm = ({
     if (value.length > 10) {
       value = value.slice(0, 10);
     }
+    console.log('Phone changed:', value);
     formik.setFieldValue('phone', value);
     setExistingClient(null);
   };
 
   useEffect(() => {
     if (open) {
+      console.log('Form opened with client:', client);
       formik.resetForm({
         values: {
           firstName: client?.firstName || '',
@@ -131,12 +141,39 @@ const ClientForm = ({
       <Box component="form" onSubmit={formik.handleSubmit}>
         <DialogContent>
           {existingClient && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert 
+              severity="error" 
+              sx={{ mb: 2 }}
+              action={
+                onShowExistingClient && (
+                  <Button
+                    color="inherit"
+                    size="small"
+                    onClick={() => {
+                      console.log('Show existing client clicked:', existingClient.id);
+                      onShowExistingClient(existingClient.id);
+                      onClose();
+                    }}
+                  >
+                    Ver Cliente
+                  </Button>
+                )
+              }
+            >
               Ya existe un cliente con este número de teléfono:
               <br />
               Nombre: {existingClient.firstName} {existingClient.lastName}
               <br />
               Teléfono: {existingClient.phone}
+              <br />
+              Estado: {existingClient.status === 'ACTIVE' ? 'Activo' : 'Inactivo'}
+              <br />
+              Creado: {new Date(existingClient.createdAt).toLocaleDateString()}
+              {existingClient.status === 'INACTIVE' && (
+                <Typography color="textSecondary" sx={{ mt: 1, fontSize: '0.875rem' }}>
+                  * El cliente está inactivo. Al hacer clic en "Ver Cliente" se activará la opción de mostrar clientes inactivos.
+                </Typography>
+              )}
             </Alert>
           )}
           <Box sx={{ mt: 2 }}>
