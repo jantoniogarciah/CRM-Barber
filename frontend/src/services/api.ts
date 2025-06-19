@@ -121,7 +121,7 @@ export const api = createApi({
         method: 'POST',
         body: client,
       }),
-      invalidatesTags: ['Client'],
+      invalidatesTags: ['Client', 'Clients'],
     }),
     updateClient: builder.mutation<Client, { id: string; client: Partial<Client> }>({
       query: ({ id, client }) => ({

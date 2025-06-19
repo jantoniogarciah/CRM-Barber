@@ -37,7 +37,7 @@ const validationSchema = Yup.object({
   email: Yup.string().email('Email inválido').nullable(),
   phone: Yup.string()
     .required('El teléfono es requerido')
-    .matches(/^\+?[\d\s-]{10,}$/, 'Formato de teléfono inválido'),
+    .matches(/^\d{10}$/, 'El teléfono debe tener exactamente 10 dígitos'),
   notes: Yup.string(),
 });
 
@@ -67,14 +67,25 @@ const ClientForm = ({
     validationSchema,
     onSubmit: async (values) => {
       try {
+        const cleanPhone = values.phone.replace(/\D/g, '');
+        if (cleanPhone.length !== 10) {
+          onError('El teléfono debe tener exactamente 10 dígitos');
+          return;
+        }
+
+        const clientData = {
+          ...values,
+          phone: cleanPhone,
+        };
+
         if (client?.id) {
           await updateClient({
             id: client.id,
-            client: values,
+            client: clientData,
           }).unwrap();
           onSuccess('Cliente actualizado exitosamente');
         } else {
-          const result = await createClient(values).unwrap();
+          await createClient(clientData).unwrap();
           onSuccess('Cliente creado exitosamente');
         }
         setExistingClient(null);
@@ -89,6 +100,15 @@ const ClientForm = ({
       }
     },
   });
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 10) {
+      value = value.slice(0, 10);
+    }
+    formik.setFieldValue('phone', value);
+    setExistingClient(null);
+  };
 
   useEffect(() => {
     if (open) {
@@ -111,7 +131,7 @@ const ClientForm = ({
       <Box component="form" onSubmit={formik.handleSubmit}>
         <DialogContent>
           {existingClient && (
-            <Alert severity="warning" sx={{ mb: 2 }}>
+            <Alert severity="error" sx={{ mb: 2 }}>
               Ya existe un cliente con este número de teléfono:
               <br />
               Nombre: {existingClient.firstName} {existingClient.lastName}
@@ -152,12 +172,15 @@ const ClientForm = ({
                   name="phone"
                   label="Teléfono"
                   value={formik.values.phone}
-                  onChange={(e) => {
-                    formik.handleChange(e);
-                    setExistingClient(null);
-                  }}
+                  onChange={handlePhoneChange}
                   error={formik.touched.phone && Boolean(formik.errors.phone)}
-                  helperText={formik.touched.phone && formik.errors.phone}
+                  helperText={
+                    (formik.touched.phone && formik.errors.phone) ||
+                    'Ingresa exactamente 10 dígitos'
+                  }
+                  inputProps={{
+                    maxLength: 10,
+                  }}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -191,7 +214,12 @@ const ClientForm = ({
         </DialogContent>
         <DialogActions>
           <Button onClick={onClose}>Cancelar</Button>
-          <Button type="submit" variant="contained" color="primary">
+          <Button 
+            type="submit" 
+            variant="contained" 
+            color="primary"
+            disabled={!formik.isValid || formik.isSubmitting}
+          >
             {client ? 'Actualizar' : 'Crear'}
           </Button>
         </DialogActions>

@@ -181,9 +181,11 @@ const Clients = () => {
                 <TableRow
                   key={client.id}
                   sx={{
-                    opacity: client.isActive ? 1 : 0.6,
-                    backgroundColor: client.isActive ? 'inherit' : 'action.hover',
-                    transition: 'all 0.3s ease',
+                    opacity: client.isActive ? 1 : 0.5,
+                    backgroundColor: client.isActive ? 'transparent' : '#f5f5f5',
+                    '&:hover': {
+                      backgroundColor: client.isActive ? '#f8f8f8' : '#eeeeee',
+                    },
                   }}
                 >
                   <TableCell>{`${client.firstName} ${client.lastName}`}</TableCell>
