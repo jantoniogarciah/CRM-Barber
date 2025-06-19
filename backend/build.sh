@@ -51,4 +51,14 @@ mkdir -p dist/prisma
 cp -r prisma/* dist/prisma/
 
 # Ejecutar migraciones
-npm run migrate 
+npm run migrate
+
+# Si estamos en modo desarrollo (NODE_ENV=development), ejecutar Prisma Studio
+if [ "$NODE_ENV" = "development" ]; then
+  echo "Starting Prisma Studio..."
+  npx prisma studio &
+fi
+
+# Iniciar la aplicación
+echo "Starting the application..."
+npm start 
