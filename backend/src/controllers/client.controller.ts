@@ -22,6 +22,16 @@ export const getClients = async (req: Request, res: Response) => {
 
     console.log('Where clause:', whereClause);
 
+    // Primero buscar todos los clientes para debugging
+    const allClients = await prisma.client.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    console.log('All clients in database:', allClients);
+
+    // Luego aplicar el filtro
     const clients = await prisma.client.findMany({
       where: whereClause,
       orderBy: {
@@ -29,7 +39,8 @@ export const getClients = async (req: Request, res: Response) => {
       },
     });
 
-    console.log(`Found ${clients.length} clients`);
+    console.log(`Found ${clients.length} clients after filtering`);
+    console.log('Filtered clients:', clients);
 
     res.json(clients);
   } catch (error) {
@@ -79,21 +90,19 @@ export const createClient = async (req: Request, res: Response) => {
     // Buscar cliente existente con logs detallados
     console.log('Searching for existing client with phone:', cleanPhone);
     
-    const existingClients = await prisma.client.findMany({
+    // Primero buscar coincidencia exacta
+    const exactMatch = await prisma.client.findFirst({
       where: {
-        phone: {
-          contains: cleanPhone,
-        },
+        phone: cleanPhone
       },
     });
 
-    console.log('Found clients with similar phone:', existingClients);
+    console.log('Exact match search result:', exactMatch);
 
-    const exactMatch = existingClients.find(c => c.phone === cleanPhone);
     if (exactMatch) {
       console.log('Found exact match:', exactMatch);
       return res.status(400).json({
-        message: "Ya existe un cliente con este número de teléfono",
+        message: `Ya existe un cliente con este número de teléfono: ${exactMatch.firstName} ${exactMatch.lastName} (${exactMatch.status})`,
         existingClient: {
           id: exactMatch.id,
           firstName: exactMatch.firstName,
@@ -105,6 +114,17 @@ export const createClient = async (req: Request, res: Response) => {
       });
     }
 
+    // Buscar coincidencias parciales para debugging
+    const similarMatches = await prisma.client.findMany({
+      where: {
+        phone: {
+          contains: cleanPhone
+        }
+      }
+    });
+
+    console.log('Similar matches found:', similarMatches);
+
     // Si llegamos aquí, no hay cliente existente con ese teléfono
     console.log('No existing client found, creating new client');
 
@@ -113,7 +133,7 @@ export const createClient = async (req: Request, res: Response) => {
         firstName,
         lastName,
         email,
-        phone: cleanPhone, // Usar el teléfono limpio
+        phone: cleanPhone,
         notes,
         status: "ACTIVE",
       },
@@ -125,11 +145,18 @@ export const createClient = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error in createClient:', error);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      console.log('Prisma error details:', {
+        code: error.code,
+        meta: error.meta,
+        message: error.message
+      });
+      
       // El error P2002 es para violaciones de unicidad
       if (error.code === 'P2002') {
-        console.log('Unique constraint violation:', error);
         return res.status(400).json({
           message: "Ya existe un cliente con este número de teléfono",
+          error: 'UNIQUE_CONSTRAINT_VIOLATION',
+          field: error.meta?.target
         });
       }
     }
