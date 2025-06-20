@@ -21,6 +21,8 @@ import {
   CircularProgress,
   Tooltip,
   Link,
+  TextField,
+  TablePagination,
 } from '@mui/material';
 import {
   useGetClientsQuery,
@@ -54,7 +56,22 @@ interface ApiError {
 
 const Clients = () => {
   const [showInactive, setShowInactive] = React.useState(false);
-  const { data: clients = [], isLoading, refetch } = useGetClientsQuery({ showInactive });
+  const [page, setPage] = React.useState(1);
+  const [limit, setLimit] = React.useState(10);
+  const [searchPhone, setSearchPhone] = React.useState('');
+  const [searchTimeout, setSearchTimeout] = React.useState<ReturnType<typeof setTimeout> | null>(null);
+
+  const { 
+    data: clientsData, 
+    isLoading,
+    refetch 
+  } = useGetClientsQuery({ 
+    showInactive,
+    page,
+    limit,
+    phone: searchPhone
+  });
+
   const { data: lastAppointments = {} } = useGetLastCompletedAppointmentsQuery();
   const [toggleClientStatus] = useToggleClientStatusMutation();
   const [deleteClient] = useDeleteClientMutation();
@@ -63,15 +80,44 @@ const Clients = () => {
   const [togglingId, setTogglingId] = React.useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
 
+  const clients = clientsData?.clients || [];
+  const pagination = clientsData?.pagination || { total: 0, totalPages: 0 };
+
   // Efecto para loguear cambios en los clientes y showInactive
   React.useEffect(() => {
     console.log('Clients state changed:', { 
       showInactive, 
+      page,
+      limit,
+      searchPhone,
       clientsCount: clients.length,
       activeClients: clients.filter(c => c.status === 'ACTIVE').length,
-      inactiveClients: clients.filter(c => c.status === 'INACTIVE').length
+      inactiveClients: clients.filter(c => c.status === 'INACTIVE').length,
+      pagination
     });
-  }, [clients, showInactive]);
+  }, [clients, showInactive, page, limit, searchPhone, pagination]);
+
+  const handlePhoneSearch = (value: string) => {
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+
+    const timeout = setTimeout(() => {
+      setSearchPhone(value);
+      setPage(1); // Reset to first page when searching
+    }, 500);
+
+    setSearchTimeout(timeout);
+  };
+
+  const handlePageChange = (_: unknown, newPage: number) => {
+    setPage(newPage + 1);
+  };
+
+  const handleLimitChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setLimit(parseInt(event.target.value, 10));
+    setPage(1); // Reset to first page when changing limit
+  };
 
   const handleShowExistingClient = async (clientId: string) => {
     console.log('Showing existing client:', clientId);
@@ -181,6 +227,12 @@ const Clients = () => {
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4">Clientes</Typography>
         <Box>
+          <TextField
+            size="small"
+            placeholder="Buscar por teléfono..."
+            onChange={(e) => handlePhoneSearch(e.target.value)}
+            sx={{ mr: 2 }}
+          />
           <FormControlLabel
             control={
               <Switch
@@ -188,6 +240,7 @@ const Clients = () => {
                 onChange={(e: ChangeEvent) => {
                   console.log('Toggling showInactive:', e.target.checked);
                   setShowInactive(e.target.checked);
+                  setPage(1); // Reset to first page when toggling inactive
                 }}
               />
             }
@@ -214,87 +267,113 @@ const Clients = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {clients.map((client) => {
-              const lastAppointment = lastAppointments[client.id];
-              const daysSinceLastAppointment = lastAppointment
-                ? differenceInDays(new Date(), new Date(lastAppointment.date))
-                : null;
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={8} align="center">
+                  <CircularProgress />
+                </TableCell>
+              </TableRow>
+            ) : clients.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} align="center">
+                  No se encontraron clientes
+                </TableCell>
+              </TableRow>
+            ) : (
+              clients.map((client) => {
+                const lastAppointment = lastAppointments[client.id];
+                const daysSinceLastAppointment = lastAppointment
+                  ? differenceInDays(new Date(), new Date(lastAppointment.date))
+                  : null;
 
-              return (
-                <TableRow
-                  key={client.id}
-                  id={`client-row-${client.id}`}
-                  sx={{
-                    opacity: client.status === 'ACTIVE' ? 1 : 0.5,
-                    backgroundColor: client.status === 'ACTIVE' ? 'transparent' : '#f5f5f5',
-                    '&:hover': {
-                      backgroundColor: client.status === 'ACTIVE' ? '#f8f8f8' : '#eeeeee',
-                    },
-                    transition: 'background-color 0.3s ease',
-                  }}
-                >
-                  <TableCell>{`${client.firstName} ${client.lastName}`}</TableCell>
-                  <TableCell>{client.email || '-'}</TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {client.phone}
-                      <Tooltip title="Enviar mensaje por WhatsApp">
-                        <Link
-                          href={`https://wa.me/${formatPhoneForWhatsApp(client.phone)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <IconButton size="small" color="success">
-                            <WhatsAppIcon />
-                          </IconButton>
-                        </Link>
+                return (
+                  <TableRow
+                    key={client.id}
+                    id={`client-row-${client.id}`}
+                    sx={{
+                      opacity: client.status === 'ACTIVE' ? 1 : 0.5,
+                      backgroundColor: client.status === 'ACTIVE' ? 'transparent' : '#f5f5f5',
+                      '&:hover': {
+                        backgroundColor: client.status === 'ACTIVE' ? '#f8f8f8' : '#eeeeee',
+                      },
+                      transition: 'background-color 0.3s ease',
+                    }}
+                  >
+                    <TableCell>{`${client.firstName} ${client.lastName}`}</TableCell>
+                    <TableCell>{client.email || '-'}</TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {client.phone}
+                        <Tooltip title="Enviar mensaje por WhatsApp">
+                          <Link
+                            href={`https://wa.me/${formatPhoneForWhatsApp(client.phone)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <IconButton size="small" color="success">
+                              <WhatsAppIcon />
+                            </IconButton>
+                          </Link>
+                        </Tooltip>
+                      </Box>
+                    </TableCell>
+                    <TableCell>{client.notes || '-'}</TableCell>
+                    <TableCell>
+                      <Typography
+                        component="span"
+                        sx={{
+                          color:
+                            daysSinceLastAppointment && daysSinceLastAppointment > 20
+                              ? 'error.main'
+                              : 'inherit',
+                        }}
+                      >
+                        {daysSinceLastAppointment !== null
+                          ? `${daysSinceLastAppointment} días`
+                          : 'Sin citas'}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      {client.createdAt ? format(new Date(client.createdAt), 'dd/MM/yyyy') : ''}
+                    </TableCell>
+                    <TableCell>
+                      <Tooltip
+                        title={client.status === 'ACTIVE' ? 'Click para desactivar' : 'Click para activar'}
+                      >
+                        <Switch
+                          checked={client.status === 'ACTIVE'}
+                          onChange={() => handleToggleStatus(client)}
+                          disabled={togglingId === client.id}
+                          color="primary"
+                        />
                       </Tooltip>
-                    </Box>
-                  </TableCell>
-                  <TableCell>{client.notes || '-'}</TableCell>
-                  <TableCell>
-                    <Typography
-                      component="span"
-                      sx={{
-                        color:
-                          daysSinceLastAppointment && daysSinceLastAppointment > 20
-                            ? 'error.main'
-                            : 'inherit',
-                      }}
-                    >
-                      {daysSinceLastAppointment !== null
-                        ? `${daysSinceLastAppointment} días`
-                        : 'Sin citas'}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    {client.createdAt ? format(new Date(client.createdAt), 'dd/MM/yyyy') : ''}
-                  </TableCell>
-                  <TableCell>
-                    <Tooltip
-                      title={client.status === 'ACTIVE' ? 'Click para desactivar' : 'Click para activar'}
-                    >
-                      <Switch
-                        checked={client.status === 'ACTIVE'}
-                        onChange={() => handleToggleStatus(client)}
-                        disabled={togglingId === client.id}
-                        color="primary"
-                      />
-                    </Tooltip>
-                  </TableCell>
-                  <TableCell align="right">
-                    <IconButton onClick={() => handleEdit(client)} size="small">
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton onClick={() => handleDelete(client)} size="small">
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+                    </TableCell>
+                    <TableCell align="right">
+                      <IconButton onClick={() => handleEdit(client)} size="small">
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton onClick={() => handleDelete(client)} size="small">
+                        <DeleteIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
           </TableBody>
         </Table>
+        <Box sx={{ p: 2 }}>
+          <TablePagination
+            component="div"
+            count={pagination.total}
+            page={page - 1}
+            onPageChange={handlePageChange}
+            rowsPerPage={limit}
+            onRowsPerPageChange={handleLimitChange}
+            rowsPerPageOptions={[5, 10, 25, 50]}
+            labelRowsPerPage="Clientes por página"
+          />
+        </Box>
       </TableContainer>
 
       {formOpen && (

@@ -103,9 +103,17 @@ export const api = createApi({
     }),
 
     // Client endpoints
-    getClients: builder.query<Client[], { showInactive?: boolean }>({
-      query: ({ showInactive }) => `/clients${showInactive ? '?showInactive=true' : ''}`,
-      providesTags: ['Client'],
+    getClients: builder.query<{ clients: Client[]; pagination: any }, { showInactive?: boolean; page?: number; limit?: number; phone?: string }>({
+      query: (params) => ({
+        url: '/clients',
+        params: {
+          showInactive: params.showInactive,
+          page: params.page,
+          limit: params.limit,
+          phone: params.phone
+        },
+      }),
+      providesTags: ['Clients'],
     }),
     getLastCompletedAppointments: builder.query<{ [clientId: string]: Appointment }, void>({
       query: () => '/appointments/last-completed',
@@ -144,6 +152,14 @@ export const api = createApi({
         method: 'PATCH',
       }),
       invalidatesTags: ['Client'],
+    }),
+
+    searchClientByPhone: builder.query<Client[], string>({
+      query: (phone) => ({
+        url: '/clients/search/phone',
+        params: { phone },
+      }),
+      providesTags: ['Clients'],
     }),
 
     // Service endpoints
@@ -334,12 +350,6 @@ export const api = createApi({
       invalidatesTags: ['ServicesLog'],
     }),
 
-    // Búsqueda de cliente por teléfono
-    getClientByPhone: builder.query({
-      query: (phone) => `/clients/search?phone=${encodeURIComponent(phone)}`,
-      providesTags: ['Clients'],
-    }),
-
     // Sales endpoints
     getSales: builder.query<Sale[], void>({
       query: () => '/sales',
@@ -420,4 +430,5 @@ export const {
   useCreateSaleMutation,
   useUpdateSaleMutation,
   useDeleteSaleMutation,
+  useSearchClientByPhoneQuery,
 } = api;

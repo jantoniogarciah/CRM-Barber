@@ -8,6 +8,7 @@ import {
   deleteClient,
   toggleClientStatus,
   getClientByPhone,
+  searchClientByPhone,
 } from "../controllers/client.controller";
 import { validateRequest } from "../middleware/validate-request";
 import { requireAuth } from "../middleware/require-auth";
@@ -21,7 +22,7 @@ router.use(requireAuth);
 router.get("/", getClients);
 
 // Search client by phone
-router.get("/search", getClientByPhone);
+router.get("/search/phone", searchClientByPhone);
 
 // Get specific client
 router.get("/:id", getClient);

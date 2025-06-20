@@ -12,9 +12,13 @@ export const getClients = async (req: Request, res: Response) => {
   try {
     const showInactive = req.query.showInactive === "true";
     const phone = req.query.phone as string;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
 
-    console.log('Fetching clients with params:', { showInactive, phone });
+    console.log('Fetching clients with params:', { showInactive, phone, page, limit });
 
+    // Construir where clause
     const whereClause = {
       ...(showInactive ? {} : { status: "ACTIVE" }),
       ...(phone ? { phone: { contains: phone } } : {}),
@@ -22,27 +26,37 @@ export const getClients = async (req: Request, res: Response) => {
 
     console.log('Where clause:', whereClause);
 
-    // Primero buscar todos los clientes para debugging
-    const allClients = await prisma.client.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
+    // Obtener el total de registros para la paginación
+    const total = await prisma.client.count({
+      where: whereClause,
     });
 
-    console.log('All clients in database:', allClients);
-
-    // Luego aplicar el filtro
+    // Obtener los clientes paginados
     const clients = await prisma.client.findMany({
       where: whereClause,
       orderBy: {
         createdAt: "desc",
       },
+      skip,
+      take: limit,
     });
 
-    console.log(`Found ${clients.length} clients after filtering`);
-    console.log('Filtered clients:', clients);
+    // Calcular el total de páginas
+    const totalPages = Math.ceil(total / limit);
 
-    res.json(clients);
+    console.log(`Found ${clients.length} clients. Total: ${total}, Pages: ${totalPages}`);
+
+    res.json({
+      clients,
+      pagination: {
+        total,
+        totalPages,
+        currentPage: page,
+        limit,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1
+      }
+    });
   } catch (error) {
     console.error("Error fetching clients:", error);
     res.status(500).json({ message: "Error al obtener los clientes" });
@@ -255,6 +269,37 @@ export const getClientByPhone = async (req: Request, res: Response) => {
     }
 
     return res.json(client);
+  } catch (error) {
+    console.error("Error searching client by phone:", error);
+    return res.status(500).json({ message: "Error al buscar el cliente" });
+  }
+};
+
+// Añadir función específica para buscar por teléfono
+export const searchClientByPhone = async (req: Request, res: Response) => {
+  try {
+    const { phone } = req.query;
+
+    if (!phone) {
+      return res.status(400).json({ message: "El número de teléfono es requerido" });
+    }
+
+    console.log('Searching client by phone:', phone);
+
+    const clients = await prisma.client.findMany({
+      where: {
+        phone: {
+          contains: phone as string,
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    console.log(`Found ${clients.length} clients with phone containing: ${phone}`);
+
+    return res.json(clients);
   } catch (error) {
     console.error("Error searching client by phone:", error);
     return res.status(500).json({ message: "Error al buscar el cliente" });
