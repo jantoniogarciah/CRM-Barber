@@ -24,7 +24,6 @@ import {
   Paper,
   IconButton,
   Tooltip,
-  Dialog as ConfirmDialog,
   DialogContentText,
 } from '@mui/material';
 import { 
@@ -46,8 +45,12 @@ import {
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { debounce } from 'lodash';
 import { Sale } from '../types';
+
+interface SalesResponse {
+  sales: Sale[];
+  total: number;
+}
 
 const Sales: React.FC = () => {
   const [openNewSale, setOpenNewSale] = useState(false);
@@ -75,9 +78,11 @@ const Sales: React.FC = () => {
   });
   const [createSale] = useCreateSaleMutation();
   const [updateSale] = useUpdateSaleMutation();
-  const { data: sales = [], isLoading: isLoadingSales } = useGetSalesQuery();
+  const { data: salesData, isLoading: isLoadingSales } = useGetSalesQuery();
   const [createClient] = useCreateClientMutation();
   const [deleteSale] = useDeleteSaleMutation();
+
+  const sales = (salesData as SalesResponse)?.sales || [];
 
   const handleNewSale = () => {
     setOpenNewSale(true);
@@ -258,7 +263,7 @@ const Sales: React.FC = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {sales.map((sale) => (
+            {sales.map((sale: Sale) => (
               <TableRow key={sale.id}>
                 <TableCell>
                   {format(new Date(sale.createdAt), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}

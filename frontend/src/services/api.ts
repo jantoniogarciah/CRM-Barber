@@ -203,7 +203,7 @@ export const api = createApi({
     }),
 
     // Appointment endpoints
-    getAppointments: builder.query<Appointment[], void>({
+    getAppointments: builder.query<{ appointments: Appointment[]; total: number }, void>({
       query: () => '/appointments',
       providesTags: ['Appointment'],
     }),
@@ -351,7 +351,7 @@ export const api = createApi({
     }),
 
     // Sales endpoints
-    getSales: builder.query<Sale[], void>({
+    getSales: builder.query<{ sales: Sale[]; total: number }, void>({
       query: () => '/sales',
       providesTags: ['Sales'],
     }),
