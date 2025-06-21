@@ -51,9 +51,24 @@ export interface Appointment {
   time: string;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   notes: string;
-  client?: Client;
-  service?: Service;
-  barber?: Barber;
+  client?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    email?: string;
+  };
+  service?: {
+    id: string;
+    name: string;
+    price: number;
+    duration: number;
+  };
+  barber?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
   createdAt: string;
   updatedAt: string;
 }

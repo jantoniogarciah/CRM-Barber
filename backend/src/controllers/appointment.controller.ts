@@ -29,7 +29,12 @@ export const getAppointments = async (req: Request, res: Response) => {
       ],
     });
 
-    res.json(appointments);
+    console.log('Found appointments:', appointments.length);
+
+    res.json({
+      appointments,
+      total: appointments.length
+    });
   } catch (error) {
     console.error("Error getting appointments:", error);
     throw new AppError("Error getting appointments", 500);
@@ -65,7 +70,21 @@ export const createAppointment = async (req: Request, res: Response) => {
   try {
     const { clientId, serviceId, barberId, date, time, status, notes } = req.body;
 
-    console.log('Creating appointment with date:', date);
+    console.log('Creating appointment with data:', {
+      clientId,
+      serviceId,
+      barberId,
+      date,
+      time,
+      status,
+      notes
+    });
+
+    // Validate status
+    const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled'];
+    if (status && !validStatuses.includes(status)) {
+      throw new AppError(`Invalid status. Must be one of: ${validStatuses.join(', ')}`, 400);
+    }
 
     // Validate that client, service, and barber exist
     const client = await prisma.client.findUnique({ where: { id: clientId } });
@@ -92,7 +111,7 @@ export const createAppointment = async (req: Request, res: Response) => {
         barberId,
         date,
         time,
-        status,
+        status: status || 'pending', // Default to pending if not provided
         notes,
       },
       include: {
@@ -102,10 +121,18 @@ export const createAppointment = async (req: Request, res: Response) => {
       },
     });
 
+    console.log('Created appointment:', appointment);
+
     res.status(201).json(appointment);
   } catch (error) {
     console.error("Error creating appointment:", error);
-    throw new AppError("Error creating appointment", 500);
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new AppError(
+      `Error creating appointment: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      error instanceof AppError ? error.statusCode : 500
+    );
   }
 };
 

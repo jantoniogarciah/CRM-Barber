@@ -24,6 +24,7 @@ import {
   Tabs,
   Tab,
   Grid,
+  SelectChangeEvent,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -36,19 +37,13 @@ import {
 } from '@mui/icons-material';
 import { format, parseISO, isToday, isTomorrow, isPast } from 'date-fns';
 import axios from 'axios';
-import AppointmentForm from './AppointmentForm';
+import AppointmentForm from '../../components/AppointmentForm';
 import AppointmentDetails from './AppointmentDetails';
 import AppointmentCalendar from './AppointmentCalendar';
+import { Appointment } from '../../types';
 
 interface AppointmentListProps {
   barberId?: string;
-}
-
-interface Appointment {
-  id: string;
-  status: 'scheduled' | 'completed' | 'cancelled' | 'no-show';
-  date: string;
-  // Add other appointment properties as needed
 }
 
 const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
@@ -86,9 +81,15 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
         },
       });
 
-      setAppointments(response.data.appointments);
-      setTotalCount(response.data.total);
+      if (response.data && Array.isArray(response.data.appointments)) {
+        setAppointments(response.data.appointments);
+        setTotalCount(response.data.total || response.data.appointments.length);
+      } else {
+        console.error('Invalid response format:', response.data);
+        setError('Invalid response format from server');
+      }
     } catch (error: any) {
+      console.error('Error fetching appointments:', error);
       setError(error.response?.data?.message || 'An error occurred while fetching appointments');
     } finally {
       setLoading(false);
@@ -113,7 +114,7 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
     setPage(0);
   };
 
-  const handleStatusChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleStatusChange = (event: SelectChangeEvent<string>) => {
     setStatus(event.target.value);
     setPage(0);
   };
@@ -177,14 +178,14 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'scheduled':
+      case 'pending':
+        return 'warning';
+      case 'confirmed':
         return 'info';
       case 'completed':
         return 'success';
       case 'cancelled':
         return 'error';
-      case 'no-show':
-        return 'warning';
       default:
         return 'default';
     }
@@ -234,11 +235,11 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
           <FormControl sx={{ minWidth: 150 }}>
             <InputLabel>Status</InputLabel>
             <Select value={status} onChange={handleStatusChange} label="Status">
-              <MenuItem value="">All Statuses</MenuItem>
-              <MenuItem value="scheduled">Scheduled</MenuItem>
-              <MenuItem value="completed">Completed</MenuItem>
-              <MenuItem value="cancelled">Cancelled</MenuItem>
-              <MenuItem value="no-show">No Show</MenuItem>
+              <MenuItem value="">Todos los estados</MenuItem>
+              <MenuItem value="pending">Pendiente</MenuItem>
+              <MenuItem value="confirmed">Confirmada</MenuItem>
+              <MenuItem value="completed">Completada</MenuItem>
+              <MenuItem value="cancelled">Cancelada</MenuItem>
             </Select>
           </FormControl>
           <TextField
@@ -305,11 +306,11 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
                       {format(parseISO(`2000-01-01T${appointment.time}`), 'h:mm a')}
                     </TableCell>
                     <TableCell>
-                      {appointment.client.firstName} {appointment.client.lastName}
+                      {appointment.client?.firstName} {appointment.client?.lastName}
                     </TableCell>
-                    <TableCell>{appointment.service.name}</TableCell>
+                    <TableCell>{appointment.service?.name}</TableCell>
                     <TableCell>
-                      {appointment.barber.firstName} {appointment.barber.lastName}
+                      {appointment.barber?.firstName} {appointment.barber?.lastName}
                     </TableCell>
                     <TableCell>
                       <Chip
@@ -367,23 +368,27 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
 
       <Dialog open={openForm} onClose={handleFormClose} maxWidth="md" fullWidth>
         <AppointmentForm
-          appointment={selectedAppointment}
-          mode={formMode}
-          onSubmit={handleFormSubmit}
-          onCancel={handleFormClose}
+          open={openForm}
+          onClose={handleFormClose}
+          onSuccess={handleFormSubmit}
+          appointment={selectedAppointment || undefined}
         />
       </Dialog>
 
-      <Dialog open={openDetails} onClose={handleDetailsClose} maxWidth="lg" fullWidth>
-        <AppointmentDetails
-          appointment={selectedAppointment}
-          onClose={handleDetailsClose}
-          onEdit={() => {
-            handleDetailsClose();
-            handleEditClick(selectedAppointment);
-          }}
-        />
-      </Dialog>
+      {openDetails && selectedAppointment && (
+        <Dialog open={openDetails} onClose={handleDetailsClose} maxWidth="lg" fullWidth>
+          <AppointmentDetails
+            appointment={selectedAppointment}
+            onClose={handleDetailsClose}
+            onEdit={() => {
+              handleDetailsClose();
+              if (selectedAppointment) {
+                handleEditClick(selectedAppointment);
+              }
+            }}
+          />
+        </Dialog>
+      )}
     </Box>
   );
 };

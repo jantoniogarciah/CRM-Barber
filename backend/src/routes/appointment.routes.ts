@@ -37,8 +37,9 @@ router.post(
     body("date").notEmpty().withMessage("Date is required"),
     body("time").notEmpty().withMessage("Time is required"),
     body("status")
+      .optional()
       .isIn(["pending", "confirmed", "completed", "cancelled"])
-      .withMessage("Invalid status"),
+      .withMessage("Invalid status. Must be one of: pending, confirmed, completed, cancelled"),
     body("notes").optional(),
     validateRequest,
   ],
@@ -61,12 +62,18 @@ router.put(
       .optional()
       .notEmpty()
       .withMessage("Barber ID cannot be empty"),
-    body("date").optional().notEmpty().withMessage("Date cannot be empty"),
-    body("time").optional().notEmpty().withMessage("Time cannot be empty"),
+    body("date")
+      .optional()
+      .notEmpty()
+      .withMessage("Date cannot be empty"),
+    body("time")
+      .optional()
+      .notEmpty()
+      .withMessage("Time cannot be empty"),
     body("status")
       .optional()
       .isIn(["pending", "confirmed", "completed", "cancelled"])
-      .withMessage("Invalid status"),
+      .withMessage("Invalid status. Must be one of: pending, confirmed, completed, cancelled"),
     body("notes").optional(),
     validateRequest,
   ],
