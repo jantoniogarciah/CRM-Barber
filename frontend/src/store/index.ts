@@ -1,24 +1,30 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { setupListeners } from '@reduxjs/toolkit/query';
-import { api } from '../services/api';
-import authReducer from './slices/authSlice';
-import clientReducer from './slices/clientSlice';
-import serviceReducer from './slices/serviceSlice';
-import appointmentReducer from './slices/appointmentSlice';
-import notificationReducer from './slices/notificationSlice';
+import { authReducer } from './slices/authSlice';
+import { appointmentApi } from './services/appointmentApi';
+import { clientApi } from './services/clientApi';
+import { serviceApi } from './services/serviceApi';
+import { barberApi } from './services/barberApi';
 
 export const store = configureStore({
   reducer: {
-    [api.reducerPath]: api.reducer,
     auth: authReducer,
-    client: clientReducer,
-    service: serviceReducer,
-    appointment: appointmentReducer,
-    notification: notificationReducer,
+    [appointmentApi.reducerPath]: appointmentApi.reducer,
+    [clientApi.reducerPath]: clientApi.reducer,
+    [serviceApi.reducerPath]: serviceApi.reducer,
+    [barberApi.reducerPath]: barberApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(api.middleware),
-  devTools: process.env.NODE_ENV !== 'production',
+    getDefaultMiddleware({
+      serializableCheck: {
+        ignoredActions: ['persist/PERSIST'],
+      },
+    }).concat(
+      appointmentApi.middleware,
+      clientApi.middleware,
+      serviceApi.middleware,
+      barberApi.middleware
+    ),
 });
 
 setupListeners(store.dispatch);

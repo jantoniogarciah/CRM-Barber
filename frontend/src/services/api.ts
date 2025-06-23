@@ -1,7 +1,7 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { createApi, fetchBaseQuery, BaseQueryFn, FetchBaseQueryError, FetchArgs } from '@reduxjs/toolkit/query/react';
 import { User, Client, Service, Appointment, Notification, Category, Barber, Sale } from '../types';
 import { RootState } from '../store';
-import { toast } from 'react-hot-toast';
+import { toast } from 'react-toastify';
 import { clearCredentials } from '../store/slices/authSlice';
 
 // Asegurarse de que la URL base termine en /api
@@ -26,19 +26,32 @@ const baseQuery = fetchBaseQuery({
   credentials: 'include'
 });
 
-const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
+interface ErrorResponse {
+  message?: string;
+  [key: string]: unknown;
+}
+
+interface CustomError extends FetchBaseQueryError {
+  data?: ErrorResponse;
+}
+
+export const baseQueryWithRetry: BaseQueryFn<
+  string | FetchArgs,
+  unknown,
+  CustomError
+> = async (args, api, extraOptions) => {
   try {
     console.log('Making API request:', {
       url: typeof args === 'string' ? args : args.url,
       method: args.method
     });
     
-    const result = await baseQuery(args, api, extraOptions);
+    let result = await baseQuery(args, api, extraOptions);
     
     console.log('API response:', result);
     
     if (result.error) {
-      const error = result.error as any;
+      const error = result.error as CustomError;
       
       // No manejar errores 401 para la ruta de login
       if (error.status === 401 && !args.url.includes('/auth/login')) {
@@ -71,8 +84,9 @@ const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
     toast.error('Error en la conexión. Por favor, verifica tu conexión a internet.');
     return {
       error: {
-        status: 'CUSTOM_ERROR',
-        error: error.message || 'Error en la solicitud'
+        status: 'FETCH_ERROR',
+        error: 'Failed to fetch',
+        data: { message: 'Error de conexión' }
       }
     };
   }

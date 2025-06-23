@@ -1,6 +1,7 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { createApi } from '@reduxjs/toolkit/query/react';
+import { baseQueryWithRetry } from '../../services/api';
 import { Barber } from '../../types';
-import { toast } from 'react-hot-toast';
+import { toast } from 'react-toastify';
 import { clearCredentials } from '../slices/authSlice';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
@@ -54,24 +55,42 @@ const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
   return result;
 };
 
+const handleError = (error: any) => {
+  if (error.status === 401) {
+    toast.error('Sesión expirada. Por favor inicia sesión nuevamente.');
+  } else if (error.status === 500) {
+    toast.error('Error del servidor. Por favor intenta más tarde.');
+  } else {
+    toast.error(error.data?.message || 'Error desconocido');
+  }
+};
+
 export const barberApi = createApi({
   reducerPath: 'barberApi',
   baseQuery: baseQueryWithRetry,
   tagTypes: ['Barber'],
   endpoints: (builder) => ({
-    getBarbers: builder.query<Barber[], { showInactive?: boolean }>({
-      query: ({ showInactive }) => ({
-        url: `/barbers${showInactive ? '?showInactive=true' : ''}`,
-        method: 'GET',
-      }),
+    getBarbers: builder.query<Barber[], void>({
+      query: () => '/barbers',
       providesTags: ['Barber'],
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+        } catch (error: any) {
+          handleError(error.error);
+        }
+      },
     }),
     getBarber: builder.query<Barber, string>({
-      query: (id) => ({
-        url: `/barbers/${id}`,
-        method: 'GET',
-      }),
+      query: (id: string) => `/barbers/${id}`,
       providesTags: (_result, _error, id) => [{ type: 'Barber', id }],
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+        } catch (error: any) {
+          handleError(error.error);
+        }
+      },
     }),
     createBarber: builder.mutation<Barber, Partial<Barber>>({
       query: (barber) => ({
@@ -80,6 +99,14 @@ export const barberApi = createApi({
         body: barber,
       }),
       invalidatesTags: ['Barber'],
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          toast.success('Barbero creado exitosamente');
+        } catch (error: any) {
+          handleError(error.error);
+        }
+      },
     }),
     updateBarber: builder.mutation<Barber, { id: string; barber: Partial<Barber> }>({
       query: ({ id, barber }) => ({
@@ -87,14 +114,33 @@ export const barberApi = createApi({
         method: 'PUT',
         body: barber,
       }),
-      invalidatesTags: (_result, _error, { id }) => [{ type: 'Barber', id }],
+      invalidatesTags: (_result, _error, { id }) => [
+        { type: 'Barber', id },
+        'Barber',
+      ],
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          toast.success('Barbero actualizado exitosamente');
+        } catch (error: any) {
+          handleError(error.error);
+        }
+      },
     }),
     deleteBarber: builder.mutation<void, string>({
-      query: (id) => ({
+      query: (id: string) => ({
         url: `/barbers/${id}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['Barber'],
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          toast.success('Barbero eliminado exitosamente');
+        } catch (error: any) {
+          handleError(error.error);
+        }
+      },
     }),
     toggleBarberStatus: builder.mutation<Barber, string>({
       query: (id) => ({
