@@ -1,4 +1,4 @@
-import { createApi, fetchBaseQuery, BaseQueryFn, FetchBaseQueryError, FetchArgs } from '@reduxjs/toolkit/query/react';
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { User, Client, Service, Appointment, Notification, Category, Barber, Sale } from '../types';
 import { RootState } from '../store';
 import { toast } from 'react-hot-toast';
@@ -23,50 +23,9 @@ const baseQuery = fetchBaseQuery({
   credentials: 'same-origin'
 });
 
-const baseQueryWithRetry: BaseQueryFn = async (args, api, extraOptions) => {
-  try {
-    const result = await baseQuery(args, api, extraOptions);
-    
-    if (result.error) {
-      const error = result.error as FetchBaseQueryError;
-      const url = typeof args === 'string' ? args : args.url;
-      
-      if (error.status === 401 && !url.includes('/auth/login')) {
-        localStorage.clear();
-        sessionStorage.clear();
-        api.dispatch(clearCredentials());
-        
-        if (window.location.pathname !== '/login') {
-          toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
-          window.location.href = '/login';
-        }
-      }
-      
-      if (error.status === 500) {
-        toast.error('Error en el servidor. Por favor, intenta más tarde.');
-      }
-      
-      if ('data' in error && typeof error.data === 'object' && error.data && 'message' in error.data) {
-        toast.error(error.data.message as string);
-      }
-    }
-    
-    return result;
-  } catch (error: any) {
-    toast.error('Error en la conexión. Por favor, verifica tu conexión a internet.');
-    return {
-      error: {
-        status: 'FETCH_ERROR',
-        error: 'Failed to fetch',
-        data: { message: 'Error de conexión' }
-      }
-    };
-  }
-};
-
 export const api = createApi({
   reducerPath: 'api',
-  baseQuery: baseQueryWithRetry,
+  baseQuery,
   tagTypes: ['User', 'Client', 'Service', 'Appointment', 'Notification', 'Category', 'Barber', 'Services', 'Categories', 'Clients', 'Barbers', 'ServicesLog', 'Sales'],
   endpoints: (builder) => ({
     // Auth endpoints
