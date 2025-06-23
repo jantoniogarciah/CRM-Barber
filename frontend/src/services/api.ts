@@ -1,7 +1,7 @@
 import { createApi, fetchBaseQuery, BaseQueryFn, FetchBaseQueryError, FetchArgs } from '@reduxjs/toolkit/query/react';
 import { User, Client, Service, Appointment, Notification, Category, Barber, Sale } from '../types';
 import { RootState } from '../store';
-import { toast } from 'react-toastify';
+import { toast } from 'react-hot-toast';
 import { clearCredentials } from '../store/slices/authSlice';
 
 // Asegurarse de que la URL base termine en /api

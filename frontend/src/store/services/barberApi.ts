@@ -1,59 +1,8 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { baseQueryWithRetry } from '../../services/api';
 import { Barber } from '../../types';
-import { toast } from 'react-toastify';
+import { toast } from 'react-hot-toast';
 import { clearCredentials } from '../slices/authSlice';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
-
-const baseQuery = fetchBaseQuery({
-  baseUrl: API_URL,
-  prepareHeaders: (headers) => {
-    // Get token from localStorage
-    const token = localStorage.getItem('token');
-    if (token) {
-      headers.set('authorization', `Bearer ${token}`);
-    }
-    headers.set('Content-Type', 'application/json');
-    return headers;
-  },
-  credentials: 'include',
-});
-
-const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
-  const result = await baseQuery(args, api, extraOptions);
-
-  if (result.error) {
-    const error = result.error as any;
-    console.error('API Error:', error);
-
-    // Handle authentication errors
-    if (error.status === 401) {
-      // Clear all auth data
-      localStorage.clear();
-      sessionStorage.clear();
-      api.dispatch(clearCredentials());
-
-      // Show error message
-      toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
-
-      window.location.href = '/login';
-      return result;
-    }
-
-    // Handle server errors
-    if (error.status === 500) {
-      toast.error('Error en el servidor. Por favor, intenta más tarde.');
-    }
-
-    // Handle network errors
-    if (error.status === 'FETCH_ERROR') {
-      toast.error('Error de conexión. Por favor, verifica tu conexión a internet.');
-    }
-  }
-
-  return result;
-};
 
 const handleError = (error: any) => {
   if (error.status === 401) {

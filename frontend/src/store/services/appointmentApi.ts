@@ -1,7 +1,7 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { baseQueryWithRetry } from '../../services/api';
 import { Appointment } from '../../types';
-import { toast } from 'react-toastify';
+import { toast } from 'react-hot-toast';
 
 const handleError = (error: any) => {
   if (error.status === 401) {
