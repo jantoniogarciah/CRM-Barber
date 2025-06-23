@@ -41,20 +41,37 @@ const AppContent: React.FC = () => {
   };
 
   useEffect(() => {
-    // Intentar restaurar la sesión al iniciar la app
-    const token = localStorage.getItem('token');
-    const userStr = localStorage.getItem('user');
-    
-    if (token && userStr) {
+    const initializeAuth = () => {
       try {
-        const user = JSON.parse(userStr);
-        dispatch(setCredentials({ user, token }));
+        console.log('Initializing authentication...');
+        const token = localStorage.getItem('token');
+        const userStr = localStorage.getItem('user');
+
+        console.log('Stored token:', token);
+        console.log('Stored user:', userStr);
+
+        if (token && userStr) {
+          try {
+            const user = JSON.parse(userStr);
+            console.log('Parsed user:', user);
+            dispatch(setCredentials({ user, token }));
+            console.log('Authentication restored successfully');
+          } catch (error) {
+            console.error('Error parsing stored user data:', error);
+            localStorage.clear();
+            sessionStorage.clear();
+          }
+        } else {
+          console.log('No stored authentication data found');
+        }
       } catch (error) {
-        console.error('Error restoring session:', error);
+        console.error('Error initializing authentication:', error);
         localStorage.clear();
         sessionStorage.clear();
       }
-    }
+    };
+
+    initializeAuth();
   }, [dispatch]);
 
   return (

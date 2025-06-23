@@ -11,14 +11,22 @@ const baseQuery = fetchBaseQuery({
   baseUrl: API_URL.endsWith('/api') ? API_URL : `${API_URL}/api`,
   prepareHeaders: (headers, { getState }) => {
     // Intentar obtener el token primero de Redux
-    const token = (getState() as RootState).auth.token || localStorage.getItem('token');
+    const token = (getState() as RootState).auth.token;
     
-    console.log('Current token:', token);
+    console.log('Token from Redux:', token);
     
-    if (token) {
+    // Si no hay token en Redux, intentar obtenerlo del localStorage
+    if (!token) {
+      const localToken = localStorage.getItem('token');
+      console.log('Token from localStorage:', localToken);
+      if (localToken) {
+        headers.set('authorization', `Bearer ${localToken}`);
+      }
+    } else {
       headers.set('authorization', `Bearer ${token}`);
-      console.log('Headers after setting token:', headers.get('authorization'));
     }
+    
+    console.log('Final authorization header:', headers.get('authorization'));
     
     headers.set('Content-Type', 'application/json');
     return headers;
@@ -27,55 +35,81 @@ const baseQuery = fetchBaseQuery({
 });
 
 const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
-  try {
-    console.log('Making API request:', {
-      url: typeof args === 'string' ? args : args.url,
-      method: args.method
-    });
-    
-    const result = await baseQuery(args, api, extraOptions);
-    
-    console.log('API response:', result);
-    
-    if (result.error) {
-      const error = result.error as any;
+  let attempt = 0;
+  const maxAttempts = 2;
+
+  const executeQuery = async () => {
+    try {
+      console.log(`API request attempt ${attempt + 1}:`, {
+        url: typeof args === 'string' ? args : args.url,
+        method: args.method,
+        body: args.body
+      });
       
-      // No manejar errores 401 para la ruta de login
-      if (error.status === 401 && !args.url.includes('/auth/login')) {
-        console.error('Authentication error:', error);
-        localStorage.clear();
-        sessionStorage.clear();
-        api.dispatch(clearCredentials());
+      const result = await baseQuery(args, api, extraOptions);
+      
+      console.log('API response:', {
+        status: result.meta?.response?.status,
+        data: result.data,
+        error: result.error
+      });
+      
+      if (result.error) {
+        const error = result.error as any;
         
-        if (window.location.pathname !== '/login') {
-          toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
-          window.location.href = '/login';
+        // No manejar errores 401 para la ruta de login
+        if (error.status === 401 && !args.url.includes('/auth/login')) {
+          console.error('Authentication error:', error);
+          // Verificar el token actual antes de limpiar
+          const currentToken = (api.getState() as RootState).auth.token || localStorage.getItem('token');
+          console.log('Current token before clearing:', currentToken);
+          
+          localStorage.clear();
+          sessionStorage.clear();
+          api.dispatch(clearCredentials());
+          
+          if (window.location.pathname !== '/login') {
+            toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+            window.location.href = '/login';
+          }
+          return result;
         }
-        return result;
+        
+        if (error.status === 500) {
+          console.error('Server error:', error);
+          toast.error('Error en el servidor. Por favor, intenta más tarde.');
+          if (attempt < maxAttempts - 1) {
+            attempt++;
+            console.log(`Retrying request (attempt ${attempt + 1})...`);
+            return await executeQuery();
+          }
+        }
+        
+        if (error.data?.message) {
+          console.error('API error:', error.data.message);
+          toast.error(error.data.message);
+        }
       }
       
-      if (error.status === 500) {
-        console.error('Server error:', error);
-        toast.error('Error en el servidor. Por favor, intenta más tarde.');
+      return result;
+    } catch (error: any) {
+      console.error('API Error:', error);
+      if (attempt < maxAttempts - 1) {
+        attempt++;
+        console.log(`Retrying request after error (attempt ${attempt + 1})...`);
+        return await executeQuery();
       }
-      
-      if (error.data?.message) {
-        console.error('API error:', error.data.message);
-        toast.error(error.data.message);
-      }
+      toast.error('Error en la conexión. Por favor, verifica tu conexión a internet.');
+      return {
+        error: {
+          status: 'CUSTOM_ERROR',
+          error: error.message || 'Error en la solicitud'
+        }
+      };
     }
-    
-    return result;
-  } catch (error: any) {
-    console.error('API Error:', error);
-    toast.error('Error en la conexión. Por favor, verifica tu conexión a internet.');
-    return {
-      error: {
-        status: 'CUSTOM_ERROR',
-        error: error.message || 'Error en la solicitud'
-      }
-    };
-  }
+  };
+
+  return executeQuery();
 };
 
 export const api = createApi({

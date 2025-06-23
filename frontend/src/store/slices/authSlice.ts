@@ -21,33 +21,64 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     setCredentials: (state, action: PayloadAction<{ user: User; token: string }>) => {
-      state.user = {
-        ...action.payload.user,
-        role: action.payload.user.role?.toUpperCase(), // Normalize role to uppercase
+      const { user, token } = action.payload;
+      
+      // Normalize role to uppercase
+      const normalizedUser = {
+        ...user,
+        role: user.role?.toUpperCase(),
       };
-      state.token = action.payload.token;
+      
+      // Update state
+      state.user = normalizedUser;
+      state.token = token;
       state.error = null;
+      
+      // Save to localStorage
+      try {
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(normalizedUser));
+        console.log('Credentials saved to localStorage:', { user: normalizedUser, token });
+      } catch (error) {
+        console.error('Error saving credentials to localStorage:', error);
+      }
     },
     clearCredentials: (state) => {
+      // Clear state
       state.user = null;
       state.token = null;
       state.error = null;
-      // Clear localStorage
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      
+      // Clear storage
+      try {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        sessionStorage.clear();
+        console.log('Credentials cleared from storage');
+      } catch (error) {
+        console.error('Error clearing credentials from storage:', error);
+      }
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
     },
     setError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload;
+      
+      if (action.payload) {
+        console.error('Auth error:', action.payload);
+      }
     },
   },
 });
 
 export const { setCredentials, clearCredentials, setLoading, setError } = authSlice.actions;
+
+// Selectors
 export const selectUser = (state: RootState) => state.auth.user;
-export const selectLoading = (state: { auth: AuthState }) => state.auth.loading;
-export const selectError = (state: { auth: AuthState }) => state.auth.error;
+export const selectToken = (state: RootState) => state.auth.token;
+export const selectLoading = (state: RootState) => state.auth.loading;
+export const selectError = (state: RootState) => state.auth.error;
+export const selectIsAuthenticated = (state: RootState) => Boolean(state.auth.token && state.auth.user);
 
 export default authSlice.reducer;
