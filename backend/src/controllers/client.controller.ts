@@ -291,22 +291,25 @@ export const searchClientByPhone = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "El número de teléfono es requerido" });
     }
 
-    console.log('Searching client by phone:', phone);
+    // Limpiar el número de teléfono
+    const cleanPhone = (phone as string).replace(/\D/g, '');
+    
+    console.log('Searching client by phone:', { original: phone, cleaned: cleanPhone });
 
-    const clients = await prisma.client.findMany({
+    const client = await prisma.client.findFirst({
       where: {
-        phone: {
-          contains: phone as string,
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
+        phone: cleanPhone,
+        status: "ACTIVE",
       },
     });
 
-    console.log(`Found ${clients.length} clients with phone containing: ${phone}`);
+    console.log('Search result:', client);
 
-    return res.json(clients);
+    if (!client) {
+      return res.status(404).json({ message: "Cliente no encontrado" });
+    }
+
+    return res.json(client);
   } catch (error) {
     console.error("Error searching client by phone:", error);
     return res.status(500).json({ message: "Error al buscar el cliente" });

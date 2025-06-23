@@ -105,7 +105,7 @@ export const api = createApi({
     // Client endpoints
     getClientByPhone: builder.query<Client, string>({
       query: (phone) => ({
-        url: '/clients/by-phone',
+        url: '/clients/search/phone',
         params: { phone },
       }),
       providesTags: ['Client'],
