@@ -166,9 +166,9 @@ const Sales: React.FC = () => {
 
   useEffect(() => {
     console.log('Sales Data:', salesData);
-    console.log('Sales Error:', salesError);
-    console.log('Is Loading:', isLoadingSales);
-  }, [salesData, salesError, isLoadingSales]);
+    console.log('Current sales array:', sales);
+    console.log('Total sales:', totalSales);
+  }, [salesData, sales, totalSales]);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 10);
@@ -392,11 +392,11 @@ const Sales: React.FC = () => {
                     {format(new Date(sale.createdAt), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}
                   </TableCell>
                   <TableCell>
-                    {sale.client.firstName} {sale.client.lastName}
+                    {sale.client?.firstName} {sale.client?.lastName}
                   </TableCell>
-                  <TableCell>{sale.service.name}</TableCell>
+                  <TableCell>{sale.service?.name}</TableCell>
                   <TableCell>
-                    {sale.barber.firstName} {sale.barber.lastName}
+                    {sale.barber?.firstName} {sale.barber?.lastName}
                   </TableCell>
                   <TableCell>${sale.amount}</TableCell>
                   <TableCell>{sale.paymentMethod}</TableCell>
