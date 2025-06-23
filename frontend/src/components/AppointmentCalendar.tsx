@@ -64,7 +64,15 @@ const AppointmentCalendar: React.FC<AppointmentCalendarProps> = ({
 
   return (
     <Box>
-      <DatePicker label="Seleccionar fecha" value={selectedDate} onChange={onDateChange} />
+      <DatePicker 
+        label="Seleccionar fecha" 
+        value={selectedDate} 
+        onChange={(newDate) => {
+          if (newDate) {
+            onDateChange(newDate);
+          }
+        }}
+      />
 
       <Typography variant="h6" sx={{ mb: 2 }}>
         Horario del día {format(selectedDate, 'EEEE dd/MM/yyyy', { locale: es })}

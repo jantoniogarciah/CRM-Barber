@@ -15,6 +15,7 @@ import {
   Select,
   Alert,
   Grid,
+  CircularProgress,
 } from '@mui/material';
 import {
   useCreateAppointmentMutation,
@@ -23,8 +24,8 @@ import {
   useGetServicesQuery,
   useGetBarbersQuery,
 } from '../services/api';
-import { Appointment } from '../types';
-import { format, parseISO } from 'date-fns';
+import { Appointment, Client, Service, Barber } from '../types';
+import { format } from 'date-fns';
 import { toast } from 'react-hot-toast';
 
 interface AppointmentFormProps {
@@ -62,9 +63,22 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
 }) => {
   const [createAppointment] = useCreateAppointmentMutation();
   const [updateAppointment] = useUpdateAppointmentMutation();
-  const { data: clients = [] } = useGetClientsQuery({ showInactive: false });
-  const { data: services = [] } = useGetServicesQuery({ showInactive: false });
-  const { data: barbers = [] } = useGetBarbersQuery({ showInactive: false });
+  
+  const { data: clientsData, isLoading: isLoadingClients } = useGetClientsQuery({ showInactive: false });
+  const { data: servicesData, isLoading: isLoadingServices } = useGetServicesQuery({ showInactive: false });
+  const { data: barbersData, isLoading: isLoadingBarbers } = useGetBarbersQuery({ showInactive: false });
+
+  // Asegurarse de que los datos existan y sean arrays
+  const clients = clientsData?.clients || [];
+  const services = servicesData || [];
+  const barbers = barbersData || [];
+
+  console.log('Form data:', {
+    clients,
+    services,
+    barbers,
+    appointment
+  });
 
   const formik = useFormik<AppointmentFormValues>({
     initialValues: {
@@ -79,6 +93,8 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
     validationSchema,
     onSubmit: async (values) => {
       try {
+        console.log('Submitting form with values:', values);
+
         const appointmentData = {
           clientId: values.clientId,
           serviceId: values.serviceId,
@@ -89,18 +105,21 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
           notes: values.notes || undefined,
         };
 
+        console.log('Appointment data to submit:', appointmentData);
+
         if (appointment?.id) {
           await updateAppointment({
             id: appointment.id,
             appointment: appointmentData,
           }).unwrap();
+          toast.success('Cita actualizada exitosamente');
         } else {
           await createAppointment(appointmentData).unwrap();
+          toast.success('Cita creada exitosamente');
         }
 
         onSuccess();
         onClose();
-        toast.success(appointment ? 'Cita actualizada exitosamente' : 'Cita creada exitosamente');
       } catch (error: any) {
         console.error('Error al guardar la cita:', error);
         toast.error(error.data?.message || 'Error al guardar la cita');
@@ -110,6 +129,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
 
   useEffect(() => {
     if (open) {
+      console.log('Resetting form with appointment:', appointment);
       formik.resetForm({
         values: {
           clientId: appointment?.clientId || '',
@@ -124,6 +144,18 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
     }
   }, [open, appointment]);
 
+  if (isLoadingClients || isLoadingServices || isLoadingBarbers) {
+    return (
+      <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+        <DialogContent>
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+            <CircularProgress />
+          </Box>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>{appointment ? 'Editar Cita' : 'Nueva Cita'}</DialogTitle>
@@ -132,16 +164,15 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
           <Box sx={{ mt: 2 }}>
             <Grid container spacing={2}>
               <Grid item xs={12}>
-                <FormControl fullWidth>
+                <FormControl fullWidth error={formik.touched.clientId && Boolean(formik.errors.clientId)}>
                   <InputLabel>Cliente</InputLabel>
                   <Select
                     name="clientId"
                     value={formik.values.clientId}
                     onChange={formik.handleChange}
-                    error={formik.touched.clientId && Boolean(formik.errors.clientId)}
                     label="Cliente"
                   >
-                    {clients.map((client) => (
+                    {clients.map((client: Client) => (
                       <MenuItem key={client.id} value={client.id}>
                         {client.firstName} {client.lastName}
                       </MenuItem>
@@ -151,16 +182,15 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
               </Grid>
 
               <Grid item xs={12}>
-                <FormControl fullWidth>
+                <FormControl fullWidth error={formik.touched.serviceId && Boolean(formik.errors.serviceId)}>
                   <InputLabel>Servicio</InputLabel>
                   <Select
                     name="serviceId"
                     value={formik.values.serviceId}
                     onChange={formik.handleChange}
-                    error={formik.touched.serviceId && Boolean(formik.errors.serviceId)}
                     label="Servicio"
                   >
-                    {services.map((service) => (
+                    {services.map((service: Service) => (
                       <MenuItem key={service.id} value={service.id}>
                         {service.name} - ${service.price}
                       </MenuItem>
@@ -170,16 +200,15 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
               </Grid>
 
               <Grid item xs={12}>
-                <FormControl fullWidth>
+                <FormControl fullWidth error={formik.touched.barberId && Boolean(formik.errors.barberId)}>
                   <InputLabel>Barbero</InputLabel>
                   <Select
                     name="barberId"
                     value={formik.values.barberId}
                     onChange={formik.handleChange}
-                    error={formik.touched.barberId && Boolean(formik.errors.barberId)}
                     label="Barbero"
                   >
-                    {barbers.map((barber) => (
+                    {barbers.map((barber: Barber) => (
                       <MenuItem key={barber.id} value={barber.id}>
                         {barber.firstName} {barber.lastName}
                       </MenuItem>
@@ -217,13 +246,12 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
               </Grid>
 
               <Grid item xs={12}>
-                <FormControl fullWidth>
+                <FormControl fullWidth error={formik.touched.status && Boolean(formik.errors.status)}>
                   <InputLabel>Estado</InputLabel>
                   <Select
                     name="status"
                     value={formik.values.status}
                     onChange={formik.handleChange}
-                    error={formik.touched.status && Boolean(formik.errors.status)}
                     label="Estado"
                   >
                     <MenuItem value="pending">Pendiente</MenuItem>

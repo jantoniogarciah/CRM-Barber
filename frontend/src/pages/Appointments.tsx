@@ -19,6 +19,10 @@ import {
   TextField,
   MenuItem,
   CircularProgress,
+  Alert,
+  FormControl,
+  InputLabel,
+  Select,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -60,14 +64,14 @@ export const Appointments = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedBarber, setSelectedBarber] = useState<string>('');
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
-  const [appointmentToDelete, setAppointmentToDelete] = useState<Appointment | undefined>(undefined);
+  const [appointmentToDelete, setAppointmentToDelete] = useState<Appointment | null>(null);
 
-  const { data: appointmentsData, isLoading, isError, error } = useGetAppointmentsQuery();
-  const { data: barbersData } = useGetBarbersQuery({ showInactive: false });
+  const { data: appointmentsData, isLoading: isLoadingAppointments, refetch: refetchAppointments } = useGetAppointmentsQuery();
+  const { data: barbersData, isLoading: isLoadingBarbers } = useGetBarbersQuery({ showInactive: false });
   const [deleteAppointment] = useDeleteAppointmentMutation();
 
+  const barbers = barbersData || [];
   const appointments = appointmentsData?.appointments || [];
-  const barbers = barbersData?.barbers || [];
 
   const handleAdd = () => {
     setSelectedAppointment(undefined);
@@ -88,13 +92,15 @@ export const Appointments = () => {
     if (appointmentToDelete) {
       try {
         await deleteAppointment(appointmentToDelete.id).unwrap();
-        toast.success('Cita eliminada correctamente');
-      } catch (error) {
-        toast.error('Error al eliminar la cita');
+        toast.success('Cita eliminada exitosamente');
+        refetchAppointments();
+      } catch (error: any) {
+        console.error('Error al eliminar la cita:', error);
+        toast.error(error.data?.message || 'Error al eliminar la cita');
       }
     }
     setOpenDeleteDialog(false);
-    setAppointmentToDelete(undefined);
+    setAppointmentToDelete(null);
   };
 
   const handleCloseForm = () => {
@@ -163,20 +169,22 @@ export const Appointments = () => {
     }
   });
 
-  if (isLoading) {
-    return (
-      <PageContainer>
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-          <CircularProgress />
-        </Box>
-      </PageContainer>
-    );
-  }
+  const handleDateChange = (date: Date | null) => {
+    if (date) {
+      setSelectedDate(date);
+    }
+  };
 
-  if (isError) {
+  const handleBarberChange = (event: React.ChangeEvent<{ value: unknown }>) => {
+    setSelectedBarber(event.target.value as string);
+  };
+
+  if (isLoadingAppointments || isLoadingBarbers) {
     return (
       <PageContainer>
-        <Typography color="error">Error al cargar las citas: {error?.toString()}</Typography>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+          <Typography>Cargando...</Typography>
+        </Box>
       </PageContainer>
     );
   }
@@ -251,19 +259,19 @@ export const Appointments = () => {
                       size="small"
                     />
                   </TableCell>
-                  <TableCell>{appointment.notes || '-'}</TableCell>
+                  <TableCell>{appointment.notes}</TableCell>
                   <TableCell align="right">
                     <IconButton
                       size="small"
                       onClick={() => handleEdit(appointment)}
-                      color="primary"
+                      title="Editar Cita"
                     >
                       <EditIcon />
                     </IconButton>
                     <IconButton
                       size="small"
                       onClick={() => handleDelete(appointment)}
-                      color="error"
+                      title="Eliminar Cita"
                     >
                       <DeleteIcon />
                     </IconButton>
@@ -274,35 +282,14 @@ export const Appointments = () => {
           </Table>
         </TableContainer>
       ) : (
-        <>
-          <Box sx={{ mb: 4 }}>
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  select
-                  label="Barbero"
-                  value={selectedBarber}
-                  onChange={(e) => setSelectedBarber(e.target.value)}
-                >
-                  <MenuItem value="">Todos los barberos</MenuItem>
-                  {barbers.map((barber: Barber) => (
-                    <MenuItem key={barber.id} value={barber.id}>
-                      {`${barber.firstName} ${barber.lastName}`}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-            </Grid>
-          </Box>
-          <AppointmentCalendar
-            appointments={filteredAppointments}
-            selectedDate={selectedDate}
-            onDateChange={(date) => date && setSelectedDate(date)}
-            onEditAppointment={handleEdit}
-            onDeleteAppointment={handleDelete}
-          />
-        </>
+        <AppointmentCalendar
+          selectedDate={selectedDate}
+          onDateChange={handleDateChange}
+          appointments={filteredAppointments}
+          onEditAppointment={handleEdit}
+          onDeleteAppointment={handleDelete}
+          selectedBarber={selectedBarber}
+        />
       )}
 
       <AppointmentForm

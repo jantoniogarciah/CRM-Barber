@@ -24,14 +24,21 @@ const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
   content,
 }) => {
   return (
-    <Dialog open={open} onClose={onClose}>
-      <DialogTitle>{title}</DialogTitle>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      aria-labelledby="alert-dialog-title"
+      aria-describedby="alert-dialog-description"
+    >
+      <DialogTitle id="alert-dialog-title">{title}</DialogTitle>
       <DialogContent>
-        <DialogContentText>{content}</DialogContentText>
+        <DialogContentText id="alert-dialog-description">
+          {content}
+        </DialogContentText>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancelar</Button>
-        <Button onClick={onConfirm} color="error" variant="contained" autoFocus>
+        <Button onClick={onConfirm} color="error" autoFocus>
           Eliminar
         </Button>
       </DialogActions>
