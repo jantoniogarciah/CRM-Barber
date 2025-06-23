@@ -45,7 +45,7 @@ import {
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Sale, Service, Barber } from '../types';
+import { Sale, Service, Barber, Client } from '../types';
 
 interface ServicesResponse {
   services: Service[];
@@ -80,6 +80,7 @@ const Sales: React.FC = () => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [saleToDelete, setSaleToDelete] = useState<string | null>(null);
   const [saleToEdit, setSaleToEdit] = useState<Sale | null>(null);
+  const [foundClient, setFoundClient] = useState<Client | null>(null);
 
   const { data: servicesResponse, isLoading: isLoadingServices } = useGetServicesQuery({ showInactive: false });
   const { data: barbersResponse, isLoading: isLoadingBarbers } = useGetBarbersQuery({ showInactive: false });
@@ -102,6 +103,14 @@ const Sales: React.FC = () => {
       toast.error(errorMessage);
     }
   }, [searchError]);
+
+  useEffect(() => {
+    if (client) {
+      setFoundClient(client);
+    } else if (phoneNumber.length === 10) {
+      setFoundClient(null);
+    }
+  }, [client, phoneNumber]);
 
   const handleNewSale = () => {
     setOpenNewSale(true);
@@ -149,6 +158,7 @@ const Sales: React.FC = () => {
     setPaymentMethod('EFECTIVO');
     setNotes('');
     setShowNewClientForm(false);
+    setFoundClient(null);
     setNewClient({
       firstName: '',
       lastName: '',
@@ -163,6 +173,11 @@ const Sales: React.FC = () => {
     
     // Limitar a 10 dígitos
     const cleanPhone = value.slice(0, 10);
+    
+    // Limpiar el cliente encontrado si estamos empezando una nueva búsqueda
+    if (cleanPhone.length < 10) {
+      setFoundClient(null);
+    }
     
     setPhoneNumber(cleanPhone);
     if (!showNewClientForm) {
@@ -189,7 +204,7 @@ const Sales: React.FC = () => {
 
   const handleSaleSubmit = async () => {
     try {
-      if (!client) {
+      if (!foundClient) {
         toast.error('Por favor busca un cliente primero');
         return;
       }
@@ -209,7 +224,7 @@ const Sales: React.FC = () => {
       }
 
       await createSale({
-        clientId: client.id,
+        clientId: foundClient.id,
         serviceId: selectedService,
         barberId: selectedBarber,
         amount: service.price,
@@ -362,7 +377,15 @@ const Sales: React.FC = () => {
               />
             </Grid>
 
-            {!client && phoneNumber.length >= 10 && !isSearchingClient && (
+            {foundClient && (
+              <Grid item xs={12}>
+                <Alert severity="success">
+                  Cliente: {foundClient.firstName} {foundClient.lastName}
+                </Alert>
+              </Grid>
+            )}
+
+            {!foundClient && phoneNumber.length >= 10 && !isSearchingClient && (
               <Grid item xs={12}>
                 <Button
                   variant="outlined"
@@ -417,14 +440,6 @@ const Sales: React.FC = () => {
                   </Button>
                 </Grid>
               </>
-            )}
-
-            {client && (
-              <Grid item xs={12}>
-                <Alert severity="success">
-                  Cliente: {client.firstName} {client.lastName}
-                </Alert>
-              </Grid>
             )}
 
             <Grid item xs={12}>
