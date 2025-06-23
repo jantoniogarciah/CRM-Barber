@@ -103,6 +103,14 @@ export const api = createApi({
     }),
 
     // Client endpoints
+    getClientByPhone: builder.query<Client, string>({
+      query: (phone) => ({
+        url: '/clients/by-phone',
+        params: { phone },
+      }),
+      providesTags: ['Client'],
+    }),
+
     getClients: builder.query<{ clients: Client[]; pagination: any }, { showInactive?: boolean; page?: number; limit?: number; phone?: string }>({
       query: (params) => ({
         url: '/clients',
@@ -163,9 +171,12 @@ export const api = createApi({
     }),
 
     // Service endpoints
-    getServices: builder.query<Service[], { showInactive?: boolean } | void>({
-      query: (params) => `/services${params?.showInactive ? '?showInactive=true' : ''}`,
-      providesTags: ['Service'],
+    getServices: builder.query<{ services: Service[]; total: number }, { showInactive?: boolean }>({
+      query: (params) => ({
+        url: '/services',
+        params: { showInactive: params?.showInactive },
+      }),
+      providesTags: ['Services'],
     }),
     getService: builder.query<Service, string>({
       query: (id) => `/services/${id}`,
@@ -290,12 +301,12 @@ export const api = createApi({
     }),
 
     // Barber endpoints
-    getBarbers: builder.query<Barber[], { showInactive?: boolean }>({
-      query: ({ showInactive }) => ({
-        url: `/barbers${showInactive ? '?showInactive=true' : ''}`,
-        method: 'GET',
+    getBarbers: builder.query<{ barbers: Barber[]; total: number }, { showInactive?: boolean }>({
+      query: (params) => ({
+        url: '/barbers',
+        params: { showInactive: params?.showInactive },
       }),
-      providesTags: ['Barber'],
+      providesTags: ['Barbers'],
     }),
     getBarber: builder.query<Barber, string>({
       query: (id) => ({
@@ -392,6 +403,7 @@ export const {
   useLogoutMutation,
   useUpdateUserMutation,
   useGetClientsQuery,
+  useGetClientByPhoneQuery,
   useGetLastCompletedAppointmentsQuery,
   useGetClientQuery,
   useCreateClientMutation,
@@ -424,7 +436,6 @@ export const {
   useToggleBarberStatusMutation,
   useGetServicesLogQuery,
   useCreateServiceLogMutation,
-  useGetClientByPhoneQuery,
   useGetSalesQuery,
   useGetSaleQuery,
   useCreateSaleMutation,

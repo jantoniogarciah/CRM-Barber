@@ -45,7 +45,17 @@ import {
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Sale } from '../types';
+import { Sale, Service, Barber } from '../types';
+
+interface ServicesResponse {
+  services: Service[];
+  total: number;
+}
+
+interface BarbersResponse {
+  barbers: Barber[];
+  total: number;
+}
 
 interface SalesResponse {
   sales: Sale[];
@@ -71,18 +81,20 @@ const Sales: React.FC = () => {
   const [saleToDelete, setSaleToDelete] = useState<string | null>(null);
   const [saleToEdit, setSaleToEdit] = useState<Sale | null>(null);
 
-  const { data: services = [], isLoading: isLoadingServices } = useGetServicesQuery({ showInactive: false });
-  const { data: barbers = [], isLoading: isLoadingBarbers } = useGetBarbersQuery({ showInactive: false });
+  const { data: servicesResponse, isLoading: isLoadingServices } = useGetServicesQuery({ showInactive: false });
+  const { data: barbersResponse, isLoading: isLoadingBarbers } = useGetBarbersQuery({ showInactive: false });
   const { data: client, isFetching: isSearchingClient } = useGetClientByPhoneQuery(phoneNumber, {
     skip: !phoneNumber || phoneNumber.length < 10,
   });
   const [createSale] = useCreateSaleMutation();
   const [updateSale] = useUpdateSaleMutation();
-  const { data: salesData, isLoading: isLoadingSales } = useGetSalesQuery();
+  const { data: salesResponse, isLoading: isLoadingSales } = useGetSalesQuery();
   const [createClient] = useCreateClientMutation();
   const [deleteSale] = useDeleteSaleMutation();
 
-  const sales = (salesData as SalesResponse)?.sales || [];
+  const services = servicesResponse?.services || [];
+  const barbers = barbersResponse?.barbers || [];
+  const sales = salesResponse?.sales || [];
 
   const handleNewSale = () => {
     setOpenNewSale(true);
