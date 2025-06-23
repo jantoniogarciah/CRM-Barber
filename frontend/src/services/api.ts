@@ -1,11 +1,11 @@
-import { createApi, fetchBaseQuery, BaseQueryFn, FetchBaseQueryError, FetchArgs } from '@reduxjs/toolkit/query/react';
+import { createApi, fetchBaseQuery, BaseQueryFn, FetchBaseQueryError, FetchArgs, QueryReturnValue } from '@reduxjs/toolkit/query/react';
 import { User, Client, Service, Appointment, Notification, Category, Barber, Sale } from '../types';
 import { RootState } from '../store';
 import { toast } from 'react-hot-toast';
 import { clearCredentials } from '../store/slices/authSlice';
 
 // Asegurarse de que la URL base termine en /api
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+const API_URL = process.env.REACT_APP_API_URL || 'https://crm-barber-backend.onrender.com/api';
 
 const baseQuery = fetchBaseQuery({
   baseUrl: API_URL.endsWith('/api') ? API_URL : `${API_URL}/api`,
@@ -23,23 +23,26 @@ const baseQuery = fetchBaseQuery({
     headers.set('Content-Type', 'application/json');
     return headers;
   },
-  credentials: 'include'
+  credentials: 'same-origin'
 });
 
 interface ErrorResponse {
   message?: string;
-  [key: string]: unknown;
+  status?: number;
+  data?: unknown;
 }
 
-interface CustomError extends FetchBaseQueryError {
+type CustomError = Omit<FetchBaseQueryError, 'data'> & {
   data?: ErrorResponse;
-}
+};
 
-export const baseQueryWithRetry: BaseQueryFn<
-  string | FetchArgs,
-  unknown,
-  CustomError
-> = async (args, api, extraOptions) => {
+type CustomQueryReturnValue = QueryReturnValue<unknown, CustomError, {}>;
+
+const baseQueryWithRetry: BaseQueryFn<string | FetchArgs, unknown, CustomError> = async (
+  args,
+  api,
+  extraOptions
+): Promise<CustomQueryReturnValue> => {
   try {
     console.log('Making API request:', {
       url: typeof args === 'string' ? args : args.url,
@@ -54,7 +57,8 @@ export const baseQueryWithRetry: BaseQueryFn<
       const error = result.error as CustomError;
       
       // No manejar errores 401 para la ruta de login
-      if (error.status === 401 && !args.url.includes('/auth/login')) {
+      const url = typeof args === 'string' ? args : args.url;
+      if (error.status === 401 && !url.includes('/auth/login')) {
         console.error('Authentication error:', error);
         localStorage.clear();
         sessionStorage.clear();
@@ -64,7 +68,6 @@ export const baseQueryWithRetry: BaseQueryFn<
           toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
           window.location.href = '/login';
         }
-        return result;
       }
       
       if (error.status === 500) {
@@ -78,7 +81,7 @@ export const baseQueryWithRetry: BaseQueryFn<
       }
     }
     
-    return result;
+    return result as CustomQueryReturnValue;
   } catch (error: any) {
     console.error('API Error:', error);
     toast.error('Error en la conexión. Por favor, verifica tu conexión a internet.');
@@ -88,7 +91,7 @@ export const baseQueryWithRetry: BaseQueryFn<
         error: 'Failed to fetch',
         data: { message: 'Error de conexión' }
       }
-    };
+    } as CustomQueryReturnValue;
   }
 };
 
