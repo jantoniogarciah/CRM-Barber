@@ -7,6 +7,14 @@ const prisma = new PrismaClient();
 // Get all sales
 export const getSales = async (req: Request, res: Response) => {
   try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    // Get total count
+    const total = await prisma.sale.count();
+
+    // Get paginated sales
     const sales = await prisma.sale.findMany({
       include: {
         client: true,
@@ -16,9 +24,18 @@ export const getSales = async (req: Request, res: Response) => {
       orderBy: {
         createdAt: "desc",
       },
+      skip,
+      take: limit,
     });
 
-    res.json(sales);
+    res.json({
+      sales,
+      total,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      hasNextPage: skip + sales.length < total,
+      hasPrevPage: page > 1
+    });
   } catch (error) {
     console.error("Error getting sales:", error);
     throw new AppError("Error al obtener las ventas", 500);

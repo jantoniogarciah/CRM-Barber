@@ -51,6 +51,10 @@ import { Sale, Service, Barber, Client } from '../types';
 interface SalesResponse {
   sales: Sale[];
   total: number;
+  currentPage: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
 }
 
 const Sales: React.FC = () => {
