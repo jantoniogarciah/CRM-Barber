@@ -164,6 +164,12 @@ const Sales: React.FC = () => {
     }
   }, [salesError, refetchSales]);
 
+  useEffect(() => {
+    console.log('Sales Data:', salesData);
+    console.log('Sales Error:', salesError);
+    console.log('Is Loading:', isLoadingSales);
+  }, [salesData, salesError, isLoadingSales]);
+
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 10);
     setPhoneNumber(value);
