@@ -83,13 +83,15 @@ const Sales: React.FC = () => {
   const [foundClient, setFoundClient] = useState<Client | null>(null);
 
   const { 
-    data: servicesData, 
+    data: services = [], 
     isLoading: isLoadingServices,
+    error: servicesError
   } = useGetServicesQuery({ showInactive: false });
 
   const { 
-    data: barbersData, 
+    data: barbers = [], 
     isLoading: isLoadingBarbers,
+    error: barbersError
   } = useGetBarbersQuery({ showInactive: false });
 
   const { 
@@ -106,9 +108,21 @@ const Sales: React.FC = () => {
   const [createClient] = useCreateClientMutation();
   const [deleteSale] = useDeleteSaleMutation();
 
-  const services = servicesData?.services || [];
-  const barbers = barbersData?.barbers || [];
   const sales = salesData?.sales || [];
+
+  useEffect(() => {
+    if (servicesError) {
+      console.error('Error loading services:', servicesError);
+      toast.error('Error al cargar los servicios. Por favor, verifica tu conexión.');
+    }
+  }, [servicesError]);
+
+  useEffect(() => {
+    if (barbersError) {
+      console.error('Error loading barbers:', barbersError);
+      toast.error('Error al cargar los barberos. Por favor, verifica tu conexión.');
+    }
+  }, [barbersError]);
 
   useEffect(() => {
     if (searchError) {
@@ -466,7 +480,9 @@ const Sales: React.FC = () => {
                       disabled={isLoadingServices}
                     >
                       {isLoadingServices ? (
-                        <MenuItem disabled>Cargando servicios...</MenuItem>
+                        <MenuItem disabled>
+                          <CircularProgress size={20} /> Cargando servicios...
+                        </MenuItem>
                       ) : services.length > 0 ? (
                         services.map((service) => (
                           <MenuItem key={service.id} value={service.id}>
@@ -490,7 +506,9 @@ const Sales: React.FC = () => {
                       disabled={isLoadingBarbers}
                     >
                       {isLoadingBarbers ? (
-                        <MenuItem disabled>Cargando barberos...</MenuItem>
+                        <MenuItem disabled>
+                          <CircularProgress size={20} /> Cargando barberos...
+                        </MenuItem>
                       ) : barbers.length > 0 ? (
                         barbers.map((barber) => (
                           <MenuItem key={barber.id} value={barber.id}>

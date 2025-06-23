@@ -171,11 +171,12 @@ export const api = createApi({
     }),
 
     // Service endpoints
-    getServices: builder.query<{ services: Service[]; total: number }, { showInactive?: boolean }>({
+    getServices: builder.query<Service[], { showInactive?: boolean }>({
       query: (params) => ({
         url: '/services',
         params: { showInactive: params?.showInactive },
       }),
+      transformResponse: (response: { services: Service[] }) => response.services,
       providesTags: ['Services'],
     }),
     getService: builder.query<Service, string>({
@@ -301,11 +302,12 @@ export const api = createApi({
     }),
 
     // Barber endpoints
-    getBarbers: builder.query<{ barbers: Barber[]; total: number }, { showInactive?: boolean }>({
+    getBarbers: builder.query<Barber[], { showInactive?: boolean }>({
       query: (params) => ({
         url: '/barbers',
         params: { showInactive: params?.showInactive },
       }),
+      transformResponse: (response: { barbers: Barber[] }) => response.barbers,
       providesTags: ['Barbers'],
     }),
     getBarber: builder.query<Barber, string>({
