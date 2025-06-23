@@ -358,10 +358,10 @@ const Sales: React.FC = () => {
         </Table>
       </TableContainer>
 
-      <Dialog open={openNewSale} onClose={handleClose} maxWidth="md" fullWidth>
+      <Dialog open={openNewSale} onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle>Nueva Venta</DialogTitle>
         <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
+          <Grid container spacing={2}>
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -447,7 +447,7 @@ const Sales: React.FC = () => {
             )}
 
             <Grid item xs={12}>
-              <FormControl fullWidth>
+              <FormControl fullWidth disabled={isLoadingServices}>
                 <InputLabel>Servicio</InputLabel>
                 <Select
                   value={selectedService}
@@ -464,7 +464,7 @@ const Sales: React.FC = () => {
             </Grid>
 
             <Grid item xs={12}>
-              <FormControl fullWidth>
+              <FormControl fullWidth disabled={isLoadingBarbers}>
                 <InputLabel>Barbero</InputLabel>
                 <Select
                   value={selectedBarber}
@@ -500,7 +500,7 @@ const Sales: React.FC = () => {
                 fullWidth
                 label="Notas"
                 multiline
-                rows={4}
+                rows={2}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
               />
@@ -509,8 +509,12 @@ const Sales: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancelar</Button>
-          <Button onClick={handleSaleSubmit} variant="contained" color="primary">
-            Registrar Venta
+          <Button 
+            onClick={handleSaleSubmit} 
+            variant="contained"
+            disabled={!foundClient || !selectedService || !selectedBarber}
+          >
+            Guardar
           </Button>
         </DialogActions>
       </Dialog>
