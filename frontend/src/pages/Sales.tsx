@@ -104,7 +104,8 @@ const Sales: React.FC = () => {
   const { 
     data: salesData, 
     isLoading: isLoadingSales,
-    error: salesError 
+    error: salesError,
+    refetch: refetchSales
   } = useGetSalesQuery({
     page: page + 1,
     limit: rowsPerPage
@@ -153,8 +154,15 @@ const Sales: React.FC = () => {
     if (salesError) {
       console.error('Error loading sales:', salesError);
       toast.error('Error al cargar las ventas. Por favor, verifica tu conexión.');
+      
+      // Intentar recargar los datos después de un error
+      const timer = setTimeout(() => {
+        refetchSales();
+      }, 5000);
+      
+      return () => clearTimeout(timer);
     }
-  }, [salesError]);
+  }, [salesError, refetchSales]);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 10);
@@ -326,6 +334,19 @@ const Sales: React.FC = () => {
     );
   }
 
+  if (salesError) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error" sx={{ mb: 2 }}>
+          Error al cargar las ventas. 
+          <Button color="inherit" size="small" onClick={() => refetchSales()}>
+            Reintentar
+          </Button>
+        </Alert>
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -340,89 +361,93 @@ const Sales: React.FC = () => {
         </Button>
       </Box>
 
-      <TableContainer component={Paper} sx={{ mb: 4 }}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Fecha</TableCell>
-              <TableCell>Cliente</TableCell>
-              <TableCell>Servicio</TableCell>
-              <TableCell>Barbero</TableCell>
-              <TableCell>Monto</TableCell>
-              <TableCell>Método de Pago</TableCell>
-              <TableCell>Estado</TableCell>
-              <TableCell>Notas</TableCell>
-              <TableCell>Acciones</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {sales.map((sale: Sale) => (
-              <TableRow key={sale.id}>
-                <TableCell>
-                  {format(new Date(sale.createdAt), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}
-                </TableCell>
-                <TableCell>
-                  {sale.client.firstName} {sale.client.lastName}
-                </TableCell>
-                <TableCell>{sale.service.name}</TableCell>
-                <TableCell>
-                  {sale.barber.firstName} {sale.barber.lastName}
-                </TableCell>
-                <TableCell>${sale.amount}</TableCell>
-                <TableCell>{sale.paymentMethod}</TableCell>
-                <TableCell>
-                  <Alert 
-                    severity={
-                      sale.status === 'completed' ? 'success' : 
-                      sale.status === 'cancelled' ? 'error' : 
-                      'warning'
-                    }
-                    sx={{ py: 0 }}
-                  >
-                    {sale.status === 'completed' ? 'Completada' :
-                     sale.status === 'cancelled' ? 'Cancelada' :
-                     'Reembolsada'}
-                  </Alert>
-                </TableCell>
-                <TableCell>{sale.notes}</TableCell>
-                <TableCell>
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Tooltip title="Editar venta">
-                      <IconButton
-                        color="primary"
-                        onClick={() => handleEditClick(sale)}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Eliminar venta">
-                      <IconButton
-                        color="error"
-                        onClick={() => handleDeleteClick(sale.id)}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                </TableCell>
+      {sales.length === 0 ? (
+        <Alert severity="info">No hay ventas registradas.</Alert>
+      ) : (
+        <TableContainer component={Paper} sx={{ mb: 4 }}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Fecha</TableCell>
+                <TableCell>Cliente</TableCell>
+                <TableCell>Servicio</TableCell>
+                <TableCell>Barbero</TableCell>
+                <TableCell>Monto</TableCell>
+                <TableCell>Método de Pago</TableCell>
+                <TableCell>Estado</TableCell>
+                <TableCell>Notas</TableCell>
+                <TableCell>Acciones</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
-          component="div"
-          count={totalSales}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-          labelRowsPerPage="Filas por página"
-          labelDisplayedRows={({ from, to, count }) => 
-            `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`
-          }
-        />
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {sales.map((sale: Sale) => (
+                <TableRow key={sale.id}>
+                  <TableCell>
+                    {format(new Date(sale.createdAt), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}
+                  </TableCell>
+                  <TableCell>
+                    {sale.client.firstName} {sale.client.lastName}
+                  </TableCell>
+                  <TableCell>{sale.service.name}</TableCell>
+                  <TableCell>
+                    {sale.barber.firstName} {sale.barber.lastName}
+                  </TableCell>
+                  <TableCell>${sale.amount}</TableCell>
+                  <TableCell>{sale.paymentMethod}</TableCell>
+                  <TableCell>
+                    <Alert 
+                      severity={
+                        sale.status === 'completed' ? 'success' : 
+                        sale.status === 'cancelled' ? 'error' : 
+                        'warning'
+                      }
+                      sx={{ py: 0 }}
+                    >
+                      {sale.status === 'completed' ? 'Completada' :
+                       sale.status === 'cancelled' ? 'Cancelada' :
+                       'Reembolsada'}
+                    </Alert>
+                  </TableCell>
+                  <TableCell>{sale.notes}</TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Tooltip title="Editar venta">
+                        <IconButton
+                          color="primary"
+                          onClick={() => handleEditClick(sale)}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Eliminar venta">
+                        <IconButton
+                          color="error"
+                          onClick={() => handleDeleteClick(sale.id)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          <TablePagination
+            rowsPerPageOptions={[5, 10, 25]}
+            component="div"
+            count={totalSales}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            labelRowsPerPage="Filas por página"
+            labelDisplayedRows={({ from, to, count }) => 
+              `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`
+            }
+          />
+        </TableContainer>
+      )}
 
       <Dialog open={openNewSale} onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle>Nueva Venta</DialogTitle>
