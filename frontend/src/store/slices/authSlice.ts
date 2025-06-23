@@ -1,8 +1,9 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { RootState } from '..';
+import { User } from '../../types';
+import { RootState } from '../../store';
 
 interface AuthState {
-  user: any | null;
+  user: User | null;
   token: string | null;
   loading: boolean;
   error: string | null;
@@ -19,8 +20,11 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    setCredentials: (state, action: PayloadAction<{ user: any; token: string }>) => {
-      state.user = action.payload.user;
+    setCredentials: (state, action: PayloadAction<{ user: User; token: string }>) => {
+      state.user = {
+        ...action.payload.user,
+        role: action.payload.user.role?.toUpperCase(), // Normalize role to uppercase
+      };
       state.token = action.payload.token;
       state.error = null;
     },
@@ -28,6 +32,9 @@ const authSlice = createSlice({
       state.user = null;
       state.token = null;
       state.error = null;
+      // Clear localStorage
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
@@ -39,10 +46,8 @@ const authSlice = createSlice({
 });
 
 export const { setCredentials, clearCredentials, setLoading, setError } = authSlice.actions;
-
 export const selectUser = (state: RootState) => state.auth.user;
-export const selectToken = (state: RootState) => state.auth.token;
-export const selectLoading = (state: RootState) => state.auth.loading;
-export const selectError = (state: RootState) => state.auth.error;
+export const selectLoading = (state: { auth: AuthState }) => state.auth.loading;
+export const selectError = (state: { auth: AuthState }) => state.auth.error;
 
-export const authReducer = authSlice.reducer;
+export default authSlice.reducer;

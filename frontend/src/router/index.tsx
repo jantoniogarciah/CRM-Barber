@@ -13,14 +13,33 @@ import { PrivateRoute } from '../components/PrivateRoute';
 import { AdminRoute } from '../components/AdminRoute';
 
 // Lazy load the Barbers component
-const BarbersPage = lazy(() => import('../pages/Barbers'));
+const BarbersPage = lazy(() => {
+  console.log('Router - Loading BarbersPage component');
+  return import('../pages/Barbers').then((module) => {
+    console.log('Router - BarbersPage component loaded:', module);
+    return module;
+  });
+});
 
 // Loading component for suspense fallback
-const LoadingComponent = () => (
-  <Box sx={{ p: 3, display: 'flex', justifyContent: 'center' }}>
-    <CircularProgress />
-  </Box>
-);
+const LoadingComponent = () => {
+  console.log('Router - Rendering LoadingComponent');
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '400px',
+        gap: 2,
+      }}
+    >
+      <CircularProgress />
+      <Box>Cargando página de barberos...</Box>
+    </Box>
+  );
+};
 
 const AppRoutes: React.FC = () => {
   console.log('Router - Rendering AppRoutes');

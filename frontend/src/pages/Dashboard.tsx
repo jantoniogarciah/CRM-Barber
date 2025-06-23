@@ -1,89 +1,39 @@
 import React from 'react';
-import { Box, Typography, Card, CardContent, CircularProgress, Alert, Grid } from '@mui/material';
+import { Box, Typography, Card, CardContent } from '@mui/material';
+import { useAppSelector } from '../store/hooks';
 import { useGetAppointmentsQuery, useGetClientsQuery, useGetServicesQuery } from '../services/api';
-import { PageContainer } from '../components/PageContainer';
 
 const Dashboard: React.FC = () => {
-  const {
-    data: appointmentsData = { appointments: [], total: 0 },
-    isLoading: isLoadingAppointments,
-    error: appointmentsError,
-  } = useGetAppointmentsQuery();
-
-  const {
-    data: clientsData = { clients: [], pagination: { total: 0 } },
-    isLoading: isLoadingClients,
-    error: clientsError,
-  } = useGetClientsQuery({ showInactive: false });
-
-  const {
-    data: services = [],
-    isLoading: isLoadingServices,
-    error: servicesError,
-  } = useGetServicesQuery({ showInactive: false });
-
-  const isLoading = isLoadingAppointments || isLoadingClients || isLoadingServices;
-  const error = appointmentsError || clientsError || servicesError;
-
-  if (isLoading) {
-    return (
-      <Box sx={{ p: 3, display: 'flex', justifyContent: 'center' }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Box sx={{ p: 3 }}>
-        <Alert severity="error">
-          Error al cargar los datos del dashboard. Por favor, intenta nuevamente.
-        </Alert>
-      </Box>
-    );
-  }
+  const { data: appointments = [] } = useGetAppointmentsQuery();
+  const { data: clients = [] } = useGetClientsQuery({ showInactive: false });
+  const { data: services = [] } = useGetServicesQuery({ showInactive: false });
 
   return (
-    <PageContainer>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4">Dashboard</Typography>
+    <Box>
+      <Typography variant="h4" gutterBottom>
+        Dashboard
+      </Typography>
+      <Box display="flex" gap={2}>
+        <Card>
+          <CardContent>
+            <Typography variant="h6">Total Appointments</Typography>
+            <Typography variant="h4">{appointments.length}</Typography>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent>
+            <Typography variant="h6">Total Clients</Typography>
+            <Typography variant="h4">{clients.length}</Typography>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent>
+            <Typography variant="h6">Total Services</Typography>
+            <Typography variant="h4">{services.length}</Typography>
+          </CardContent>
+        </Card>
       </Box>
-
-      <Grid container spacing={3}>
-        <Grid item xs={12} sm={6} md={4}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Total Citas
-              </Typography>
-              <Typography variant="h4">{appointmentsData.total}</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={4}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Total Clientes
-              </Typography>
-              <Typography variant="h4">{clientsData.pagination.total}</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={4}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Total Servicios
-              </Typography>
-              <Typography variant="h4">{services.length}</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-    </PageContainer>
+    </Box>
   );
 };
 

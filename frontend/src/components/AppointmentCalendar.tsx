@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Card, CardContent, Grid, IconButton, Typography, Paper } from '@mui/material';
+import { Box, Card, CardContent, Grid, IconButton, Typography } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { format } from 'date-fns';
@@ -12,8 +12,8 @@ interface AppointmentCalendarProps {
   selectedDate: Date;
   onDateChange: (date: Date | null) => void;
   appointments: Appointment[];
-  onEditAppointment: (appointment?: Appointment) => void;
-  onDeleteAppointment: (id: string) => void;
+  onEditAppointment: (appointment: Appointment) => void;
+  onDeleteAppointment: (appointment: Appointment) => void;
   selectedBarber?: string;
 }
 
@@ -63,7 +63,7 @@ const AppointmentCalendar: React.FC<AppointmentCalendarProps> = ({
   };
 
   return (
-    <Box component={Paper} sx={{ p: 2 }}>
+    <Box>
       <DatePicker label="Seleccionar fecha" value={selectedDate} onChange={onDateChange} />
 
       <Typography variant="h6" sx={{ mb: 2 }}>
@@ -112,7 +112,7 @@ const AppointmentCalendar: React.FC<AppointmentCalendarProps> = ({
                             </IconButton>
                             <IconButton
                               size="small"
-                              onClick={() => onDeleteAppointment(appointment.id)}
+                              onClick={() => onDeleteAppointment(appointment)}
                               color="error"
                             >
                               <DeleteIcon fontSize="small" />
@@ -120,10 +120,10 @@ const AppointmentCalendar: React.FC<AppointmentCalendarProps> = ({
                           </Box>
                         </Box>
                         <Typography variant="body1" sx={{ mb: 1 }}>
-                          {appointment.client?.firstName || 'Cliente'} {appointment.client?.lastName || 'Desconocido'}
+                          {appointment.client?.firstName} {appointment.client?.lastName}
                         </Typography>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                          {appointment.service?.name || 'Servicio Desconocido'}
+                          {appointment.service?.name}
                         </Typography>
                         <Box
                           sx={{
@@ -133,7 +133,7 @@ const AppointmentCalendar: React.FC<AppointmentCalendarProps> = ({
                           }}
                         >
                           <Typography variant="body2" color="text.secondary">
-                            {appointment.barber?.firstName || 'Barbero'} {appointment.barber?.lastName || 'Desconocido'}
+                            {appointment.barber?.firstName} {appointment.barber?.lastName}
                           </Typography>
                           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                             <Typography

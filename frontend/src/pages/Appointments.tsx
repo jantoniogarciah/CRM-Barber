@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   Box,
   Button,
+  Container,
   Typography,
   Paper,
   Table,
@@ -18,7 +19,6 @@ import {
   TextField,
   MenuItem,
   CircularProgress,
-  Alert,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -38,7 +38,7 @@ import { Appointment, Barber } from '../types';
 import AppointmentForm from '../components/AppointmentForm';
 import AppointmentCalendar from '../components/AppointmentCalendar';
 import DeleteConfirmDialog from '../components/DeleteConfirmDialog';
-import toast from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
 import { PageContainer } from '../components/PageContainer';
 
 type ViewMode = 'list' | 'calendar';
@@ -48,136 +48,167 @@ interface AppointmentsResponse {
   total: number;
 }
 
-const Appointments: React.FC = () => {
+interface BarbersResponse {
+  barbers: Barber[];
+  total: number;
+}
+
+export const Appointments = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [openForm, setOpenForm] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
-  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | undefined>(undefined);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedBarber, setSelectedBarber] = useState<string>('');
-  const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
-  const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [appointmentToDelete, setAppointmentToDelete] = useState<Appointment | undefined>(undefined);
 
-  const {
-    data: appointmentsData = { appointments: [] },
-    isLoading,
-    error,
-    refetch
-  } = useGetAppointmentsQuery();
+  const { data: appointmentsData, isLoading, isError, error } = useGetAppointmentsQuery();
+  const { data: barbersData } = useGetBarbersQuery({ showInactive: false });
+  const [deleteAppointment] = useDeleteAppointmentMutation();
 
-  const {
-    data: barbers = [],
-    isLoading: isLoadingBarbers,
-    error: barbersError,
-  } = useGetBarbersQuery({ showInactive: false });
+  const appointments = appointmentsData?.appointments || [];
+  const barbers = barbersData?.barbers || [];
 
-  const [deleteAppointment, { isLoading: isDeleting }] = useDeleteAppointmentMutation();
-
-  const isLoadingCombined = isLoading || isLoadingBarbers;
-  const errorCombined = error || barbersError;
-
-  const handleViewModeChange = (_: React.MouseEvent<HTMLElement>, newMode: ViewMode | null) => {
-    if (newMode !== null) {
-      setViewMode(newMode);
-    }
+  const handleAdd = () => {
+    setSelectedAppointment(undefined);
+    setOpenForm(true);
   };
 
-  const handleOpenForm = (appointment?: Appointment) => {
-    setSelectedAppointment(appointment || null);
+  const handleEdit = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
     setOpenForm(true);
+  };
+
+  const handleDelete = (appointment: Appointment) => {
+    setAppointmentToDelete(appointment);
+    setOpenDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (appointmentToDelete) {
+      try {
+        await deleteAppointment(appointmentToDelete.id).unwrap();
+        toast.success('Cita eliminada correctamente');
+      } catch (error) {
+        toast.error('Error al eliminar la cita');
+      }
+    }
+    setOpenDeleteDialog(false);
+    setAppointmentToDelete(undefined);
   };
 
   const handleCloseForm = () => {
     setOpenForm(false);
-    setSelectedAppointment(null);
+    setSelectedAppointment(undefined);
   };
 
-  const handleOpenDeleteDialog = (appointment: Appointment) => {
-    setSelectedAppointment(appointment);
-    setOpenDeleteDialog(true);
+  const handleSuccess = () => {
+    handleCloseForm();
+    toast.success(selectedAppointment ? 'Cita actualizada correctamente' : 'Cita creada correctamente');
   };
 
-  const handleCloseDeleteDialog = () => {
-    setOpenDeleteDialog(false);
-    setSelectedAppointment(null);
-  };
-
-  const handleDelete = async () => {
-    if (!selectedAppointmentId) return;
-
-    try {
-      await deleteAppointment(selectedAppointmentId).unwrap();
-      toast.success('Cita eliminada exitosamente');
-      setIsDeleteDialogOpen(false);
-      setSelectedAppointmentId(null);
-      refetch();
-    } catch (error) {
-      toast.error('Error al eliminar la cita');
-    }
-  };
-
-  const handleEditAppointment = (appointment?: Appointment) => {
-    // Implement edit functionality
-    console.log('Edit appointment:', appointment);
-  };
-
-  if (isLoadingCombined) {
-    return (
-      <Box sx={{ p: 3, display: 'flex', justifyContent: 'center' }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (errorCombined) {
-    return (
-      <Box sx={{ p: 3 }}>
-        <Alert severity="error">
-          Error al cargar las citas. Por favor, intenta nuevamente.
-        </Alert>
-      </Box>
-    );
-  }
-
-  const getAppointmentStatus = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'completed':
-        return 'completed';
-      case 'cancelled':
-        return 'cancelled';
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'warning';
       case 'confirmed':
-        return 'confirmed';
+        return 'info';
+      case 'completed':
+        return 'success';
+      case 'cancelled':
+        return 'error';
       default:
-        return 'pending';
+        return 'default';
     }
   };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'Pendiente';
+      case 'confirmed':
+        return 'Confirmada';
+      case 'completed':
+        return 'Completada';
+      case 'cancelled':
+        return 'Cancelada';
+      default:
+        return status;
+    }
+  };
+
+  const formatDate = (dateStr: string) => {
+    try {
+      const date = new Date(dateStr);
+      return format(date, 'dd/MM/yyyy', { locale: es });
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return dateStr;
+    }
+  };
+
+  const filteredAppointments = appointments.filter((appointment: Appointment) => {
+    if (!appointment || !appointment.date) return false;
+    
+    try {
+      const appointmentDate = new Date(appointment.date);
+      const compareDate = new Date(format(selectedDate, 'yyyy-MM-dd'));
+
+      const isDateMatch = format(appointmentDate, 'yyyy-MM-dd') === format(compareDate, 'yyyy-MM-dd');
+      const isBarberMatch = !selectedBarber || appointment.barberId === selectedBarber;
+      return isDateMatch && isBarberMatch;
+    } catch (error) {
+      console.error('Error filtering appointment:', error);
+      return false;
+    }
+  });
+
+  if (isLoading) {
+    return (
+      <PageContainer>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+          <CircularProgress />
+        </Box>
+      </PageContainer>
+    );
+  }
+
+  if (isError) {
+    return (
+      <PageContainer>
+        <Typography color="error">Error al cargar las citas: {error?.toString()}</Typography>
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer>
       <Box sx={{ mb: 4 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={6}>
-            <Typography variant="h4">Citas</Typography>
+        <Grid container spacing={2} alignItems="center" justifyContent="space-between">
+          <Grid item>
+            <Typography variant="h5" component="h1">
+              Citas
+            </Typography>
           </Grid>
-          <Grid item xs={12} md={6}>
-            <Box display="flex" justifyContent="flex-end" gap={2}>
+          <Grid item>
+            <Box display="flex" gap={2}>
               <ToggleButtonGroup
                 value={viewMode}
                 exclusive
-                onChange={handleViewModeChange}
-                aria-label="view mode"
+                onChange={(e, newMode) => newMode && setViewMode(newMode)}
+                size="small"
               >
-                <ToggleButton value="list" aria-label="list view">
+                <ToggleButton value="list">
                   <ViewListIcon />
                 </ToggleButton>
-                <ToggleButton value="calendar" aria-label="calendar view">
+                <ToggleButton value="calendar">
                   <CalendarIcon />
                 </ToggleButton>
               </ToggleButtonGroup>
               <Button
                 variant="contained"
                 startIcon={<AddIcon />}
-                onClick={() => handleOpenForm()}
+                onClick={handleAdd}
               >
                 Nueva Cita
               </Button>
@@ -186,131 +217,107 @@ const Appointments: React.FC = () => {
         </Grid>
       </Box>
 
-      {viewMode === 'calendar' ? (
-        <AppointmentCalendar
-          appointments={appointmentsData.appointments.map(appointment => ({
-            ...appointment,
-            client: appointment.client || { firstName: 'Cliente', lastName: 'Desconocido', id: '0', isActive: true, createdAt: '', updatedAt: '' },
-            barber: appointment.barber || { firstName: 'Barbero', lastName: 'Desconocido', id: '0', isActive: true, createdAt: '', updatedAt: '' },
-            service: appointment.service || { name: 'Servicio Desconocido', id: '0', price: 0, duration: 0, isActive: true, createdAt: '', updatedAt: '' },
-            status: getAppointmentStatus(appointment.status)
-          }))}
-          onEditAppointment={handleEditAppointment}
-          onDeleteAppointment={(id: string) => {
-            setSelectedAppointmentId(id);
-            setIsDeleteDialogOpen(true);
-          }}
-          selectedDate={new Date(selectedDate)}
-          onDateChange={(date) => setSelectedDate(format(date || new Date(), 'yyyy-MM-dd'))}
-        />
-      ) : (
-        <Box>
-          <Grid container spacing={2} sx={{ mb: 2 }}>
-            <Grid item xs={12} md={6}>
-              <TextField
-                select
-                fullWidth
-                label="Filtrar por barbero"
-                value={selectedBarber}
-                onChange={(e) => setSelectedBarber(e.target.value)}
-              >
-                <MenuItem value="">Todos los barberos</MenuItem>
-                {barbers.map((barber) => (
-                  <MenuItem key={barber.id} value={barber.id}>
-                    {`${barber.firstName} ${barber.lastName}`}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                type="date"
-                fullWidth
-                label="Filtrar por fecha"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-          </Grid>
-
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Cliente</TableCell>
-                  <TableCell>Barbero</TableCell>
-                  <TableCell>Servicio</TableCell>
-                  <TableCell>Fecha</TableCell>
-                  <TableCell>Hora</TableCell>
-                  <TableCell>Estado</TableCell>
-                  <TableCell align="right">Acciones</TableCell>
+      {viewMode === 'list' ? (
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Barbero</TableCell>
+                <TableCell>Cliente</TableCell>
+                <TableCell>Servicio</TableCell>
+                <TableCell>Fecha</TableCell>
+                <TableCell>Hora</TableCell>
+                <TableCell>Estado</TableCell>
+                <TableCell>Notas</TableCell>
+                <TableCell align="right">Acciones</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {appointments.map((appointment: Appointment) => (
+                <TableRow key={appointment.id}>
+                  <TableCell>
+                    {`${appointment.barber?.firstName} ${appointment.barber?.lastName}`}
+                  </TableCell>
+                  <TableCell>
+                    {`${appointment.client?.firstName} ${appointment.client?.lastName}`}
+                  </TableCell>
+                  <TableCell>{appointment.service?.name}</TableCell>
+                  <TableCell>{formatDate(appointment.date)}</TableCell>
+                  <TableCell>{appointment.time}</TableCell>
+                  <TableCell>
+                    <Chip
+                      label={getStatusText(appointment.status)}
+                      color={getStatusColor(appointment.status)}
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell>{appointment.notes || '-'}</TableCell>
+                  <TableCell align="right">
+                    <IconButton
+                      size="small"
+                      onClick={() => handleEdit(appointment)}
+                      color="primary"
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleDelete(appointment)}
+                      color="error"
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {appointmentsData.appointments.map((appointment) => (
-                  <TableRow key={appointment.id}>
-                    <TableCell>
-                      {`${appointment.client?.firstName || 'Cliente'} ${appointment.client?.lastName || 'Desconocido'}`}
-                    </TableCell>
-                    <TableCell>
-                      {`${appointment.barber?.firstName || 'Barbero'} ${appointment.barber?.lastName || 'Desconocido'}`}
-                    </TableCell>
-                    <TableCell>{appointment.service?.name || 'Servicio Desconocido'}</TableCell>
-                    <TableCell>
-                      {format(new Date(appointment.date), 'dd/MM/yyyy', { locale: es })}
-                    </TableCell>
-                    <TableCell>{appointment.time}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={appointment.status}
-                        color={
-                          appointment.status === 'completed'
-                            ? 'success'
-                            : appointment.status === 'cancelled'
-                            ? 'error'
-                            : 'primary'
-                        }
-                      />
-                    </TableCell>
-                    <TableCell align="right">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleOpenForm(appointment)}
-                        title="Editar cita"
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleOpenDeleteDialog(appointment)}
-                        title="Eliminar cita"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Box>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      ) : (
+        <>
+          <Box sx={{ mb: 4 }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  select
+                  label="Barbero"
+                  value={selectedBarber}
+                  onChange={(e) => setSelectedBarber(e.target.value)}
+                >
+                  <MenuItem value="">Todos los barberos</MenuItem>
+                  {barbers.map((barber: Barber) => (
+                    <MenuItem key={barber.id} value={barber.id}>
+                      {`${barber.firstName} ${barber.lastName}`}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+            </Grid>
+          </Box>
+          <AppointmentCalendar
+            appointments={filteredAppointments}
+            selectedDate={selectedDate}
+            onDateChange={(date) => date && setSelectedDate(date)}
+            onEditAppointment={handleEdit}
+            onDeleteAppointment={handleDelete}
+          />
+        </>
       )}
 
       <AppointmentForm
         open={openForm}
         onClose={handleCloseForm}
-        onSuccess={handleCloseForm}
-        appointment={selectedAppointment || undefined}
+        onSuccess={handleSuccess}
+        appointment={selectedAppointment}
       />
 
       <DeleteConfirmDialog
-        open={isDeleteDialogOpen}
-        onClose={() => setIsDeleteDialogOpen(false)}
-        onConfirm={handleDelete}
-        title="¿Eliminar cita?"
-        content="¿Estás seguro que deseas eliminar esta cita? Esta acción no se puede deshacer."
-        isLoading={isDeleting}
+        open={openDeleteDialog}
+        onClose={() => setOpenDeleteDialog(false)}
+        onConfirm={handleConfirmDelete}
+        title="Eliminar Cita"
+        content="¿Estás seguro de que deseas eliminar esta cita? Esta acción no se puede deshacer."
       />
     </PageContainer>
   );

@@ -20,14 +20,12 @@ const app = express();
 const httpServer = createServer(app);
 const prisma = new PrismaClient();
 
-// CORS configuration
+// Simple CORS configuration that accepts all origins
 const corsOptions = {
-  origin: ['https://crm-barber.onrender.com'],
+  origin: true, // Allow all origins
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  preflightContinue: false,
-  optionsSuccessStatus: 204
 };
 
 app.use(cors(corsOptions));

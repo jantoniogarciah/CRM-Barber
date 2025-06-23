@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Box,
   Typography,
@@ -23,7 +23,6 @@ import {
   Link,
   TextField,
   TablePagination,
-  Alert,
 } from '@mui/material';
 import {
   useGetClientsQuery,
@@ -39,9 +38,6 @@ import AddIcon from '@mui/icons-material/Add';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import { Client, Appointment } from '../types';
 import { toast } from 'react-hot-toast';
-import { PageContainer } from '../components/PageContainer';
-import ClientsTable from '../components/ClientsTable';
-import DeleteConfirmDialog from '../components/DeleteConfirmDialog';
 
 interface ChangeEvent {
   target: {
@@ -58,7 +54,7 @@ interface ApiError {
   status?: string;
 }
 
-const Clients: React.FC = () => {
+const Clients = () => {
   const [showInactive, setShowInactive] = React.useState(false);
   const [page, setPage] = React.useState(1);
   const [limit, setLimit] = React.useState(10);

@@ -5,7 +5,7 @@ import { toast } from 'react-hot-toast';
 import { clearCredentials } from '../store/slices/authSlice';
 
 // Asegurarse de que la URL base termine en /api
-const API_URL = process.env.REACT_APP_API_URL || 'https://crm-barber-backend.onrender.com/api';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
 const baseQuery = fetchBaseQuery({
   baseUrl: API_URL.endsWith('/api') ? API_URL : `${API_URL}/api`,
@@ -13,20 +13,75 @@ const baseQuery = fetchBaseQuery({
     // Intentar obtener el token primero de Redux
     const token = (getState() as RootState).auth.token || localStorage.getItem('token');
     
+    console.log('Current token:', token);
+    
     if (token) {
       headers.set('authorization', `Bearer ${token}`);
+      console.log('Headers after setting token:', headers.get('authorization'));
     }
     
     headers.set('Content-Type', 'application/json');
     return headers;
   },
-  credentials: 'same-origin'
+  credentials: 'include'
 });
+
+const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
+  try {
+    console.log('Making API request:', {
+      url: typeof args === 'string' ? args : args.url,
+      method: args.method
+    });
+    
+    const result = await baseQuery(args, api, extraOptions);
+    
+    console.log('API response:', result);
+    
+    if (result.error) {
+      const error = result.error as any;
+      
+      // No manejar errores 401 para la ruta de login
+      if (error.status === 401 && !args.url.includes('/auth/login')) {
+        console.error('Authentication error:', error);
+        localStorage.clear();
+        sessionStorage.clear();
+        api.dispatch(clearCredentials());
+        
+        if (window.location.pathname !== '/login') {
+          toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+          window.location.href = '/login';
+        }
+        return result;
+      }
+      
+      if (error.status === 500) {
+        console.error('Server error:', error);
+        toast.error('Error en el servidor. Por favor, intenta más tarde.');
+      }
+      
+      if (error.data?.message) {
+        console.error('API error:', error.data.message);
+        toast.error(error.data.message);
+      }
+    }
+    
+    return result;
+  } catch (error: any) {
+    console.error('API Error:', error);
+    toast.error('Error en la conexión. Por favor, verifica tu conexión a internet.');
+    return {
+      error: {
+        status: 'CUSTOM_ERROR',
+        error: error.message || 'Error en la solicitud'
+      }
+    };
+  }
+};
 
 export const api = createApi({
   reducerPath: 'api',
-  baseQuery,
-  tagTypes: ['User', 'Client', 'Service', 'Appointment', 'Notification', 'Category', 'Barber', 'Sale'],
+  baseQuery: baseQueryWithRetry,
+  tagTypes: ['User', 'Client', 'Service', 'Appointment', 'Notification', 'Category', 'Barber', 'Services', 'Categories', 'Clients', 'Barbers', 'ServicesLog', 'Sales'],
   endpoints: (builder) => ({
     // Auth endpoints
     login: builder.mutation<{ user: User; token: string }, { email: string; password: string }>({
@@ -84,7 +139,7 @@ export const api = createApi({
           phone: params.phone
         },
       }),
-      providesTags: ['Client'],
+      providesTags: ['Clients'],
     }),
     getLastCompletedAppointments: builder.query<{ [clientId: string]: Appointment }, void>({
       query: () => '/appointments/last-completed',
@@ -130,7 +185,7 @@ export const api = createApi({
         url: '/clients/search/phone',
         params: { phone },
       }),
-      providesTags: ['Client'],
+      providesTags: ['Clients'],
     }),
 
     // Service endpoints
@@ -139,11 +194,11 @@ export const api = createApi({
         url: '/services',
         params: { showInactive: params?.showInactive },
       }),
-      providesTags: ['Service'],
+      providesTags: ['Services'],
     }),
     getService: builder.query<Service, string>({
       query: (id) => `/services/${id}`,
-      providesTags: (_result, _error, id) => [{ type: 'Service', id }],
+      providesTags: (result, error, id) => [{ type: 'Service', id }],
     }),
     createService: builder.mutation<Service, Partial<Service>>({
       query: (service) => ({
@@ -159,7 +214,7 @@ export const api = createApi({
         method: 'PUT',
         body: service,
       }),
-      invalidatesTags: (_result, _error, { id }) => [{ type: 'Service', id }],
+      invalidatesTags: (result, error, { id }) => [{ type: 'Service', id }, 'Service'],
     }),
     deleteService: builder.mutation<void, string>({
       query: (id) => ({
@@ -269,7 +324,7 @@ export const api = createApi({
         url: '/barbers',
         params: { showInactive: params?.showInactive },
       }),
-      providesTags: ['Barber'],
+      providesTags: ['Barbers'],
     }),
     getBarber: builder.query<Barber, string>({
       query: (id) => ({
@@ -340,7 +395,7 @@ export const api = createApi({
           limit: params?.limit || 10
         }
       }),
-      providesTags: ['Sale'],
+      providesTags: ['Sales'],
     }),
     getSale: builder.query<Sale, string>({
       query: (id) => `/sales/${id}`,

@@ -16,7 +16,6 @@ import {
   CircularProgress,
   Tooltip,
   Link,
-  Alert,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -24,26 +23,44 @@ import {
   Delete as DeleteIcon,
   WhatsApp as WhatsAppIcon,
 } from '@mui/icons-material';
-import { toast } from 'react-hot-toast';
+import { useSnackbar } from 'notistack';
 import {
   useGetBarbersQuery,
   useCreateBarberMutation,
   useUpdateBarberMutation,
   useDeleteBarberMutation,
   useToggleBarberStatusMutation,
-} from '../store/services/barberApi';
+} from '../services/api';
 import BarberForm from '../components/BarberForm';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { Barber } from '../types';
+import LoadingScreen from '../components/LoadingScreen';
 import { format } from 'date-fns';
 
 const BarbersPage: React.FC = () => {
+  console.log('BarbersPage - Component rendering');
+
+  useEffect(() => {
+    console.log('BarbersPage - Component mounted');
+    return () => {
+      console.log('BarbersPage - Component unmounted');
+    };
+  }, []);
+
+  const { enqueueSnackbar } = useSnackbar();
   const [showInactive, setShowInactive] = useState(false);
   const [openForm, setOpenForm] = useState(false);
   const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
   const [selectedBarber, setSelectedBarber] = useState<Partial<Barber> | null>(null);
 
-  const { data: barbers = [], isLoading, error } = useGetBarbersQuery({ showInactive });
+  const { data: barbers = [], isLoading, refetch, error } = useGetBarbersQuery({ showInactive });
+
+  useEffect(() => {
+    if (error) {
+      console.error('BarbersPage - Error fetching barbers:', error);
+    }
+  }, [error]);
+
   const [createBarber, { isLoading: isCreating }] = useCreateBarberMutation();
   const [updateBarber, { isLoading: isUpdating }] = useUpdateBarberMutation();
   const [deleteBarber, { isLoading: isDeleting }] = useDeleteBarberMutation();
@@ -76,15 +93,16 @@ const BarbersPage: React.FC = () => {
           id: selectedBarber.id,
           barber,
         }).unwrap();
-        toast.success('Barbero actualizado exitosamente');
+        enqueueSnackbar('Barbero actualizado exitosamente', { variant: 'success' });
       } else {
         await createBarber(barber).unwrap();
-        toast.success('Barbero creado exitosamente');
+        enqueueSnackbar('Barbero creado exitosamente', { variant: 'success' });
       }
       handleCloseForm();
+      refetch();
     } catch (error: any) {
       console.error('Error saving barber:', error);
-      toast.error(error.data?.message || 'Error al guardar el barbero');
+      enqueueSnackbar(error.data?.message || 'Error al guardar el barbero', { variant: 'error' });
     }
   };
 
@@ -93,21 +111,25 @@ const BarbersPage: React.FC = () => {
 
     try {
       await deleteBarber(selectedBarber.id).unwrap();
-      toast.success('Barbero eliminado exitosamente');
+      enqueueSnackbar('Barbero eliminado exitosamente', { variant: 'success' });
       handleCloseConfirmDialog();
+      refetch();
     } catch (error: any) {
       console.error('Error deleting barber:', error);
-      toast.error(error.data?.message || 'Error al eliminar el barbero');
+      enqueueSnackbar(error.data?.message || 'Error al eliminar el barbero', { variant: 'error' });
     }
   };
 
   const handleToggleStatus = async (id: string) => {
     try {
       await toggleBarberStatus(id).unwrap();
-      toast.success('Estado del barbero actualizado exitosamente');
+      enqueueSnackbar('Estado del barbero actualizado exitosamente', { variant: 'success' });
+      refetch();
     } catch (error: any) {
       console.error('Error toggling barber status:', error);
-      toast.error(error.data?.message || 'Error al actualizar el estado del barbero');
+      enqueueSnackbar(error.data?.message || 'Error al actualizar el estado del barbero', {
+        variant: 'error',
+      });
     }
   };
 
@@ -116,23 +138,12 @@ const BarbersPage: React.FC = () => {
     return phone.replace(/\D/g, '');
   };
 
-  if (error) {
-    return (
-      <Box sx={{ p: 3 }}>
-        <Alert severity="error">
-          Error al cargar los barberos. Por favor, intenta nuevamente.
-        </Alert>
-      </Box>
-    );
+  if (isLoading) {
+    console.log('BarbersPage - Loading state');
+    return <LoadingScreen />;
   }
 
-  if (isLoading) {
-    return (
-      <Box sx={{ p: 3, display: 'flex', justifyContent: 'center' }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
+  console.log('BarbersPage - Rendering with data:', { barbers, showInactive });
 
   return (
     <Box sx={{ p: 3 }}>

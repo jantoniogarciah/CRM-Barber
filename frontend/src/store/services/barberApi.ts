@@ -1,45 +1,77 @@
-import { api } from '../../services/api';
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { Barber } from '../../types';
 import { toast } from 'react-hot-toast';
 import { clearCredentials } from '../slices/authSlice';
 
-const handleError = (error: any) => {
-  if (error.status === 401) {
-    toast.error('Sesión expirada. Por favor inicia sesión nuevamente.');
-  } else if (error.status === 500) {
-    toast.error('Error del servidor. Por favor intenta más tarde.');
-  } else {
-    toast.error(error.data?.message || 'Error desconocido');
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+
+const baseQuery = fetchBaseQuery({
+  baseUrl: API_URL,
+  prepareHeaders: (headers) => {
+    // Get token from localStorage
+    const token = localStorage.getItem('token');
+    if (token) {
+      headers.set('authorization', `Bearer ${token}`);
+    }
+    headers.set('Content-Type', 'application/json');
+    return headers;
+  },
+  credentials: 'include',
+});
+
+const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
+  const result = await baseQuery(args, api, extraOptions);
+
+  if (result.error) {
+    const error = result.error as any;
+    console.error('API Error:', error);
+
+    // Handle authentication errors
+    if (error.status === 401) {
+      // Clear all auth data
+      localStorage.clear();
+      sessionStorage.clear();
+      api.dispatch(clearCredentials());
+
+      // Show error message
+      toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+
+      window.location.href = '/login';
+      return result;
+    }
+
+    // Handle server errors
+    if (error.status === 500) {
+      toast.error('Error en el servidor. Por favor, intenta más tarde.');
+    }
+
+    // Handle network errors
+    if (error.status === 'FETCH_ERROR') {
+      toast.error('Error de conexión. Por favor, verifica tu conexión a internet.');
+    }
   }
+
+  return result;
 };
 
-// Extend the base api with the barber endpoints
-export const barberApi = api.injectEndpoints({
+export const barberApi = createApi({
+  reducerPath: 'barberApi',
+  baseQuery: baseQueryWithRetry,
+  tagTypes: ['Barber'],
   endpoints: (builder) => ({
-    getBarbers: builder.query<Barber[], { showInactive: boolean }>({
-      query: (params) => ({
-        url: '/barbers',
-        params: { showInactive: params.showInactive },
+    getBarbers: builder.query<Barber[], { showInactive?: boolean }>({
+      query: ({ showInactive }) => ({
+        url: `/barbers${showInactive ? '?showInactive=true' : ''}`,
+        method: 'GET',
       }),
       providesTags: ['Barber'],
-      async onQueryStarted(_, { dispatch, queryFulfilled }) {
-        try {
-          await queryFulfilled;
-        } catch (error: any) {
-          handleError(error.error);
-        }
-      },
     }),
     getBarber: builder.query<Barber, string>({
-      query: (id: string) => `/barbers/${id}`,
+      query: (id) => ({
+        url: `/barbers/${id}`,
+        method: 'GET',
+      }),
       providesTags: (_result, _error, id) => [{ type: 'Barber', id }],
-      async onQueryStarted(_, { dispatch, queryFulfilled }) {
-        try {
-          await queryFulfilled;
-        } catch (error: any) {
-          handleError(error.error);
-        }
-      },
     }),
     createBarber: builder.mutation<Barber, Partial<Barber>>({
       query: (barber) => ({
@@ -48,14 +80,6 @@ export const barberApi = api.injectEndpoints({
         body: barber,
       }),
       invalidatesTags: ['Barber'],
-      async onQueryStarted(_, { dispatch, queryFulfilled }) {
-        try {
-          await queryFulfilled;
-          toast.success('Barbero creado exitosamente');
-        } catch (error: any) {
-          handleError(error.error);
-        }
-      },
     }),
     updateBarber: builder.mutation<Barber, { id: string; barber: Partial<Barber> }>({
       query: ({ id, barber }) => ({
@@ -63,33 +87,14 @@ export const barberApi = api.injectEndpoints({
         method: 'PUT',
         body: barber,
       }),
-      invalidatesTags: (_result, _error, { id }) => [
-        { type: 'Barber', id },
-        'Barber',
-      ],
-      async onQueryStarted(_, { dispatch, queryFulfilled }) {
-        try {
-          await queryFulfilled;
-          toast.success('Barbero actualizado exitosamente');
-        } catch (error: any) {
-          handleError(error.error);
-        }
-      },
+      invalidatesTags: (_result, _error, { id }) => [{ type: 'Barber', id }],
     }),
     deleteBarber: builder.mutation<void, string>({
-      query: (id: string) => ({
+      query: (id) => ({
         url: `/barbers/${id}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['Barber'],
-      async onQueryStarted(_, { dispatch, queryFulfilled }) {
-        try {
-          await queryFulfilled;
-          toast.success('Barbero eliminado exitosamente');
-        } catch (error: any) {
-          handleError(error.error);
-        }
-      },
     }),
     toggleBarberStatus: builder.mutation<Barber, string>({
       query: (id) => ({
@@ -99,7 +104,6 @@ export const barberApi = api.injectEndpoints({
       invalidatesTags: ['Barber'],
     }),
   }),
-  overrideExisting: false,
 });
 
 export const {

@@ -11,12 +11,11 @@ export interface Client {
   id: string;
   firstName: string;
   lastName: string;
-  email?: string;
+  email: string | null;
   phone: string;
-  notes?: string;
-  status: string;
+  notes: string | null;
   createdAt: string;
-  updatedAt: string;
+  status: 'ACTIVE' | 'INACTIVE';
 }
 
 export interface Category {
@@ -32,11 +31,13 @@ export interface Category {
 export interface Service {
   id: string;
   name: string;
-  description?: string;
+  description: string;
   price: number;
   duration: number;
-  categoryId: string;
+  image?: string;
   isActive: boolean;
+  categoryId?: string;
+  category?: Category;
   createdAt: string;
   updatedAt: string;
 }
@@ -49,12 +50,27 @@ export interface Appointment {
   date: string;
   time: string;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
-  notes?: string;
+  notes: string;
+  client?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    email?: string;
+  };
+  service?: {
+    id: string;
+    name: string;
+    price: number;
+    duration: number;
+  };
+  barber?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
   createdAt: string;
   updatedAt: string;
-  client?: Client;
-  service?: Service;
-  barber?: Barber;
 }
 
 export interface Notification {
@@ -78,8 +94,8 @@ export interface Barber {
   id: string;
   firstName: string;
   lastName: string;
-  email?: string;
   phone: string;
+  email?: string;
   instagram?: string;
   isActive: boolean;
   createdAt: string;
@@ -97,27 +113,7 @@ export interface Sale {
   notes?: string;
   createdAt: string;
   updatedAt: string;
-  client?: Client;
-  service?: Service;
-  barber?: Barber;
+  client: Client;
+  service: Service;
+  barber: Barber;
 }
-
-export interface ServiceLog {
-  id: string;
-  clientId: string;
-  serviceId: string;
-  barberId: string;
-  date: string;
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
-  client?: Client;
-  service?: Service;
-  barber?: Barber;
-}
-
-export * from './appointment';
-export * from './barber';
-export * from './client';
-export * from './service';
-export * from './sale';
