@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { store } from './store';
@@ -14,11 +14,14 @@ import Layout from './components/Layout';
 import AppRoutes from './router';
 import AuthInitializer from './components/AuthInitializer';
 import { useOrientation } from './hooks/useOrientation';
+import { useAppDispatch } from './store/hooks';
+import { setCredentials } from './store/slices/authSlice';
 
 const AppContent: React.FC = () => {
   const orientation = useOrientation();
   const isMobile = useMediaQuery('(max-width:600px)');
   const isPWA = window.matchMedia('(display-mode: standalone)').matches;
+  const dispatch = useAppDispatch();
 
   const getRotationStyles = () => {
     if (!isMobile || !isPWA) return {};
@@ -36,6 +39,23 @@ const AppContent: React.FC = () => {
     }
     return {};
   };
+
+  useEffect(() => {
+    // Intentar restaurar la sesión al iniciar la app
+    const token = localStorage.getItem('token');
+    const userStr = localStorage.getItem('user');
+    
+    if (token && userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        dispatch(setCredentials({ user, token }));
+      } catch (error) {
+        console.error('Error restoring session:', error);
+        localStorage.clear();
+        sessionStorage.clear();
+      }
+    }
+  }, [dispatch]);
 
   return (
     <Box

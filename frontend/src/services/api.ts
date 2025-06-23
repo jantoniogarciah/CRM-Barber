@@ -10,20 +10,17 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 const baseQuery = fetchBaseQuery({
   baseUrl: API_URL.endsWith('/api') ? API_URL : `${API_URL}/api`,
   prepareHeaders: (headers, { getState }) => {
-    const token = (getState() as RootState).auth.token;
+    // Intentar obtener el token primero de Redux
+    const token = (getState() as RootState).auth.token || localStorage.getItem('token');
     
     console.log('Current token:', token);
     
-    if (!token) {
-      console.warn('No token found in Redux state');
-      window.location.href = '/login';
-      return headers;
+    if (token) {
+      headers.set('authorization', `Bearer ${token}`);
+      console.log('Headers after setting token:', headers.get('authorization'));
     }
     
-    headers.set('authorization', `Bearer ${token}`);
-    console.log('Headers after setting token:', headers.get('authorization'));
     headers.set('Content-Type', 'application/json');
-    
     return headers;
   },
   credentials: 'include'
@@ -33,8 +30,7 @@ const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
   try {
     console.log('Making API request:', {
       url: typeof args === 'string' ? args : args.url,
-      method: args.method,
-      headers: args.headers
+      method: args.method
     });
     
     const result = await baseQuery(args, api, extraOptions);
@@ -44,7 +40,8 @@ const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
     if (result.error) {
       const error = result.error as any;
       
-      if (error.status === 401) {
+      // No manejar errores 401 para la ruta de login
+      if (error.status === 401 && !args.url.includes('/auth/login')) {
         console.error('Authentication error:', error);
         localStorage.clear();
         sessionStorage.clear();
