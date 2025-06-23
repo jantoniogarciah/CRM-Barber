@@ -158,10 +158,15 @@ const Sales: React.FC = () => {
   };
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Limpiar el número de teléfono (eliminar espacios, guiones, etc.)
     const value = e.target.value.replace(/\D/g, '');
-    setPhoneNumber(value);
+    
+    // Limitar a 10 dígitos
+    const cleanPhone = value.slice(0, 10);
+    
+    setPhoneNumber(cleanPhone);
     if (!showNewClientForm) {
-      setNewClient(prev => ({ ...prev, phone: value }));
+      setNewClient(prev => ({ ...prev, phone: cleanPhone }));
     }
   };
 
@@ -347,6 +352,8 @@ const Sales: React.FC = () => {
                 label="Teléfono del cliente"
                 value={phoneNumber}
                 onChange={handlePhoneChange}
+                error={phoneNumber.length > 0 && phoneNumber.length < 10}
+                helperText={phoneNumber.length > 0 && phoneNumber.length < 10 ? "El teléfono debe tener 10 dígitos" : ""}
                 InputProps={{
                   endAdornment: isSearchingClient && (
                     <CircularProgress size={20} />

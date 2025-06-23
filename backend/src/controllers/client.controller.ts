@@ -257,12 +257,19 @@ export const getClientByPhone = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "El teléfono es requerido" });
     }
 
+    // Limpiar el número de teléfono (eliminar espacios, guiones, etc.)
+    const cleanPhone = (phone as string).replace(/\D/g, '');
+    
+    console.log('Searching client by phone:', { original: phone, cleaned: cleanPhone });
+
     const client = await prisma.client.findFirst({
       where: {
-        phone: phone as string,
+        phone: cleanPhone,
         status: "ACTIVE",
       },
     });
+
+    console.log('Search result:', client);
 
     if (!client) {
       return res.status(404).json({ message: "Cliente no encontrado" });
