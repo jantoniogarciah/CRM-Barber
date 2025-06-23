@@ -112,6 +112,12 @@ const Sales: React.FC = () => {
     }
   }, [client, phoneNumber]);
 
+  useEffect(() => {
+    if (phoneNumber.length < 10) {
+      setFoundClient(null);
+    }
+  }, [phoneNumber]);
+
   const handleNewSale = () => {
     setOpenNewSale(true);
   };
@@ -173,11 +179,6 @@ const Sales: React.FC = () => {
     
     // Limitar a 10 dígitos
     const cleanPhone = value.slice(0, 10);
-    
-    // Limpiar el cliente encontrado si estamos empezando una nueva búsqueda
-    if (cleanPhone.length < 10) {
-      setFoundClient(null);
-    }
     
     setPhoneNumber(cleanPhone);
     if (!showNewClientForm) {
@@ -377,23 +378,25 @@ const Sales: React.FC = () => {
               />
             </Grid>
 
-            {foundClient && (
+            {phoneNumber.length === 10 && !isSearchingClient && (
               <Grid item xs={12}>
-                <Alert severity="success">
-                  Cliente: {foundClient.firstName} {foundClient.lastName}
-                </Alert>
-              </Grid>
-            )}
-
-            {!foundClient && phoneNumber.length >= 10 && !isSearchingClient && (
-              <Grid item xs={12}>
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  onClick={() => setShowNewClientForm(true)}
-                >
-                  Registrar Nuevo Cliente
-                </Button>
+                {foundClient ? (
+                  <Alert severity="success">
+                    Cliente: {foundClient.firstName} {foundClient.lastName}
+                  </Alert>
+                ) : (
+                  <Alert severity="warning">
+                    Cliente no encontrado
+                    <Button
+                      variant="text"
+                      color="primary"
+                      onClick={() => setShowNewClientForm(true)}
+                      sx={{ ml: 2 }}
+                    >
+                      Registrar Nuevo Cliente
+                    </Button>
+                  </Alert>
+                )}
               </Grid>
             )}
 
@@ -435,6 +438,7 @@ const Sales: React.FC = () => {
                     variant="contained"
                     color="primary"
                     onClick={handleCreateClient}
+                    fullWidth
                   >
                     Registrar Cliente
                   </Button>
