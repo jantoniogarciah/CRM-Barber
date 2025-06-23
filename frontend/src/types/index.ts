@@ -115,3 +115,9 @@ export interface ServiceLog {
   service?: Service;
   barber?: Barber;
 }
+
+export * from './appointment';
+export * from './barber';
+export * from './client';
+export * from './service';
+export * from './sale';

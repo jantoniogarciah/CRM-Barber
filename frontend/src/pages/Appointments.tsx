@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   Box,
   Button,
-  Container,
   Typography,
   Paper,
   Table,
@@ -37,8 +36,8 @@ import {
 } from '../services/api';
 import { Appointment, Barber } from '../types';
 import AppointmentForm from '../components/AppointmentForm';
-import { AppointmentCalendar } from '../components/AppointmentCalendar';
-import { DeleteConfirmDialog } from '../components/DeleteConfirmDialog';
+import AppointmentCalendar from '../components/AppointmentCalendar';
+import DeleteConfirmDialog from '../components/DeleteConfirmDialog';
 import toast from 'react-hot-toast';
 import { PageContainer } from '../components/PageContainer';
 
@@ -191,9 +190,9 @@ const Appointments: React.FC = () => {
         <AppointmentCalendar
           appointments={appointmentsData.appointments.map(appointment => ({
             ...appointment,
-            client: appointment.client || { firstName: 'Cliente', lastName: 'Desconocido' },
-            barber: appointment.barber || { firstName: 'Barbero', lastName: 'Desconocido' },
-            service: appointment.service || { name: 'Servicio Desconocido' },
+            client: appointment.client || { firstName: 'Cliente', lastName: 'Desconocido', id: '0', isActive: true, createdAt: '', updatedAt: '' },
+            barber: appointment.barber || { firstName: 'Barbero', lastName: 'Desconocido', id: '0', isActive: true, createdAt: '', updatedAt: '' },
+            service: appointment.service || { name: 'Servicio Desconocido', id: '0', price: 0, duration: 0, isActive: true, createdAt: '', updatedAt: '' },
             status: getAppointmentStatus(appointment.status)
           }))}
           onEditAppointment={handleEditAppointment}
@@ -201,6 +200,8 @@ const Appointments: React.FC = () => {
             setSelectedAppointmentId(id);
             setIsDeleteDialogOpen(true);
           }}
+          selectedDate={new Date(selectedDate)}
+          onDateChange={(date) => setSelectedDate(format(date || new Date(), 'yyyy-MM-dd'))}
         />
       ) : (
         <Box>
@@ -250,12 +251,12 @@ const Appointments: React.FC = () => {
                 {appointmentsData.appointments.map((appointment) => (
                   <TableRow key={appointment.id}>
                     <TableCell>
-                      {`${appointment.client.firstName} ${appointment.client.lastName}`}
+                      {`${appointment.client?.firstName || 'Cliente'} ${appointment.client?.lastName || 'Desconocido'}`}
                     </TableCell>
                     <TableCell>
-                      {`${appointment.barber.firstName} ${appointment.barber.lastName}`}
+                      {`${appointment.barber?.firstName || 'Barbero'} ${appointment.barber?.lastName || 'Desconocido'}`}
                     </TableCell>
-                    <TableCell>{appointment.service.name}</TableCell>
+                    <TableCell>{appointment.service?.name || 'Servicio Desconocido'}</TableCell>
                     <TableCell>
                       {format(new Date(appointment.date), 'dd/MM/yyyy', { locale: es })}
                     </TableCell>
@@ -264,9 +265,9 @@ const Appointments: React.FC = () => {
                       <Chip
                         label={appointment.status}
                         color={
-                          appointment.status === 'COMPLETED'
+                          appointment.status === 'completed'
                             ? 'success'
-                            : appointment.status === 'CANCELLED'
+                            : appointment.status === 'cancelled'
                             ? 'error'
                             : 'primary'
                         }
@@ -309,7 +310,7 @@ const Appointments: React.FC = () => {
         onConfirm={handleDelete}
         title="¿Eliminar cita?"
         content="¿Estás seguro que deseas eliminar esta cita? Esta acción no se puede deshacer."
-        isSubmitting={isDeleting}
+        isLoading={isDeleting}
       />
     </PageContainer>
   );
