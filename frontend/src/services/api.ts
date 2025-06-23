@@ -1,4 +1,4 @@
-import { createApi, fetchBaseQuery, BaseQueryFn, FetchBaseQueryError, FetchArgs, QueryReturnValue } from '@reduxjs/toolkit/query/react';
+import { createApi, fetchBaseQuery, BaseQueryFn, FetchBaseQueryError, FetchArgs } from '@reduxjs/toolkit/query/react';
 import { User, Client, Service, Appointment, Notification, Category, Barber, Sale } from '../types';
 import { RootState } from '../store';
 import { toast } from 'react-hot-toast';
@@ -13,11 +13,8 @@ const baseQuery = fetchBaseQuery({
     // Intentar obtener el token primero de Redux
     const token = (getState() as RootState).auth.token || localStorage.getItem('token');
     
-    console.log('Current token:', token);
-    
     if (token) {
       headers.set('authorization', `Bearer ${token}`);
-      console.log('Headers after setting token:', headers.get('authorization'));
     }
     
     headers.set('Content-Type', 'application/json');
@@ -26,40 +23,15 @@ const baseQuery = fetchBaseQuery({
   credentials: 'same-origin'
 });
 
-interface ErrorResponse {
-  message?: string;
-  status?: number;
-  data?: unknown;
-}
-
-type CustomError = Omit<FetchBaseQueryError, 'data'> & {
-  data?: ErrorResponse;
-};
-
-type CustomQueryReturnValue = QueryReturnValue<unknown, CustomError, {}>;
-
-const baseQueryWithRetry: BaseQueryFn<string | FetchArgs, unknown, CustomError> = async (
-  args,
-  api,
-  extraOptions
-): Promise<CustomQueryReturnValue> => {
+const baseQueryWithRetry: BaseQueryFn = async (args, api, extraOptions) => {
   try {
-    console.log('Making API request:', {
-      url: typeof args === 'string' ? args : args.url,
-      method: args.method
-    });
-    
-    let result = await baseQuery(args, api, extraOptions);
-    
-    console.log('API response:', result);
+    const result = await baseQuery(args, api, extraOptions);
     
     if (result.error) {
-      const error = result.error as CustomError;
-      
-      // No manejar errores 401 para la ruta de login
+      const error = result.error as FetchBaseQueryError;
       const url = typeof args === 'string' ? args : args.url;
+      
       if (error.status === 401 && !url.includes('/auth/login')) {
-        console.error('Authentication error:', error);
         localStorage.clear();
         sessionStorage.clear();
         api.dispatch(clearCredentials());
@@ -71,19 +43,16 @@ const baseQueryWithRetry: BaseQueryFn<string | FetchArgs, unknown, CustomError> 
       }
       
       if (error.status === 500) {
-        console.error('Server error:', error);
         toast.error('Error en el servidor. Por favor, intenta más tarde.');
       }
       
-      if (error.data?.message) {
-        console.error('API error:', error.data.message);
-        toast.error(error.data.message);
+      if ('data' in error && typeof error.data === 'object' && error.data && 'message' in error.data) {
+        toast.error(error.data.message as string);
       }
     }
     
-    return result as CustomQueryReturnValue;
+    return result;
   } catch (error: any) {
-    console.error('API Error:', error);
     toast.error('Error en la conexión. Por favor, verifica tu conexión a internet.');
     return {
       error: {
@@ -91,7 +60,7 @@ const baseQueryWithRetry: BaseQueryFn<string | FetchArgs, unknown, CustomError> 
         error: 'Failed to fetch',
         data: { message: 'Error de conexión' }
       }
-    } as CustomQueryReturnValue;
+    };
   }
 };
 
