@@ -361,8 +361,14 @@ export const api = createApi({
     }),
 
     // Sales endpoints
-    getSales: builder.query<Sale[], void>({
-      query: () => '/sales',
+    getSales: builder.query<{ sales: Sale[]; total: number }, { page?: number; limit?: number }>({
+      query: (params) => ({
+        url: '/sales',
+        params: {
+          page: params?.page || 1,
+          limit: params?.limit || 10
+        }
+      }),
       providesTags: ['Sales'],
     }),
     getSale: builder.query<Sale, string>({

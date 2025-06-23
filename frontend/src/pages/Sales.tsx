@@ -25,6 +25,7 @@ import {
   IconButton,
   Tooltip,
   DialogContentText,
+  TablePagination,
 } from '@mui/material';
 import { 
   Add as AddIcon, 
@@ -71,6 +72,8 @@ const Sales: React.FC = () => {
   const [saleToDelete, setSaleToDelete] = useState<string | null>(null);
   const [saleToEdit, setSaleToEdit] = useState<Sale | null>(null);
   const [foundClient, setFoundClient] = useState<Client | null>(null);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const { 
     data: services = [], 
@@ -98,11 +101,15 @@ const Sales: React.FC = () => {
     data: salesData, 
     isLoading: isLoadingSales,
     error: salesError 
-  } = useGetSalesQuery();
+  } = useGetSalesQuery({
+    page: page + 1,
+    limit: rowsPerPage
+  });
   const [createClient] = useCreateClientMutation();
   const [deleteSale] = useDeleteSaleMutation();
 
-  const sales = salesData || [];
+  const sales = salesData?.sales || [];
+  const totalSales = salesData?.total || 0;
 
   useEffect(() => {
     if (servicesError) {
@@ -298,6 +305,15 @@ const Sales: React.FC = () => {
     setSaleToDelete(null);
   };
 
+  const handleChangePage = (event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
   if (isLoadingSales) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
@@ -389,6 +405,19 @@ const Sales: React.FC = () => {
             ))}
           </TableBody>
         </Table>
+        <TablePagination
+          rowsPerPageOptions={[5, 10, 25]}
+          component="div"
+          count={totalSales}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          labelRowsPerPage="Filas por página"
+          labelDisplayedRows={({ from, to, count }) => 
+            `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`
+          }
+        />
       </TableContainer>
 
       <Dialog open={openNewSale} onClose={handleClose} maxWidth="sm" fullWidth>
