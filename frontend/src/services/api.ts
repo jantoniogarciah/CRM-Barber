@@ -26,7 +26,7 @@ const baseQuery = fetchBaseQuery({
 export const api = createApi({
   reducerPath: 'api',
   baseQuery,
-  tagTypes: ['User', 'Client', 'Service', 'Appointment', 'Notification', 'Category', 'Barber', 'Services', 'Categories', 'Clients', 'Barbers', 'ServicesLog', 'Sales'],
+  tagTypes: ['User', 'Client', 'Service', 'Appointment', 'Notification', 'Category', 'Barber', 'Sale'],
   endpoints: (builder) => ({
     // Auth endpoints
     login: builder.mutation<{ user: User; token: string }, { email: string; password: string }>({
@@ -84,7 +84,7 @@ export const api = createApi({
           phone: params.phone
         },
       }),
-      providesTags: ['Clients'],
+      providesTags: ['Client'],
     }),
     getLastCompletedAppointments: builder.query<{ [clientId: string]: Appointment }, void>({
       query: () => '/appointments/last-completed',
@@ -130,7 +130,7 @@ export const api = createApi({
         url: '/clients/search/phone',
         params: { phone },
       }),
-      providesTags: ['Clients'],
+      providesTags: ['Client'],
     }),
 
     // Service endpoints
@@ -139,11 +139,11 @@ export const api = createApi({
         url: '/services',
         params: { showInactive: params?.showInactive },
       }),
-      providesTags: ['Services'],
+      providesTags: ['Service'],
     }),
     getService: builder.query<Service, string>({
       query: (id) => `/services/${id}`,
-      providesTags: (result, error, id) => [{ type: 'Service', id }],
+      providesTags: (_result, _error, id) => [{ type: 'Service', id }],
     }),
     createService: builder.mutation<Service, Partial<Service>>({
       query: (service) => ({
@@ -159,7 +159,7 @@ export const api = createApi({
         method: 'PUT',
         body: service,
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: 'Service', id }, 'Service'],
+      invalidatesTags: (_result, _error, { id }) => [{ type: 'Service', id }],
     }),
     deleteService: builder.mutation<void, string>({
       query: (id) => ({
@@ -269,7 +269,7 @@ export const api = createApi({
         url: '/barbers',
         params: { showInactive: params?.showInactive },
       }),
-      providesTags: ['Barbers'],
+      providesTags: ['Barber'],
     }),
     getBarber: builder.query<Barber, string>({
       query: (id) => ({
@@ -340,7 +340,7 @@ export const api = createApi({
           limit: params?.limit || 10
         }
       }),
-      providesTags: ['Sales'],
+      providesTags: ['Sale'],
     }),
     getSale: builder.query<Sale, string>({
       query: (id) => `/sales/${id}`,

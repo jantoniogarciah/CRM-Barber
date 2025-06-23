@@ -1,30 +1,19 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { setupListeners } from '@reduxjs/toolkit/query';
 import { authReducer } from './slices/authSlice';
-import { appointmentApi } from './services/appointmentApi';
-import { clientApi } from './services/clientApi';
-import { serviceApi } from './services/serviceApi';
-import { barberApi } from './services/barberApi';
+import { api } from '../services/api';
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
-    [appointmentApi.reducerPath]: appointmentApi.reducer,
-    [clientApi.reducerPath]: clientApi.reducer,
-    [serviceApi.reducerPath]: serviceApi.reducer,
-    [barberApi.reducerPath]: barberApi.reducer,
+    [api.reducerPath]: api.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
         ignoredActions: ['persist/PERSIST'],
       },
-    }).concat(
-      appointmentApi.middleware,
-      clientApi.middleware,
-      serviceApi.middleware,
-      barberApi.middleware
-    ),
+    }).concat(api.middleware),
 });
 
 setupListeners(store.dispatch);
