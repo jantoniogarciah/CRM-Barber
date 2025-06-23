@@ -14,10 +14,14 @@ const baseQuery = fetchBaseQuery({
     
     console.log('Current token:', token);
     
-    if (token) {
-      headers.set('authorization', `Bearer ${token}`);
-      console.log('Headers after setting token:', headers.get('authorization'));
+    if (!token) {
+      console.warn('No token found in Redux state');
+      window.location.href = '/login';
+      return headers;
     }
+    
+    headers.set('authorization', `Bearer ${token}`);
+    console.log('Headers after setting token:', headers.get('authorization'));
     headers.set('Content-Type', 'application/json');
     
     return headers;
@@ -27,18 +31,25 @@ const baseQuery = fetchBaseQuery({
 
 const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
   try {
+    console.log('Making API request:', {
+      url: typeof args === 'string' ? args : args.url,
+      method: args.method,
+      headers: args.headers
+    });
+    
     const result = await baseQuery(args, api, extraOptions);
+    
+    console.log('API response:', result);
     
     if (result.error) {
       const error = result.error as any;
       
       if (error.status === 401) {
-        // Token expirado o inválido
+        console.error('Authentication error:', error);
         localStorage.clear();
         sessionStorage.clear();
         api.dispatch(clearCredentials());
         
-        // Redirigir solo si no estamos ya en la página de login
         if (window.location.pathname !== '/login') {
           toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
           window.location.href = '/login';
@@ -47,10 +58,12 @@ const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
       }
       
       if (error.status === 500) {
+        console.error('Server error:', error);
         toast.error('Error en el servidor. Por favor, intenta más tarde.');
       }
       
       if (error.data?.message) {
+        console.error('API error:', error.data.message);
         toast.error(error.data.message);
       }
     }

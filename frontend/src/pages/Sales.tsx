@@ -151,18 +151,23 @@ const Sales: React.FC = () => {
   }, [client, phoneNumber]);
 
   useEffect(() => {
+    console.log('Sales Query State:', {
+      data: salesData,
+      error: salesError,
+      isLoading: isLoadingSales
+    });
+
     if (salesError) {
-      console.error('Error loading sales:', salesError);
-      toast.error('Error al cargar las ventas. Por favor, verifica tu conexión.');
+      const errorMessage = (salesError as any)?.data?.message || 'Error al cargar las ventas';
+      console.error('Sales Error:', salesError);
+      toast.error(errorMessage);
       
-      // Intentar recargar los datos después de un error
-      const timer = setTimeout(() => {
-        refetchSales();
-      }, 5000);
-      
-      return () => clearTimeout(timer);
+      // Si es un error de autenticación, redirigir al login
+      if ((salesError as any)?.status === 401) {
+        window.location.href = '/login';
+      }
     }
-  }, [salesError, refetchSales]);
+  }, [salesData, salesError, isLoadingSales]);
 
   useEffect(() => {
     console.log('Sales Data:', salesData);
