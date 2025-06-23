@@ -34,13 +34,13 @@ import {
 } from '@mui/icons-material';
 import { 
   useGetServicesQuery, 
+  useGetBarbersQuery, 
   useGetClientByPhoneQuery, 
   useCreateSaleMutation, 
-  useGetBarbersQuery, 
+  useUpdateSaleMutation,
   useGetSalesQuery,
   useCreateClientMutation,
   useDeleteSaleMutation,
-  useUpdateSaleMutation
 } from '../services/api';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
@@ -83,13 +83,13 @@ const Sales: React.FC = () => {
   const [foundClient, setFoundClient] = useState<Client | null>(null);
 
   const { 
-    data: servicesResponse, 
+    data: servicesData, 
     isLoading: isLoadingServices,
     error: servicesError 
   } = useGetServicesQuery({ showInactive: false });
 
   const { 
-    data: barbersResponse, 
+    data: barbersData, 
     isLoading: isLoadingBarbers,
     error: barbersError 
   } = useGetBarbersQuery({ showInactive: false });
@@ -108,23 +108,21 @@ const Sales: React.FC = () => {
   const [createClient] = useCreateClientMutation();
   const [deleteSale] = useDeleteSaleMutation();
 
-  const services = servicesResponse?.services || [];
-  const barbers = barbersResponse?.barbers || [];
+  const services = servicesData?.services || [];
+  const barbers = barbersData?.barbers || [];
   const sales = salesResponse?.sales || [];
 
   useEffect(() => {
-    if (servicesError) {
-      console.error('Error loading services:', servicesError);
-      toast.error('Error al cargar los servicios');
-    }
-  }, [servicesError]);
+    console.log('Services Data:', servicesData);
+    console.log('Services Loading:', isLoadingServices);
+    console.log('Services Error:', servicesError);
+  }, [servicesData, isLoadingServices, servicesError]);
 
   useEffect(() => {
-    if (barbersError) {
-      console.error('Error loading barbers:', barbersError);
-      toast.error('Error al cargar los barberos');
-    }
-  }, [barbersError]);
+    console.log('Barbers Data:', barbersData);
+    console.log('Barbers Loading:', isLoadingBarbers);
+    console.log('Barbers Error:', barbersError);
+  }, [barbersData, isLoadingBarbers, barbersError]);
 
   useEffect(() => {
     if (searchError) {
