@@ -176,7 +176,6 @@ export const api = createApi({
         url: '/services',
         params: { showInactive: params?.showInactive },
       }),
-      transformResponse: (response: { services: Service[] }) => response.services,
       providesTags: ['Services'],
     }),
     getService: builder.query<Service, string>({
@@ -307,7 +306,6 @@ export const api = createApi({
         url: '/barbers',
         params: { showInactive: params?.showInactive },
       }),
-      transformResponse: (response: { barbers: Barber[] }) => response.barbers,
       providesTags: ['Barbers'],
     }),
     getBarber: builder.query<Barber, string>({

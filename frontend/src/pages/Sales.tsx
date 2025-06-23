@@ -47,16 +47,6 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Sale, Service, Barber, Client } from '../types';
 
-interface ServicesResponse {
-  services: Service[];
-  total: number;
-}
-
-interface BarbersResponse {
-  barbers: Barber[];
-  total: number;
-}
-
 interface SalesResponse {
   sales: Sale[];
   total: number;
