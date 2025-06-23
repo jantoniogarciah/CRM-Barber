@@ -1,5 +1,4 @@
-import { createApi } from '@reduxjs/toolkit/query/react';
-import { baseQueryWithRetry } from '../../services/api';
+import { api } from '../../services/api';
 import { Barber } from '../../types';
 import { toast } from 'react-hot-toast';
 import { clearCredentials } from '../slices/authSlice';
@@ -14,10 +13,8 @@ const handleError = (error: any) => {
   }
 };
 
-export const barberApi = createApi({
-  reducerPath: 'barberApi',
-  baseQuery: baseQueryWithRetry,
-  tagTypes: ['Barber'],
+// Extend the base api with the barber endpoints
+export const barberApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getBarbers: builder.query<Barber[], { showInactive: boolean }>({
       query: (params) => ({
@@ -102,6 +99,7 @@ export const barberApi = createApi({
       invalidatesTags: ['Barber'],
     }),
   }),
+  overrideExisting: false,
 });
 
 export const {

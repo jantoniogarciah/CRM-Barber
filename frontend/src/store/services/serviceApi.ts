@@ -1,5 +1,4 @@
-import { createApi } from '@reduxjs/toolkit/query/react';
-import { baseQueryWithRetry } from '../../services/api';
+import { api } from '../../services/api';
 import { Service } from '../../types';
 import { toast } from 'react-hot-toast';
 
@@ -13,10 +12,8 @@ const handleError = (error: any) => {
   }
 };
 
-export const serviceApi = createApi({
-  reducerPath: 'serviceApi',
-  baseQuery: baseQueryWithRetry,
-  tagTypes: ['Service'],
+// Extend the base api with the service endpoints
+export const serviceApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getServices: builder.query<Service[], void>({
       query: () => '/services',
@@ -91,6 +88,7 @@ export const serviceApi = createApi({
       },
     }),
   }),
+  overrideExisting: false,
 });
 
 export const {
