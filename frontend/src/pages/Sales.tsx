@@ -82,11 +82,26 @@ const Sales: React.FC = () => {
   const [saleToEdit, setSaleToEdit] = useState<Sale | null>(null);
   const [foundClient, setFoundClient] = useState<Client | null>(null);
 
-  const { data: servicesResponse, isLoading: isLoadingServices } = useGetServicesQuery({ showInactive: false });
-  const { data: barbersResponse, isLoading: isLoadingBarbers } = useGetBarbersQuery({ showInactive: false });
-  const { data: client, isFetching: isSearchingClient, error: searchError } = useGetClientByPhoneQuery(phoneNumber, {
+  const { 
+    data: servicesResponse, 
+    isLoading: isLoadingServices,
+    error: servicesError 
+  } = useGetServicesQuery({ showInactive: false });
+
+  const { 
+    data: barbersResponse, 
+    isLoading: isLoadingBarbers,
+    error: barbersError 
+  } = useGetBarbersQuery({ showInactive: false });
+
+  const { 
+    data: client, 
+    isFetching: isSearchingClient, 
+    error: searchError 
+  } = useGetClientByPhoneQuery(phoneNumber, {
     skip: !phoneNumber || phoneNumber.length < 10,
   });
+
   const [createSale] = useCreateSaleMutation();
   const [updateSale] = useUpdateSaleMutation();
   const { data: salesResponse, isLoading: isLoadingSales } = useGetSalesQuery();
@@ -96,6 +111,20 @@ const Sales: React.FC = () => {
   const services = servicesResponse?.services || [];
   const barbers = barbersResponse?.barbers || [];
   const sales = salesResponse?.sales || [];
+
+  useEffect(() => {
+    if (servicesError) {
+      console.error('Error loading services:', servicesError);
+      toast.error('Error al cargar los servicios');
+    }
+  }, [servicesError]);
+
+  useEffect(() => {
+    if (barbersError) {
+      console.error('Error loading barbers:', barbersError);
+      toast.error('Error al cargar los barberos');
+    }
+  }, [barbersError]);
 
   useEffect(() => {
     if (searchError) {
@@ -447,35 +476,53 @@ const Sales: React.FC = () => {
             )}
 
             <Grid item xs={12}>
-              <FormControl fullWidth disabled={isLoadingServices}>
+              <FormControl fullWidth error={!isLoadingServices && services.length === 0}>
                 <InputLabel>Servicio</InputLabel>
                 <Select
                   value={selectedService}
                   onChange={(e) => setSelectedService(e.target.value)}
                   label="Servicio"
+                  disabled={isLoadingServices}
                 >
-                  {services.map((service) => (
-                    <MenuItem key={service.id} value={service.id}>
-                      {service.name} - ${service.price}
+                  {isLoadingServices ? (
+                    <MenuItem disabled>
+                      <CircularProgress size={20} /> Cargando servicios...
                     </MenuItem>
-                  ))}
+                  ) : services.length > 0 ? (
+                    services.map((service) => (
+                      <MenuItem key={service.id} value={service.id}>
+                        {service.name} - ${service.price}
+                      </MenuItem>
+                    ))
+                  ) : (
+                    <MenuItem disabled>No hay servicios disponibles</MenuItem>
+                  )}
                 </Select>
               </FormControl>
             </Grid>
 
             <Grid item xs={12}>
-              <FormControl fullWidth disabled={isLoadingBarbers}>
+              <FormControl fullWidth error={!isLoadingBarbers && barbers.length === 0}>
                 <InputLabel>Barbero</InputLabel>
                 <Select
                   value={selectedBarber}
                   onChange={(e) => setSelectedBarber(e.target.value)}
                   label="Barbero"
+                  disabled={isLoadingBarbers}
                 >
-                  {barbers.map((barber) => (
-                    <MenuItem key={barber.id} value={barber.id}>
-                      {barber.firstName} {barber.lastName}
+                  {isLoadingBarbers ? (
+                    <MenuItem disabled>
+                      <CircularProgress size={20} /> Cargando barberos...
                     </MenuItem>
-                  ))}
+                  ) : barbers.length > 0 ? (
+                    barbers.map((barber) => (
+                      <MenuItem key={barber.id} value={barber.id}>
+                        {barber.firstName} {barber.lastName}
+                      </MenuItem>
+                    ))
+                  ) : (
+                    <MenuItem disabled>No hay barberos disponibles</MenuItem>
+                  )}
                 </Select>
               </FormControl>
             </Grid>
@@ -512,7 +559,7 @@ const Sales: React.FC = () => {
           <Button 
             onClick={handleSaleSubmit} 
             variant="contained"
-            disabled={!foundClient || !selectedService || !selectedBarber}
+            disabled={!foundClient || !selectedService || !selectedBarber || isLoadingServices || isLoadingBarbers}
           >
             Guardar
           </Button>
