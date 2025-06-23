@@ -94,11 +94,15 @@ const Sales: React.FC = () => {
 
   const [createSale] = useCreateSaleMutation();
   const [updateSale] = useUpdateSaleMutation();
-  const { data: salesData, isLoading: isLoadingSales } = useGetSalesQuery();
+  const { 
+    data: salesData, 
+    isLoading: isLoadingSales,
+    error: salesError 
+  } = useGetSalesQuery();
   const [createClient] = useCreateClientMutation();
   const [deleteSale] = useDeleteSaleMutation();
 
-  const sales = salesData?.sales || [];
+  const sales = salesData || [];
 
   useEffect(() => {
     if (servicesError) {
@@ -133,6 +137,13 @@ const Sales: React.FC = () => {
       setFoundClient(null);
     }
   }, [client, phoneNumber]);
+
+  useEffect(() => {
+    if (salesError) {
+      console.error('Error loading sales:', salesError);
+      toast.error('Error al cargar las ventas. Por favor, verifica tu conexión.');
+    }
+  }, [salesError]);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 10);

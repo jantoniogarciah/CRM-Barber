@@ -14,10 +14,9 @@ const baseQuery = fetchBaseQuery({
     if (token) {
       headers.set('authorization', `Bearer ${token}`);
     }
-    headers.set('Content-Type', 'application/json');
     return headers;
   },
-  credentials: 'include', // Importante para manejar cookies
+  credentials: 'include',
 });
 
 const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
@@ -362,7 +361,7 @@ export const api = createApi({
     }),
 
     // Sales endpoints
-    getSales: builder.query<{ sales: Sale[]; total: number }, void>({
+    getSales: builder.query<Sale[], void>({
       query: () => '/sales',
       providesTags: ['Sales'],
     }),
