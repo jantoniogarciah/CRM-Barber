@@ -85,13 +85,11 @@ const Sales: React.FC = () => {
   const { 
     data: servicesData, 
     isLoading: isLoadingServices,
-    error: servicesError 
   } = useGetServicesQuery({ showInactive: false });
 
   const { 
     data: barbersData, 
     isLoading: isLoadingBarbers,
-    error: barbersError 
   } = useGetBarbersQuery({ showInactive: false });
 
   const { 
@@ -104,87 +102,58 @@ const Sales: React.FC = () => {
 
   const [createSale] = useCreateSaleMutation();
   const [updateSale] = useUpdateSaleMutation();
-  const { data: salesResponse, isLoading: isLoadingSales } = useGetSalesQuery();
+  const { data: salesData, isLoading: isLoadingSales } = useGetSalesQuery();
   const [createClient] = useCreateClientMutation();
   const [deleteSale] = useDeleteSaleMutation();
 
   const services = servicesData?.services || [];
   const barbers = barbersData?.barbers || [];
-  const sales = salesResponse?.sales || [];
-
-  useEffect(() => {
-    console.log('Services Data:', servicesData);
-    console.log('Services Loading:', isLoadingServices);
-    console.log('Services Error:', servicesError);
-  }, [servicesData, isLoadingServices, servicesError]);
-
-  useEffect(() => {
-    console.log('Barbers Data:', barbersData);
-    console.log('Barbers Loading:', isLoadingBarbers);
-    console.log('Barbers Error:', barbersError);
-  }, [barbersData, isLoadingBarbers, barbersError]);
+  const sales = salesData?.sales || [];
 
   useEffect(() => {
     if (searchError) {
       const errorMessage = (searchError as any)?.data?.message || 'Error al buscar el cliente';
       toast.error(errorMessage);
+      setFoundClient(null);
     }
   }, [searchError]);
 
   useEffect(() => {
-    if (client) {
-      setFoundClient(client);
-    } else if (phoneNumber.length === 10) {
+    if (phoneNumber.length === 10) {
+      if (client) {
+        setFoundClient(client);
+      } else {
+        setFoundClient(null);
+      }
+    } else {
       setFoundClient(null);
     }
   }, [client, phoneNumber]);
 
-  useEffect(() => {
-    if (phoneNumber.length < 10) {
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+    setPhoneNumber(value);
+    
+    if (value.length !== 10 || value !== phoneNumber) {
       setFoundClient(null);
     }
-  }, [phoneNumber]);
+    
+    if (!showNewClientForm) {
+      setNewClient(prev => ({ ...prev, phone: value }));
+    }
+  };
 
   const handleNewSale = () => {
+    resetForm();
     setOpenNewSale(true);
   };
 
-  const handleEditClick = (sale: Sale) => {
-    setSaleToEdit(sale);
-    setPaymentMethod(sale.paymentMethod);
-    setNotes(sale.notes || '');
-    setOpenEditSale(true);
-  };
-
-  const handleEditClose = () => {
-    setOpenEditSale(false);
-    setSaleToEdit(null);
-    setPaymentMethod('EFECTIVO');
-    setNotes('');
-  };
-
-  const handleEditSubmit = async () => {
-    if (!saleToEdit) return;
-
-    try {
-      await updateSale({
-        id: saleToEdit.id,
-        sale: {
-          paymentMethod,
-          notes: notes || undefined,
-        },
-      }).unwrap();
-
-      toast.success('Venta actualizada exitosamente');
-      handleEditClose();
-    } catch (error) {
-      console.error('Error al actualizar la venta:', error);
-      toast.error('Error al actualizar la venta');
-    }
-  };
-
   const handleClose = () => {
+    resetForm();
     setOpenNewSale(false);
+  };
+
+  const resetForm = () => {
     setPhoneNumber('');
     setSelectedService('');
     setSelectedBarber('');
@@ -200,19 +169,6 @@ const Sales: React.FC = () => {
     });
   };
 
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Limpiar el número de teléfono (eliminar espacios, guiones, etc.)
-    const value = e.target.value.replace(/\D/g, '');
-    
-    // Limitar a 10 dígitos
-    const cleanPhone = value.slice(0, 10);
-    
-    setPhoneNumber(cleanPhone);
-    if (!showNewClientForm) {
-      setNewClient(prev => ({ ...prev, phone: cleanPhone }));
-    }
-  };
-
   const handleCreateClient = async () => {
     try {
       if (!newClient.firstName || !newClient.lastName || !newClient.phone) {
@@ -224,6 +180,7 @@ const Sales: React.FC = () => {
       toast.success('Cliente registrado exitosamente');
       setShowNewClientForm(false);
       setPhoneNumber(createdClient.phone);
+      setFoundClient(createdClient);
     } catch (error) {
       console.error('Error al crear el cliente:', error);
       toast.error('Error al crear el cliente');
@@ -265,6 +222,40 @@ const Sales: React.FC = () => {
     } catch (error) {
       console.error('Error al registrar la venta:', error);
       toast.error('Error al registrar la venta');
+    }
+  };
+
+  const handleEditClick = (sale: Sale) => {
+    setSaleToEdit(sale);
+    setPaymentMethod(sale.paymentMethod);
+    setNotes(sale.notes || '');
+    setOpenEditSale(true);
+  };
+
+  const handleEditClose = () => {
+    setOpenEditSale(false);
+    setSaleToEdit(null);
+    setPaymentMethod('EFECTIVO');
+    setNotes('');
+  };
+
+  const handleEditSubmit = async () => {
+    if (!saleToEdit) return;
+
+    try {
+      await updateSale({
+        id: saleToEdit.id,
+        sale: {
+          paymentMethod,
+          notes: notes || undefined,
+        },
+      }).unwrap();
+
+      toast.success('Venta actualizada exitosamente');
+      handleEditClose();
+    } catch (error) {
+      console.error('Error al actualizar la venta:', error);
+      toast.error('Error al actualizar la venta');
     }
   };
 
@@ -388,20 +379,14 @@ const Sales: React.FC = () => {
       <Dialog open={openNewSale} onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle>Nueva Venta</DialogTitle>
         <DialogContent>
-          <Grid container spacing={2}>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
               <TextField
                 fullWidth
                 label="Teléfono del cliente"
                 value={phoneNumber}
                 onChange={handlePhoneChange}
-                error={phoneNumber.length > 0 && phoneNumber.length < 10}
-                helperText={phoneNumber.length > 0 && phoneNumber.length < 10 ? "El teléfono debe tener 10 dígitos" : ""}
-                InputProps={{
-                  endAdornment: isSearchingClient && (
-                    <CircularProgress size={20} />
-                  ),
-                }}
+                disabled={showNewClientForm}
               />
             </Grid>
 
@@ -409,19 +394,22 @@ const Sales: React.FC = () => {
               <Grid item xs={12}>
                 {foundClient ? (
                   <Alert severity="success">
-                    Cliente: {foundClient.firstName} {foundClient.lastName}
+                    Cliente encontrado: {foundClient.firstName} {foundClient.lastName}
                   </Alert>
                 ) : (
-                  <Alert severity="warning">
+                  <Alert 
+                    severity="warning"
+                    action={
+                      <Button 
+                        color="inherit" 
+                        size="small"
+                        onClick={() => setShowNewClientForm(true)}
+                      >
+                        Registrar
+                      </Button>
+                    }
+                  >
                     Cliente no encontrado
-                    <Button
-                      variant="text"
-                      color="primary"
-                      onClick={() => setShowNewClientForm(true)}
-                      sx={{ ml: 2 }}
-                    >
-                      Registrar Nuevo Cliente
-                    </Button>
                   </Alert>
                 )}
               </Grid>
@@ -429,24 +417,20 @@ const Sales: React.FC = () => {
 
             {showNewClientForm && (
               <>
-                <Grid item xs={6}>
+                <Grid item xs={12}>
                   <TextField
                     fullWidth
                     label="Nombre"
                     value={newClient.firstName}
-                    onChange={(e) =>
-                      setNewClient((prev) => ({ ...prev, firstName: e.target.value }))
-                    }
+                    onChange={(e) => setNewClient(prev => ({ ...prev, firstName: e.target.value }))}
                   />
                 </Grid>
-                <Grid item xs={6}>
+                <Grid item xs={12}>
                   <TextField
                     fullWidth
                     label="Apellido"
                     value={newClient.lastName}
-                    onChange={(e) =>
-                      setNewClient((prev) => ({ ...prev, lastName: e.target.value }))
-                    }
+                    onChange={(e) => setNewClient(prev => ({ ...prev, lastName: e.target.value }))}
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -455,17 +439,14 @@ const Sales: React.FC = () => {
                     label="Email"
                     type="email"
                     value={newClient.email}
-                    onChange={(e) =>
-                      setNewClient((prev) => ({ ...prev, email: e.target.value }))
-                    }
+                    onChange={(e) => setNewClient(prev => ({ ...prev, email: e.target.value }))}
                   />
                 </Grid>
                 <Grid item xs={12}>
                   <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={handleCreateClient}
                     fullWidth
+                    variant="contained"
+                    onClick={handleCreateClient}
                   >
                     Registrar Cliente
                   </Button>
@@ -473,91 +454,91 @@ const Sales: React.FC = () => {
               </>
             )}
 
-            <Grid item xs={12}>
-              <FormControl fullWidth error={!isLoadingServices && services.length === 0}>
-                <InputLabel>Servicio</InputLabel>
-                <Select
-                  value={selectedService}
-                  onChange={(e) => setSelectedService(e.target.value)}
-                  label="Servicio"
-                  disabled={isLoadingServices}
-                >
-                  {isLoadingServices ? (
-                    <MenuItem disabled>
-                      <CircularProgress size={20} /> Cargando servicios...
-                    </MenuItem>
-                  ) : services.length > 0 ? (
-                    services.map((service) => (
-                      <MenuItem key={service.id} value={service.id}>
-                        {service.name} - ${service.price}
-                      </MenuItem>
-                    ))
-                  ) : (
-                    <MenuItem disabled>No hay servicios disponibles</MenuItem>
-                  )}
-                </Select>
-              </FormControl>
-            </Grid>
+            {foundClient && (
+              <>
+                <Grid item xs={12}>
+                  <FormControl fullWidth>
+                    <InputLabel>Servicio</InputLabel>
+                    <Select
+                      value={selectedService}
+                      onChange={(e) => setSelectedService(e.target.value)}
+                      label="Servicio"
+                      disabled={isLoadingServices}
+                    >
+                      {isLoadingServices ? (
+                        <MenuItem disabled>Cargando servicios...</MenuItem>
+                      ) : services.length > 0 ? (
+                        services.map((service) => (
+                          <MenuItem key={service.id} value={service.id}>
+                            {service.name} - ${service.price}
+                          </MenuItem>
+                        ))
+                      ) : (
+                        <MenuItem disabled>No hay servicios disponibles</MenuItem>
+                      )}
+                    </Select>
+                  </FormControl>
+                </Grid>
 
-            <Grid item xs={12}>
-              <FormControl fullWidth error={!isLoadingBarbers && barbers.length === 0}>
-                <InputLabel>Barbero</InputLabel>
-                <Select
-                  value={selectedBarber}
-                  onChange={(e) => setSelectedBarber(e.target.value)}
-                  label="Barbero"
-                  disabled={isLoadingBarbers}
-                >
-                  {isLoadingBarbers ? (
-                    <MenuItem disabled>
-                      <CircularProgress size={20} /> Cargando barberos...
-                    </MenuItem>
-                  ) : barbers.length > 0 ? (
-                    barbers.map((barber) => (
-                      <MenuItem key={barber.id} value={barber.id}>
-                        {barber.firstName} {barber.lastName}
-                      </MenuItem>
-                    ))
-                  ) : (
-                    <MenuItem disabled>No hay barberos disponibles</MenuItem>
-                  )}
-                </Select>
-              </FormControl>
-            </Grid>
+                <Grid item xs={12}>
+                  <FormControl fullWidth>
+                    <InputLabel>Barbero</InputLabel>
+                    <Select
+                      value={selectedBarber}
+                      onChange={(e) => setSelectedBarber(e.target.value)}
+                      label="Barbero"
+                      disabled={isLoadingBarbers}
+                    >
+                      {isLoadingBarbers ? (
+                        <MenuItem disabled>Cargando barberos...</MenuItem>
+                      ) : barbers.length > 0 ? (
+                        barbers.map((barber) => (
+                          <MenuItem key={barber.id} value={barber.id}>
+                            {barber.firstName} {barber.lastName}
+                          </MenuItem>
+                        ))
+                      ) : (
+                        <MenuItem disabled>No hay barberos disponibles</MenuItem>
+                      )}
+                    </Select>
+                  </FormControl>
+                </Grid>
 
-            <Grid item xs={12}>
-              <FormControl fullWidth>
-                <InputLabel>Método de Pago</InputLabel>
-                <Select
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value as 'EFECTIVO' | 'DEBITO' | 'CREDITO')}
-                  label="Método de Pago"
-                >
-                  <MenuItem value="EFECTIVO">Efectivo</MenuItem>
-                  <MenuItem value="DEBITO">Débito</MenuItem>
-                  <MenuItem value="CREDITO">Crédito</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
+                <Grid item xs={12}>
+                  <FormControl fullWidth>
+                    <InputLabel>Método de Pago</InputLabel>
+                    <Select
+                      value={paymentMethod}
+                      onChange={(e) => setPaymentMethod(e.target.value as 'EFECTIVO' | 'DEBITO' | 'CREDITO')}
+                      label="Método de Pago"
+                    >
+                      <MenuItem value="EFECTIVO">Efectivo</MenuItem>
+                      <MenuItem value="DEBITO">Débito</MenuItem>
+                      <MenuItem value="CREDITO">Crédito</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
 
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Notas"
-                multiline
-                rows={2}
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-              />
-            </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Notas"
+                    multiline
+                    rows={2}
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                  />
+                </Grid>
+              </>
+            )}
           </Grid>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancelar</Button>
           <Button 
-            onClick={handleSaleSubmit} 
+            onClick={handleSaleSubmit}
             variant="contained"
-            disabled={!foundClient || !selectedService || !selectedBarber || isLoadingServices || isLoadingBarbers}
+            disabled={!foundClient || !selectedService || !selectedBarber}
           >
             Guardar
           </Button>
