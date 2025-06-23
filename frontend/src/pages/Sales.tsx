@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -83,7 +83,7 @@ const Sales: React.FC = () => {
 
   const { data: servicesResponse, isLoading: isLoadingServices } = useGetServicesQuery({ showInactive: false });
   const { data: barbersResponse, isLoading: isLoadingBarbers } = useGetBarbersQuery({ showInactive: false });
-  const { data: client, isFetching: isSearchingClient } = useGetClientByPhoneQuery(phoneNumber, {
+  const { data: client, isFetching: isSearchingClient, error: searchError } = useGetClientByPhoneQuery(phoneNumber, {
     skip: !phoneNumber || phoneNumber.length < 10,
   });
   const [createSale] = useCreateSaleMutation();
@@ -95,6 +95,13 @@ const Sales: React.FC = () => {
   const services = servicesResponse?.services || [];
   const barbers = barbersResponse?.barbers || [];
   const sales = salesResponse?.sales || [];
+
+  useEffect(() => {
+    if (searchError) {
+      const errorMessage = (searchError as any)?.data?.message || 'Error al buscar el cliente';
+      toast.error(errorMessage);
+    }
+  }, [searchError]);
 
   const handleNewSale = () => {
     setOpenNewSale(true);

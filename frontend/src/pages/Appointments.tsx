@@ -62,12 +62,12 @@ export const Appointments = () => {
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [appointmentToDelete, setAppointmentToDelete] = useState<Appointment | undefined>(undefined);
 
-  const { data: appointmentsData, isLoading, isError, error } = useGetAppointmentsQuery(undefined);
-  const { data: barbersData } = useGetBarbersQuery(undefined);
+  const { data: appointmentsData, isLoading, isError, error } = useGetAppointmentsQuery();
+  const { data: barbersData } = useGetBarbersQuery({ showInactive: false });
   const [deleteAppointment] = useDeleteAppointmentMutation();
 
-  const appointments = (appointmentsData as AppointmentsResponse)?.appointments || [];
-  const barbers = (barbersData as BarbersResponse)?.barbers || [];
+  const appointments = appointmentsData?.appointments || [];
+  const barbers = barbersData?.barbers || [];
 
   const handleAdd = () => {
     setSelectedAppointment(undefined);
@@ -147,7 +147,7 @@ export const Appointments = () => {
     }
   };
 
-  const filteredAppointments = appointments && Array.isArray(appointments) ? appointments.filter((appointment: Appointment) => {
+  const filteredAppointments = appointments.filter((appointment: Appointment) => {
     if (!appointment || !appointment.date) return false;
     
     try {
@@ -161,7 +161,7 @@ export const Appointments = () => {
       console.error('Error filtering appointment:', error);
       return false;
     }
-  }) : [];
+  });
 
   if (isLoading) {
     return (
