@@ -19,8 +19,11 @@ export const barberApi = createApi({
   baseQuery: baseQueryWithRetry,
   tagTypes: ['Barber'],
   endpoints: (builder) => ({
-    getBarbers: builder.query<Barber[], void>({
-      query: () => '/barbers',
+    getBarbers: builder.query<Barber[], { showInactive: boolean }>({
+      query: (params) => ({
+        url: '/barbers',
+        params: { showInactive: params.showInactive },
+      }),
       providesTags: ['Barber'],
       async onQueryStarted(_, { dispatch, queryFulfilled }) {
         try {
