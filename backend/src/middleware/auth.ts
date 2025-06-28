@@ -5,17 +5,21 @@ import { AppError } from "../utils/appError";
 
 const prisma = new PrismaClient();
 
-// Extender la interfaz Request
-interface AuthenticatedRequest extends Request {
-  user?: User;
-}
-
 interface JwtPayload {
   id: string;
 }
 
+// Declarar el tipo user globalmente para Express
+declare global {
+  namespace Express {
+    interface Request {
+      user: User;
+    }
+  }
+}
+
 export const protect = async (
-  req: AuthenticatedRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ) => {
@@ -34,16 +38,16 @@ export const protect = async (
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as JwtPayload;
 
     // 3) Check if user still exists
-    const user = await prisma.user.findUnique({
+    const currentUser = await prisma.user.findUnique({
       where: { id: decoded.id },
     });
 
-    if (!user) {
+    if (!currentUser) {
       throw new AppError('El usuario de este token ya no existe.', 401);
     }
 
     // 4) Grant access to protected route
-    req.user = user;
+    req.user = currentUser;
     next();
   } catch (error) {
     next(error);
