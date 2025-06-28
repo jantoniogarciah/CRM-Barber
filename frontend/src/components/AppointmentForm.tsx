@@ -25,7 +25,7 @@ import {
   useGetBarbersQuery,
 } from '../services/api';
 import { Appointment, Client, Service, Barber } from '../types';
-import { format } from 'date-fns';
+import { format, startOfToday, isBefore, parseISO } from 'date-fns';
 import { toast } from 'react-hot-toast';
 
 interface AppointmentFormProps {
@@ -49,7 +49,14 @@ const validationSchema = Yup.object({
   clientId: Yup.string().required('Por favor seleccione un cliente'),
   serviceId: Yup.string().required('Por favor seleccione un servicio'),
   barberId: Yup.string().required('Por favor seleccione un barbero'),
-  date: Yup.string().required('Por favor seleccione una fecha'),
+  date: Yup.string()
+    .required('Por favor seleccione una fecha')
+    .test('is-future-date', 'La fecha debe ser hoy o una fecha futura', (value) => {
+      if (!value) return false;
+      const selectedDate = parseISO(value);
+      const today = startOfToday();
+      return !isBefore(selectedDate, today);
+    }),
   time: Yup.string().required('Por favor seleccione una hora'),
   status: Yup.string().oneOf(['pending', 'confirmed', 'completed', 'cancelled']).required(),
   notes: Yup.string(),
@@ -156,6 +163,8 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
     );
   }
 
+  const today = format(new Date(), 'yyyy-MM-dd');
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>{appointment ? 'Editar Cita' : 'Nueva Cita'}</DialogTitle>
@@ -228,6 +237,9 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
                   error={formik.touched.date && Boolean(formik.errors.date)}
                   helperText={formik.touched.date && formik.errors.date}
                   InputLabelProps={{ shrink: true }}
+                  inputProps={{
+                    min: today
+                  }}
                 />
               </Grid>
 
