@@ -118,12 +118,13 @@ export const createSale = async (req: Request, res: Response) => {
       throw new AppError("Método de pago inválido", 400);
     }
 
-    // Procesar la fecha de venta
+    // Procesar la fecha de venta manteniendo la fecha exacta
     let saleDateToUse = new Date();
     if (saleDate) {
+      // Asegurarnos de que la fecha se mantenga exactamente como se especificó
       saleDateToUse = new Date(saleDate);
-      // Asegurarnos de que la fecha se mantenga como se especificó
-      saleDateToUse.setUTCHours(0, 0, 0, 0);
+      // Establecer la hora a mediodía UTC para evitar problemas de zona horaria
+      saleDateToUse.setUTCHours(12, 0, 0, 0);
     }
 
     const sale = await prisma.sale.create({

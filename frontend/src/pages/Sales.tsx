@@ -256,8 +256,9 @@ const Sales: React.FC = () => {
         return;
       }
 
-      // Convertir la fecha local a UTC preservando la fecha seleccionada
-      const saleDateTime = zonedTimeToUtc(saleDate, 'America/Mexico_City');
+      // Crear la fecha de venta manteniendo la fecha seleccionada exactamente
+      const [year, month, day] = saleDate.split('-').map(Number);
+      const saleDateTime = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
 
       await createSale({
         clientId: foundClient.id,
@@ -401,11 +402,9 @@ const Sales: React.FC = () => {
               {sales.map((sale: Sale) => (
                 <TableRow key={sale.id}>
                   <TableCell>
-                    {format(
-                      utcToZonedTime(new Date(sale.saleDate || sale.createdAt), 'America/Mexico_City'),
-                      "d 'de' MMMM 'de' yyyy, HH:mm",
-                      { locale: es }
-                    )}
+                    {format(new Date(sale.saleDate || sale.createdAt), "d 'de' MMMM 'de' yyyy", { 
+                      locale: es 
+                    })}
                   </TableCell>
                   <TableCell>
                     {sale.client?.firstName} {sale.client?.lastName}
