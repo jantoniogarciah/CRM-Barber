@@ -508,3 +508,18 @@ export const {
   useDeleteSaleMutation,
   useSearchClientByPhoneQuery,
 } = api;
+
+// Dashboard endpoints
+export const dashboardApi = api.injectEndpoints({
+  endpoints: (builder) => ({
+    getDashboardData: builder.query<any, string>({
+      query: (endpoint) => endpoint,
+      providesTags: ['Sales', 'Clients'],
+    }),
+  }),
+  overrideExisting: false,
+});
+
+export const {
+  useGetDashboardDataQuery,
+} = dashboardApi;
