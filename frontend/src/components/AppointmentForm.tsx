@@ -25,7 +25,7 @@ import {
   useGetBarbersQuery,
 } from '../services/api';
 import { Appointment, Client, Service, Barber } from '../types';
-import { format, addDays, startOfTomorrow, isBefore, parseISO } from 'date-fns';
+import { format, addDays, isAfter, startOfToday, parseISO } from 'date-fns';
 import { toast } from 'react-hot-toast';
 
 interface AppointmentFormProps {
@@ -51,11 +51,11 @@ const validationSchema = Yup.object({
   barberId: Yup.string().required('Por favor seleccione un barbero'),
   date: Yup.string()
     .required('Por favor seleccione una fecha')
-    .test('is-future-date', 'Solo se pueden agendar citas para fechas futuras', (value) => {
+    .test('is-future-date', 'La fecha debe ser posterior al día de hoy', (value) => {
       if (!value) return false;
       const selectedDate = parseISO(value);
-      const tomorrow = startOfTomorrow();
-      return !isBefore(selectedDate, tomorrow);
+      const today = startOfToday();
+      return isAfter(selectedDate, today);
     }),
   time: Yup.string().required('Por favor seleccione una hora'),
   status: Yup.string().oneOf(['pending', 'confirmed', 'completed', 'cancelled']).required(),
@@ -96,16 +96,14 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
     validationSchema,
     onSubmit: async (values) => {
       try {
-        // Validar que la fecha sea futura
+        // Validar que la fecha sea posterior a hoy
         const selectedDate = parseISO(values.date);
-        const tomorrow = startOfTomorrow();
+        const today = startOfToday();
         
-        if (isBefore(selectedDate, tomorrow)) {
-          toast.error('Solo se pueden agendar citas para fechas futuras');
+        if (!isAfter(selectedDate, today)) {
+          toast.error('La fecha debe ser posterior al día de hoy');
           return;
         }
-
-        console.log('Submitting form with values:', values);
 
         const appointmentData = {
           clientId: values.clientId,
@@ -116,8 +114,6 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
           status: values.status,
           notes: values.notes || undefined,
         };
-
-        console.log('Appointment data to submit:', appointmentData);
 
         if (appointment?.id) {
           await updateAppointment({
@@ -141,7 +137,6 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
 
   useEffect(() => {
     if (open) {
-      console.log('Resetting form with appointment:', appointment);
       formik.resetForm({
         values: {
           clientId: appointment?.clientId || '',
