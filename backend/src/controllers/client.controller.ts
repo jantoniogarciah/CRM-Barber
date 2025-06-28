@@ -31,14 +31,59 @@ export const getClients = async (req: Request, res: Response) => {
       where: whereClause,
     });
 
-    // Obtener los clientes paginados
+    // Obtener los clientes paginados con sus últimas visitas
     const clients = await prisma.client.findMany({
       where: whereClause,
       orderBy: {
         createdAt: "desc",
       },
+      include: {
+        appointments: {
+          orderBy: {
+            date: 'desc'
+          },
+          take: 1,
+          where: {
+            status: 'completed'
+          }
+        },
+        sales: {
+          orderBy: {
+            saleDate: 'desc'
+          },
+          take: 1,
+          where: {
+            status: 'completed'
+          }
+        }
+      },
       skip,
       take: limit,
+    });
+
+    // Procesar los clientes para determinar la última visita
+    const processedClients = clients.map(client => {
+      const lastAppointment = client.appointments[0];
+      const lastSale = client.sales[0];
+
+      let lastVisit = null;
+      if (lastAppointment && lastSale) {
+        lastVisit = new Date(lastAppointment.date) > new Date(lastSale.saleDate)
+          ? lastAppointment.date
+          : lastSale.saleDate;
+      } else if (lastAppointment) {
+        lastVisit = lastAppointment.date;
+      } else if (lastSale) {
+        lastVisit = lastSale.saleDate;
+      }
+
+      // Eliminar los arrays de appointments y sales del resultado
+      const { appointments, sales, ...clientData } = client;
+      
+      return {
+        ...clientData,
+        lastVisit: lastVisit ? new Date(lastVisit).toISOString() : null
+      };
     });
 
     // Calcular el total de páginas
@@ -47,7 +92,7 @@ export const getClients = async (req: Request, res: Response) => {
     console.log(`Found ${clients.length} clients. Total: ${total}, Pages: ${totalPages}`);
 
     res.json({
-      clients,
+      clients: processedClients,
       pagination: {
         total,
         totalPages,

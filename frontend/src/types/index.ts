@@ -16,6 +16,7 @@ export interface Client {
   notes: string | null;
   createdAt: string;
   status: 'ACTIVE' | 'INACTIVE';
+  lastVisit: string | null;
 }
 
 export interface Category {

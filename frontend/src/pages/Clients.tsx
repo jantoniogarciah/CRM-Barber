@@ -260,7 +260,7 @@ const Clients = () => {
               <TableCell>Email</TableCell>
               <TableCell>Teléfono</TableCell>
               <TableCell>Notas</TableCell>
-              <TableCell>Días desde última cita</TableCell>
+              <TableCell>Última visita</TableCell>
               <TableCell>Creado</TableCell>
               <TableCell>Estado</TableCell>
               <TableCell align="right">Acciones</TableCell>
@@ -319,19 +319,17 @@ const Clients = () => {
                     </TableCell>
                     <TableCell>{client.notes || '-'}</TableCell>
                     <TableCell>
-                      <Typography
-                        component="span"
-                        sx={{
-                          color:
-                            daysSinceLastAppointment && daysSinceLastAppointment > 20
-                              ? 'error.main'
-                              : 'inherit',
-                        }}
-                      >
-                        {daysSinceLastAppointment !== null
-                          ? `${daysSinceLastAppointment} días`
-                          : 'Sin citas'}
-                      </Typography>
+                      {client.lastVisit ? (
+                        <>
+                          {format(new Date(client.lastVisit), "d 'de' MMMM 'de' yyyy")}
+                          <br />
+                          <Typography variant="caption" color="textSecondary">
+                            {differenceInDays(new Date(), new Date(client.lastVisit))} días
+                          </Typography>
+                        </>
+                      ) : (
+                        'Sin visitas'
+                      )}
                     </TableCell>
                     <TableCell>
                       {client.createdAt ? format(new Date(client.createdAt), 'dd/MM/yyyy') : ''}
