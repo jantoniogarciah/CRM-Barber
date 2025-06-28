@@ -24,6 +24,20 @@ import { useGetDashboardDataQuery } from '../services/api';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
+interface SaleData {
+  originalDate: string;
+  date: string;
+  EFECTIVO: number;
+  DEBITO: number;
+  CREDITO: number;
+  total: number;
+}
+
+interface BarberData {
+  barber: string;
+  total: number;
+}
+
 const Dashboard = () => {
   const { 
     data: salesByDay,
@@ -48,16 +62,23 @@ const Dashboard = () => {
   };
 
   // Transformar datos para la gráfica de barras
-  const barChartData = salesByDay ? Object.entries(salesByDay).map(([date, amounts]: [string, any]) => ({
-    date: format(new Date(date), "d 'de' MMMM", { locale: es }),
-    EFECTIVO: amounts.EFECTIVO,
-    DEBITO: amounts.DEBITO,
-    CREDITO: amounts.CREDITO,
-    total: amounts.EFECTIVO + amounts.DEBITO + amounts.CREDITO
-  })) : [];
+  const barChartData = salesByDay ? Object.entries(salesByDay)
+    .map(([date, amounts]: [string, any]): SaleData => ({
+      originalDate: date,
+      date: format(new Date(date + 'T00:00:00'), "d 'de' MMMM", { locale: es }),
+      EFECTIVO: amounts.EFECTIVO,
+      DEBITO: amounts.DEBITO,
+      CREDITO: amounts.CREDITO,
+      total: amounts.EFECTIVO + amounts.DEBITO + amounts.CREDITO
+    }))
+    .sort((a, b) => {
+      const dateA = new Date(a.originalDate + 'T00:00:00');
+      const dateB = new Date(b.originalDate + 'T00:00:00');
+      return dateA.getTime() - dateB.getTime();
+    }) : [];
 
   // Transformar datos para la gráfica de pie
-  const pieChartData = salesByBarber || [];
+  const pieChartData: BarberData[] = salesByBarber || [];
 
   // Obtener el mes actual para el título
   const currentMonth = format(new Date(), "MMMM 'de' yyyy", { locale: es });
@@ -118,69 +139,17 @@ const Dashboard = () => {
                       cy="50%"
                       outerRadius={150}
                       fill="#8884d8"
-                      label={(entry) => `${entry.barber}: $${entry.total}`}
+                      label={(entry) => `${entry.barber}: $${entry.total.toLocaleString()}`}
                     >
-                      {pieChartData.map((entry, index) => (
+                      {pieChartData.map((entry: BarberData, index: number) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <RechartsTooltip />
+                    <RechartsTooltip formatter={(value: number) => `$${value.toLocaleString()}`} />
+                    <Legend />
                   </PieChart>
                 </ResponsiveContainer>
               </Box>
-            )}
-          </Paper>
-        </Grid>
-
-        {/* Tabla de Clientes Inactivos */}
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom>Clientes sin visitas recientes (más de 12 días)</Typography>
-            {isLoadingInactiveClients ? (
-              <CircularProgress />
-            ) : inactiveClientsError ? (
-              <Alert severity="error">Error al cargar los datos de clientes inactivos</Alert>
-            ) : (
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Cliente</TableCell>
-                      <TableCell>Teléfono</TableCell>
-                      <TableCell>Última Visita</TableCell>
-                      <TableCell>Días sin visita</TableCell>
-                      <TableCell>Acciones</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {inactiveClients?.map((client: any) => (
-                      <TableRow key={client.id}>
-                        <TableCell>{client.name}</TableCell>
-                        <TableCell>{client.phone}</TableCell>
-                        <TableCell>
-                          {client.lastVisit
-                            ? format(new Date(client.lastVisit), "d 'de' MMMM 'de' yyyy", { locale: es })
-                            : 'Sin visitas'}
-                        </TableCell>
-                        <TableCell>{client.daysSinceLastVisit || 'N/A'}</TableCell>
-                        <TableCell>
-                          <Tooltip title="Enviar mensaje por WhatsApp">
-                            <Link
-                              href={`https://wa.me/${formatPhoneForWhatsApp(client.phone)}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <IconButton size="small" color="success">
-                                <WhatsAppIcon />
-                              </IconButton>
-                            </Link>
-                          </Tooltip>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
             )}
           </Paper>
         </Grid>

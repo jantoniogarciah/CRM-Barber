@@ -1,23 +1,31 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import { AppError } from "../utils/appError";
-import { startOfDay, endOfDay, subDays, startOfMonth, endOfMonth } from "date-fns";
+import { startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, format } from "date-fns";
+import { getTimezoneOffset } from 'date-fns-tz';
 
 const prisma = new PrismaClient();
+const timeZone = 'America/Mexico_City';
 
 // Obtener ventas por día y método de pago
 export const getSalesByDay = async (req: Request, res: Response) => {
   try {
-    // Obtener el primer y último día del mes actual
-    const startDate = startOfMonth(new Date());
-    const endDate = endOfMonth(new Date());
+    // Obtener el primer y último día del mes actual en la zona horaria local
+    const now = new Date();
+    const offset = getTimezoneOffset(timeZone, now) / (60 * 1000); // convertir a minutos
+    const startDate = startOfMonth(now);
+    const endDate = endOfMonth(now);
+
+    // Ajustar las fechas con el offset de la zona horaria
+    const startDateUTC = new Date(startOfDay(startDate).getTime() - (offset * 60 * 1000));
+    const endDateUTC = new Date(endOfDay(endDate).getTime() - (offset * 60 * 1000));
 
     const sales = await prisma.sale.groupBy({
       by: ['saleDate', 'paymentMethod'],
       where: {
         saleDate: {
-          gte: startOfDay(startDate),
-          lte: endOfDay(endDate),
+          gte: startDateUTC,
+          lte: endDateUTC,
         },
         status: 'completed'
       },
@@ -27,7 +35,10 @@ export const getSalesByDay = async (req: Request, res: Response) => {
     });
 
     const formattedSales = sales.reduce((acc: any, curr) => {
-      const date = curr.saleDate.toISOString().split('T')[0];
+      // Ajustar la fecha con el offset de la zona horaria
+      const localDate = new Date(curr.saleDate.getTime() + (offset * 60 * 1000));
+      const date = format(localDate, 'yyyy-MM-dd');
+      
       if (!acc[date]) {
         acc[date] = {
           EFECTIVO: 0,
