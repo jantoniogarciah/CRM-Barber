@@ -111,6 +111,7 @@ export interface Sale {
   status: 'completed' | 'cancelled' | 'refunded';
   paymentMethod: 'EFECTIVO' | 'DEBITO' | 'CREDITO';
   notes?: string;
+  saleDate?: string;
   createdAt: string;
   updatedAt: string;
   client: Client;

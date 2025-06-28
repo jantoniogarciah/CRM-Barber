@@ -70,7 +70,7 @@ export const getSale = async (req: Request, res: Response) => {
 // Create sale
 export const createSale = async (req: Request, res: Response) => {
   try {
-    const { clientId, serviceId, barberId, amount, notes, paymentMethod } = req.body;
+    const { clientId, serviceId, barberId, amount, notes, paymentMethod, saleDate } = req.body;
 
     // Validate that client exists or create new one
     let client = await prisma.client.findFirst({
@@ -126,6 +126,7 @@ export const createSale = async (req: Request, res: Response) => {
         amount: amount || service.price,
         status: "completed",
         paymentMethod: paymentMethod || "EFECTIVO",
+        saleDate: saleDate ? new Date(saleDate) : new Date(),
         notes,
       },
       include: {

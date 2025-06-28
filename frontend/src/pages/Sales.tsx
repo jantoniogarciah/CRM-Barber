@@ -65,6 +65,7 @@ const Sales: React.FC = () => {
   const [selectedBarber, setSelectedBarber] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'EFECTIVO' | 'DEBITO' | 'CREDITO'>('EFECTIVO');
   const [notes, setNotes] = useState('');
+  const [saleDate, setSaleDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [showNewClientForm, setShowNewClientForm] = useState(false);
   const [newClient, setNewClient] = useState({
     firstName: '',
@@ -204,6 +205,7 @@ const Sales: React.FC = () => {
     setSelectedBarber('');
     setPaymentMethod('EFECTIVO');
     setNotes('');
+    setSaleDate(format(new Date(), 'yyyy-MM-dd'));
     setShowNewClientForm(false);
     setFoundClient(null);
     setNewClient({
@@ -259,6 +261,7 @@ const Sales: React.FC = () => {
         barberId: selectedBarber,
         amount: service.price,
         paymentMethod,
+        saleDate: new Date(saleDate).toISOString(),
         notes: notes || undefined,
       }).unwrap();
 
@@ -590,6 +593,18 @@ const Sales: React.FC = () => {
                       )}
                     </Select>
                   </FormControl>
+                </Grid>
+
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    type="date"
+                    name="saleDate"
+                    label="Fecha de Venta"
+                    value={saleDate}
+                    onChange={(e) => setSaleDate(e.target.value)}
+                    InputLabelProps={{ shrink: true }}
+                  />
                 </Grid>
 
                 <Grid item xs={12}>

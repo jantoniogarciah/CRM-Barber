@@ -29,6 +29,7 @@ router.post(
     body("serviceId").notEmpty().withMessage("El servicio es requerido"),
     body("barberId").notEmpty().withMessage("El barbero es requerido"),
     body("amount").optional().isFloat().withMessage("El monto debe ser un número"),
+    body("saleDate").optional().isISO8601().withMessage("La fecha de venta debe ser una fecha válida"),
     body("paymentMethod")
       .optional()
       .isIn(["EFECTIVO", "DEBITO", "CREDITO"])

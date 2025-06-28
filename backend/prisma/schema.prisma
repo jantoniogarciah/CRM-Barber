@@ -143,6 +143,7 @@ model Sale {
   status       String   @default("completed") // completed, cancelled, refunded
   paymentMethod String   @default("EFECTIVO") // EFECTIVO, DEBITO, CREDITO
   notes        String?
+  saleDate     DateTime @default(now()) // Fecha de venta que puede ser modificada
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
