@@ -29,19 +29,19 @@ const Dashboard = () => {
     data: salesByDay,
     isLoading: isLoadingSalesByDay,
     error: salesByDayError
-  } = useGetDashboardDataQuery('/dashboard/sales-by-day');
+  } = useGetDashboardDataQuery('/sales-by-day');
 
   const {
     data: salesByBarber,
     isLoading: isLoadingSalesByBarber,
     error: salesByBarberError
-  } = useGetDashboardDataQuery('/dashboard/sales-by-barber');
+  } = useGetDashboardDataQuery('/sales-by-barber');
 
   const {
     data: inactiveClients,
     isLoading: isLoadingInactiveClients,
     error: inactiveClientsError
-  } = useGetDashboardDataQuery('/dashboard/inactive-clients');
+  } = useGetDashboardDataQuery('/inactive-clients');
 
   const formatPhoneForWhatsApp = (phone: string) => {
     return phone.replace(/\D/g, '');

@@ -513,7 +513,7 @@ export const {
 export const dashboardApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getDashboardData: builder.query<any, string>({
-      query: (endpoint) => endpoint,
+      query: (endpoint) => `/dashboard${endpoint}`,
       providesTags: ['Sales', 'Clients'],
     }),
   }),
