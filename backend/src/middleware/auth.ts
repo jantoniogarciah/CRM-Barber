@@ -9,15 +9,6 @@ interface JwtPayload {
   id: string;
 }
 
-// Declarar el tipo user globalmente para Express
-declare global {
-  namespace Express {
-    interface Request {
-      user: User;
-    }
-  }
-}
-
 export const protect = async (
   req: Request,
   res: Response,
