@@ -46,6 +46,7 @@ import {
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { zonedTimeToUtc, utcToZonedTime } from 'date-fns-tz';
 import { Sale, Service, Barber, Client } from '../types';
 
 interface SalesResponse {
@@ -255,13 +256,16 @@ const Sales: React.FC = () => {
         return;
       }
 
+      // Convertir la fecha local a UTC preservando la fecha seleccionada
+      const saleDateTime = zonedTimeToUtc(saleDate, 'America/Mexico_City');
+
       await createSale({
         clientId: foundClient.id,
         serviceId: selectedService,
         barberId: selectedBarber,
         amount: service.price,
         paymentMethod,
-        saleDate: new Date(saleDate).toISOString(),
+        saleDate: saleDateTime.toISOString(),
         notes: notes || undefined,
       }).unwrap();
 
@@ -397,7 +401,11 @@ const Sales: React.FC = () => {
               {sales.map((sale: Sale) => (
                 <TableRow key={sale.id}>
                   <TableCell>
-                    {format(new Date(sale.saleDate || sale.createdAt), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}
+                    {format(
+                      utcToZonedTime(new Date(sale.saleDate || sale.createdAt), 'America/Mexico_City'),
+                      "d 'de' MMMM 'de' yyyy, HH:mm",
+                      { locale: es }
+                    )}
                   </TableCell>
                   <TableCell>
                     {sale.client?.firstName} {sale.client?.lastName}

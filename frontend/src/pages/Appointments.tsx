@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -33,6 +33,7 @@ import {
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { zonedTimeToUtc, utcToZonedTime } from 'date-fns-tz';
 import {
   useGetAppointmentsQuery,
   useDeleteAppointmentMutation,
@@ -145,8 +146,8 @@ export const Appointments = () => {
 
   const formatDate = (dateStr: string) => {
     try {
-      const date = new Date(dateStr);
-      return format(date, 'dd/MM/yyyy', { locale: es });
+      const date = utcToZonedTime(new Date(dateStr), 'America/Mexico_City');
+      return format(date, "d 'de' MMMM 'de' yyyy", { locale: es });
     } catch (error) {
       console.error('Error formatting date:', error);
       return dateStr;
@@ -157,8 +158,8 @@ export const Appointments = () => {
     if (!appointment || !appointment.date) return false;
     
     try {
-      const appointmentDate = new Date(appointment.date);
-      const compareDate = new Date(format(selectedDate, 'yyyy-MM-dd'));
+      const appointmentDate = utcToZonedTime(new Date(appointment.date), 'America/Mexico_City');
+      const compareDate = utcToZonedTime(selectedDate, 'America/Mexico_City');
 
       const isDateMatch = format(appointmentDate, 'yyyy-MM-dd') === format(compareDate, 'yyyy-MM-dd');
       const isBarberMatch = !selectedBarber || appointment.barberId === selectedBarber;

@@ -33,6 +33,7 @@ import {
 import ClientForm from '../components/ClientForm';
 import { format, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { zonedTimeToUtc, utcToZonedTime } from 'date-fns-tz';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
@@ -322,7 +323,9 @@ const Clients = () => {
                     <TableCell>
                       {client.lastVisit ? (
                         <>
-                          {format(new Date(client.lastVisit), "d 'de' MMMM 'de' yyyy", { locale: es })}
+                          {format(utcToZonedTime(new Date(client.lastVisit), 'America/Mexico_City'), "d 'de' MMMM 'de' yyyy", { 
+                            locale: es
+                          })}
                           <br />
                           <Typography variant="caption" color="textSecondary">
                             {differenceInDays(new Date(), new Date(client.lastVisit))} días
@@ -333,7 +336,9 @@ const Clients = () => {
                       )}
                     </TableCell>
                     <TableCell>
-                      {client.createdAt ? format(new Date(client.createdAt), 'dd/MM/yyyy', { locale: es }) : ''}
+                      {client.createdAt ? format(utcToZonedTime(new Date(client.createdAt), 'America/Mexico_City'), 'dd/MM/yyyy', { 
+                        locale: es
+                      }) : ''}
                     </TableCell>
                     <TableCell>
                       <Tooltip
