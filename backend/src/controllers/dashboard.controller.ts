@@ -1,16 +1,16 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import { AppError } from "../utils/appError";
-import { startOfDay, endOfDay, subDays } from "date-fns";
+import { startOfDay, endOfDay, subDays, startOfMonth, endOfMonth } from "date-fns";
 
 const prisma = new PrismaClient();
 
 // Obtener ventas por día y método de pago
 export const getSalesByDay = async (req: Request, res: Response) => {
   try {
-    const days = parseInt(req.query.days as string) || 7;
-    const endDate = new Date();
-    const startDate = subDays(endDate, days - 1);
+    // Obtener el primer y último día del mes actual
+    const startDate = startOfMonth(new Date());
+    const endDate = endOfMonth(new Date());
 
     const sales = await prisma.sale.groupBy({
       by: ['saleDate', 'paymentMethod'],

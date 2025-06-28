@@ -49,7 +49,7 @@ const Dashboard = () => {
 
   // Transformar datos para la gráfica de barras
   const barChartData = salesByDay ? Object.entries(salesByDay).map(([date, amounts]: [string, any]) => ({
-    date: format(new Date(date), 'd MMM', { locale: es }),
+    date: format(new Date(date), "d 'de' MMMM", { locale: es }),
     EFECTIVO: amounts.EFECTIVO,
     DEBITO: amounts.DEBITO,
     CREDITO: amounts.CREDITO,
@@ -59,6 +59,9 @@ const Dashboard = () => {
   // Transformar datos para la gráfica de pie
   const pieChartData = salesByBarber || [];
 
+  // Obtener el mes actual para el título
+  const currentMonth = format(new Date(), "MMMM 'de' yyyy", { locale: es });
+
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" gutterBottom>Dashboard</Typography>
@@ -67,7 +70,9 @@ const Dashboard = () => {
         {/* Gráfica de Ventas por Día */}
         <Grid item xs={12}>
           <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom>Ventas por Día</Typography>
+            <Typography variant="h6" gutterBottom>
+              Ventas Diarias - {currentMonth}
+            </Typography>
             {isLoadingSalesByDay ? (
               <CircularProgress />
             ) : salesByDayError ? (
@@ -79,7 +84,9 @@ const Dashboard = () => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
                     <YAxis />
-                    <RechartsTooltip />
+                    <RechartsTooltip 
+                      formatter={(value: number) => `$${value.toLocaleString()}`}
+                    />
                     <Legend />
                     <Bar dataKey="EFECTIVO" stackId="a" fill="#0088FE" name="Efectivo" />
                     <Bar dataKey="DEBITO" stackId="a" fill="#00C49F" name="Débito" />
