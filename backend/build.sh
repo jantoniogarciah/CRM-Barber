@@ -13,13 +13,13 @@ echo "Current directory: $(pwd)"
 echo "Installing dependencies..."
 npm install || handle_error "Failed to install dependencies"
 
-# Generate Prisma Client with absolute path
+# Generate Prisma Client
 echo "Generating Prisma Client..."
-npx prisma generate --schema=./prisma/schema.prisma || handle_error "Failed to generate Prisma client"
+npx prisma generate || handle_error "Failed to generate Prisma client"
 
-# Run TypeScript compilation
+# Compile TypeScript
 echo "Compiling TypeScript..."
-npx tsc || handle_error "Failed to compile TypeScript"
+npm run build || handle_error "Failed to compile TypeScript"
 
 # Compile migration script
 echo "Compiling migration script..."
@@ -51,4 +51,13 @@ mkdir -p dist/prisma
 cp -r prisma/* dist/prisma/
 
 # Ejecutar migraciones
-npm run migrate 
+npm run migrate
+
+if [ $? -eq 0 ]; then
+    echo "==> Build completed successfully! 🎉"
+    exit 0
+else
+    echo "==> Build failed 😞"
+    echo "==> Common ways to troubleshoot your deploy: https://render.com/docs/troubleshooting-deploys"
+    exit 1
+fi 

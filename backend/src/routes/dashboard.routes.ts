@@ -1,8 +1,8 @@
-import express from 'express';
+import { Router } from 'express';
 import { getSalesByDay, getSalesByBarber, getInactiveClients } from '../controllers/dashboard.controller';
 import { protect } from '../middleware/auth';
 
-const router = express.Router();
+const router: Router = Router();
 
 // Proteger todas las rutas
 router.use(protect);
