@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import { getServicesLog, createServiceLog } from '../controllers/servicesLog.controller';
-import { authenticateToken } from '../middleware/auth';
+import { protect } from '../middleware/auth';
 
 const router: Router = Router();
 
-// Proteger todas las rutas con autenticación
-router.use(authenticateToken);
+// Proteger todas las rutas
+router.use(protect);
 
 // Obtener registro de servicios de un barbero
 router.get('/:barberId', getServicesLog);

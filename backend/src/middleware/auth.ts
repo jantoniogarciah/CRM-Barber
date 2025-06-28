@@ -1,23 +1,24 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, User } from "@prisma/client";
 import { AppError } from "../utils/appError";
 
 const prisma = new PrismaClient();
+
+// Extender la interfaz Request
+interface AuthenticatedRequest extends Request {
+  user?: User;
+}
 
 interface JwtPayload {
   id: string;
 }
 
-declare global {
-  namespace Express {
-    interface Request {
-      user?: any;
-    }
-  }
-}
-
-export const protect = async (req: Request, res: Response, next: NextFunction) => {
+export const protect = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     // 1) Getting token and check if it exists
     let token;

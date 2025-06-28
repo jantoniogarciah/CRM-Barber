@@ -17,41 +17,22 @@ npm install || handle_error "Failed to install dependencies"
 echo "Generating Prisma Client..."
 npx prisma generate || handle_error "Failed to generate Prisma client"
 
+# Clean dist directory
+echo "Cleaning dist directory..."
+rm -rf dist || handle_error "Failed to clean dist directory"
+
 # Compile TypeScript
 echo "Compiling TypeScript..."
-npm run build || handle_error "Failed to compile TypeScript"
+npx tsc || handle_error "Failed to compile TypeScript"
 
-# Compile migration script
-echo "Compiling migration script..."
-npx tsc prisma/migrate.ts --outDir dist/prisma --esModuleInterop || handle_error "Failed to compile migration script"
-
-# Copy Prisma files to dist
+# Copy Prisma files
 echo "Copying Prisma files..."
 mkdir -p dist/prisma
-cp -r prisma/* dist/prisma/
+cp -r prisma/* dist/prisma/ || handle_error "Failed to copy Prisma files"
 
-# Run database migrations and seeds
-echo "Running database migrations and seeds..."
+# Run database migrations
+echo "Running database migrations..."
 npx prisma migrate deploy || handle_error "Failed to run migrations"
-NODE_ENV=production node dist/prisma/migrate.js || handle_error "Failed to run seeds"
-
-echo "Build process completed successfully"
-
-# Generar tipos de Prisma
-npx prisma generate
-
-# Limpiar directorio de compilación
-rm -rf dist
-
-# Compilar TypeScript
-npm run compile
-
-# Copiar archivos de Prisma
-mkdir -p dist/prisma
-cp -r prisma/* dist/prisma/
-
-# Ejecutar migraciones
-npm run migrate
 
 if [ $? -eq 0 ]; then
     echo "==> Build completed successfully! 🎉"
