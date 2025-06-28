@@ -25,7 +25,7 @@ import {
   useGetBarbersQuery,
 } from '../services/api';
 import { Appointment, Client, Service, Barber } from '../types';
-import { format, startOfToday, isBefore, parseISO } from 'date-fns';
+import { format, addDays, startOfTomorrow, isBefore, parseISO } from 'date-fns';
 import { toast } from 'react-hot-toast';
 
 interface AppointmentFormProps {
@@ -51,11 +51,11 @@ const validationSchema = Yup.object({
   barberId: Yup.string().required('Por favor seleccione un barbero'),
   date: Yup.string()
     .required('Por favor seleccione una fecha')
-    .test('is-future-date', 'La fecha debe ser hoy o una fecha futura', (value) => {
+    .test('is-future-date', 'Solo se pueden agendar citas para fechas futuras', (value) => {
       if (!value) return false;
       const selectedDate = parseISO(value);
-      const today = startOfToday();
-      return !isBefore(selectedDate, today);
+      const tomorrow = startOfTomorrow();
+      return !isBefore(selectedDate, tomorrow);
     }),
   time: Yup.string().required('Por favor seleccione una hora'),
   status: Yup.string().oneOf(['pending', 'confirmed', 'completed', 'cancelled']).required(),
@@ -80,19 +80,15 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
   const services = servicesData || [];
   const barbers = barbersData || [];
 
-  console.log('Form data:', {
-    clients,
-    services,
-    barbers,
-    appointment
-  });
+  // Obtener la fecha mínima (mañana)
+  const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd');
 
   const formik = useFormik<AppointmentFormValues>({
     initialValues: {
       clientId: appointment?.clientId || '',
       serviceId: appointment?.serviceId || '',
       barberId: appointment?.barberId || '',
-      date: appointment?.date ? format(new Date(appointment.date), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
+      date: appointment?.date ? format(new Date(appointment.date), 'yyyy-MM-dd') : tomorrow,
       time: appointment?.time || '',
       status: appointment?.status || 'pending',
       notes: appointment?.notes || '',
@@ -100,6 +96,15 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
     validationSchema,
     onSubmit: async (values) => {
       try {
+        // Validar que la fecha sea futura
+        const selectedDate = parseISO(values.date);
+        const tomorrow = startOfTomorrow();
+        
+        if (isBefore(selectedDate, tomorrow)) {
+          toast.error('Solo se pueden agendar citas para fechas futuras');
+          return;
+        }
+
         console.log('Submitting form with values:', values);
 
         const appointmentData = {
@@ -142,7 +147,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
           clientId: appointment?.clientId || '',
           serviceId: appointment?.serviceId || '',
           barberId: appointment?.barberId || '',
-          date: appointment?.date ? format(new Date(appointment.date), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
+          date: appointment?.date ? format(new Date(appointment.date), 'yyyy-MM-dd') : tomorrow,
           time: appointment?.time || '',
           status: appointment?.status || 'pending',
           notes: appointment?.notes || '',
@@ -162,8 +167,6 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
       </Dialog>
     );
   }
-
-  const today = format(new Date(), 'yyyy-MM-dd');
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -238,7 +241,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
                   helperText={formik.touched.date && formik.errors.date}
                   InputLabelProps={{ shrink: true }}
                   inputProps={{
-                    min: today
+                    min: tomorrow
                   }}
                 />
               </Grid>
