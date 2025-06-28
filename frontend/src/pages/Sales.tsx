@@ -397,7 +397,7 @@ const Sales: React.FC = () => {
               {sales.map((sale: Sale) => (
                 <TableRow key={sale.id}>
                   <TableCell>
-                    {format(new Date(sale.createdAt), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}
+                    {format(new Date(sale.saleDate || sale.createdAt), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}
                   </TableCell>
                   <TableCell>
                     {sale.client?.firstName} {sale.client?.lastName}

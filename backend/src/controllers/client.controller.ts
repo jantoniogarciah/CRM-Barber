@@ -68,6 +68,7 @@ export const getClients = async (req: Request, res: Response) => {
 
       let lastVisit = null;
       if (lastAppointment && lastSale) {
+        // Usar saleDate para la comparación
         lastVisit = new Date(lastAppointment.date) > new Date(lastSale.saleDate)
           ? lastAppointment.date
           : lastSale.saleDate;
