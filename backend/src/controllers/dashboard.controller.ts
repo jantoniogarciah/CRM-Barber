@@ -102,7 +102,7 @@ export const getSalesByBarber = async (req: Request, res: Response) => {
 // Obtener clientes sin visitas recientes
 export const getInactiveClients = async (req: Request, res: Response) => {
   try {
-    const daysThreshold = parseInt(req.query.days as string) || 12;
+    const daysThreshold = parseInt(req.query.days as string) || 15;
     const thresholdDate = subDays(new Date(), daysThreshold);
 
     // Obtener todos los clientes activos
@@ -161,5 +161,53 @@ export const getInactiveClients = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error getting inactive clients:", error);
     throw new AppError("Error al obtener los clientes inactivos", 500);
+  }
+};
+
+// Obtener servicios por fecha
+export const getServicesByDate = async (req: Request, res: Response) => {
+  try {
+    // Obtener el primer y último día del mes actual en la zona horaria local
+    const now = new Date();
+    const offset = getTimezoneOffset(timeZone, now) / (60 * 1000); // convertir a minutos
+    const startDate = startOfMonth(now);
+    const endDate = endOfMonth(now);
+
+    // Ajustar las fechas con el offset de la zona horaria
+    const startDateUTC = new Date(startOfDay(startDate).getTime() - (offset * 60 * 1000));
+    const endDateUTC = new Date(endOfDay(endDate).getTime() - (offset * 60 * 1000));
+
+    const appointments = await prisma.appointment.findMany({
+      where: {
+        date: {
+          gte: startDateUTC,
+          lte: endDateUTC,
+        },
+        status: 'completed'
+      },
+      include: {
+        service: true
+      }
+    });
+
+    // Agrupar servicios por fecha
+    const servicesByDate = appointments.reduce((acc: { [key: string]: { [key: string]: number } }, appointment) => {
+      const localDate = new Date(appointment.date.getTime() + (offset * 60 * 1000));
+      const date = format(localDate, 'yyyy-MM-dd');
+      
+      if (!acc[date]) {
+        acc[date] = {};
+      }
+      
+      const serviceName = appointment.service.name;
+      acc[date][serviceName] = (acc[date][serviceName] || 0) + 1;
+      
+      return acc;
+    }, {});
+
+    res.json(servicesByDate);
+  } catch (error) {
+    console.error("Error getting services by date:", error);
+    throw new AppError("Error al obtener los servicios por fecha", 500);
   }
 }; 

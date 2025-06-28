@@ -38,6 +38,12 @@ interface BarberData {
   total: number;
 }
 
+interface ServiceData {
+  originalDate: string;
+  date: string;
+  [key: string]: string | number;
+}
+
 const Dashboard = () => {
   const { 
     data: salesByDay,
@@ -50,6 +56,12 @@ const Dashboard = () => {
     isLoading: isLoadingSalesByBarber,
     error: salesByBarberError
   } = useGetDashboardDataQuery('/sales-by-barber');
+
+  const {
+    data: servicesByDate,
+    isLoading: isLoadingServicesByDate,
+    error: servicesByDateError
+  } = useGetDashboardDataQuery('/services-by-date');
 
   const {
     data: inactiveClients,
@@ -80,6 +92,27 @@ const Dashboard = () => {
   // Transformar datos para la gráfica de pie
   const pieChartData: BarberData[] = salesByBarber || [];
 
+  // Transformar datos para la gráfica de servicios
+  const serviceChartData = servicesByDate ? Object.entries(servicesByDate)
+    .map(([date, services]: [string, any]): ServiceData => ({
+      originalDate: date,
+      date: format(new Date(date + 'T00:00:00'), "d 'de' MMMM", { locale: es }),
+      ...services
+    }))
+    .sort((a, b) => {
+      const dateA = new Date(a.originalDate + 'T00:00:00');
+      const dateB = new Date(b.originalDate + 'T00:00:00');
+      return dateA.getTime() - dateB.getTime();
+    }) : [];
+
+  // Obtener todos los tipos de servicios únicos
+  const serviceTypes = serviceChartData.length > 0
+    ? Object.keys(serviceChartData[0]).filter(key => !['originalDate', 'date'].includes(key))
+    : [];
+
+  // Colores para los servicios
+  const serviceColors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#0088fe', '#00c49f'];
+
   // Obtener el mes actual para el título
   const currentMonth = format(new Date(), "MMMM 'de' yyyy", { locale: es });
 
@@ -105,13 +138,46 @@ const Dashboard = () => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
                     <YAxis />
-                    <RechartsTooltip 
-                      formatter={(value: number) => `$${value.toLocaleString()}`}
-                    />
+                    <RechartsTooltip formatter={(value: number) => `$${value.toLocaleString()}`} />
                     <Legend />
                     <Bar dataKey="EFECTIVO" stackId="a" fill="#0088FE" name="Efectivo" />
                     <Bar dataKey="DEBITO" stackId="a" fill="#00C49F" name="Débito" />
                     <Bar dataKey="CREDITO" stackId="a" fill="#FFBB28" name="Crédito" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Box>
+            )}
+          </Paper>
+        </Grid>
+
+        {/* Gráfica de Servicios por Fecha */}
+        <Grid item xs={12}>
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              Servicios por Fecha - {currentMonth}
+            </Typography>
+            {isLoadingServicesByDate ? (
+              <CircularProgress />
+            ) : servicesByDateError ? (
+              <Alert severity="error">Error al cargar los datos de servicios</Alert>
+            ) : (
+              <Box sx={{ width: '100%', height: 400 }}>
+                <ResponsiveContainer>
+                  <BarChart data={serviceChartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <RechartsTooltip />
+                    <Legend />
+                    {serviceTypes.map((service, index) => (
+                      <Bar 
+                        key={service}
+                        dataKey={service}
+                        stackId="a"
+                        fill={serviceColors[index % serviceColors.length]}
+                        name={service}
+                      />
+                    ))}
                   </BarChart>
                 </ResponsiveContainer>
               </Box>
@@ -150,6 +216,59 @@ const Dashboard = () => {
                   </PieChart>
                 </ResponsiveContainer>
               </Box>
+            )}
+          </Paper>
+        </Grid>
+
+        {/* Tabla de Clientes Inactivos */}
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="h6" gutterBottom>Clientes sin visitas recientes (más de 15 días)</Typography>
+            {isLoadingInactiveClients ? (
+              <CircularProgress />
+            ) : inactiveClientsError ? (
+              <Alert severity="error">Error al cargar los datos de clientes inactivos</Alert>
+            ) : (
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Cliente</TableCell>
+                      <TableCell>Teléfono</TableCell>
+                      <TableCell>Última Visita</TableCell>
+                      <TableCell>Días sin visita</TableCell>
+                      <TableCell>Acciones</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {inactiveClients?.map((client: any) => (
+                      <TableRow key={client.id}>
+                        <TableCell>{client.name}</TableCell>
+                        <TableCell>{client.phone}</TableCell>
+                        <TableCell>
+                          {client.lastVisit
+                            ? format(new Date(client.lastVisit), "d 'de' MMMM 'de' yyyy", { locale: es })
+                            : 'Sin visitas'}
+                        </TableCell>
+                        <TableCell>{client.daysSinceLastVisit || 'N/A'}</TableCell>
+                        <TableCell>
+                          <Tooltip title="Enviar mensaje por WhatsApp">
+                            <Link
+                              href={`https://wa.me/${formatPhoneForWhatsApp(client.phone)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <IconButton size="small" color="success">
+                                <WhatsAppIcon />
+                              </IconButton>
+                            </Link>
+                          </Tooltip>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
             )}
           </Paper>
         </Grid>
