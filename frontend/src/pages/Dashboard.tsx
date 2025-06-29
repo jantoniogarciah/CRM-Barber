@@ -163,7 +163,7 @@ const Dashboard = () => {
           <Paper sx={{ p: 2 }}>
             <Typography variant="h6" gutterBottom>
               Servicios por Fecha - {currentMonth}
-            </Typography>
+      </Typography>
             {isLoadingServicesByDate ? (
               <CircularProgress />
             ) : servicesByDateError ? (
@@ -288,7 +288,7 @@ const Dashboard = () => {
                     rowsPerPageOptions={[5]}
                     labelRowsPerPage="Clientes por página"
                   />
-                </Box>
+      </Box>
               </>
             )}
           </Paper>
