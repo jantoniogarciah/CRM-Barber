@@ -8,6 +8,7 @@ import Clients from '../pages/Clients';
 import Services from '../pages/Services';
 import Appointments from '../pages/Appointments';
 import Sales from '../pages/Sales';
+import Users from '../pages/Users';
 import NotFound from '../pages/NotFound';
 import { PrivateRoute } from '../components/PrivateRoute';
 import { AdminRoute } from '../components/AdminRoute';
@@ -101,6 +102,14 @@ const AppRoutes = () => {
             <Suspense fallback={<LoadingComponent />}>
               <BarbersPage />
             </Suspense>
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/users"
+        element={
+          <AdminRoute>
+            <Users />
           </AdminRoute>
         }
       />
