@@ -80,8 +80,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     const items = [];
     const userRole = user?.role?.toUpperCase();
 
-    // Dashboard solo para ADMIN y BARBER
-    if (userRole === 'ADMIN' || userRole === 'BARBER') {
+    // Dashboard solo para ADMIN
+    if (userRole === 'ADMIN') {
       items.push({
         text: 'Dashboard',
         icon: <Dashboard sx={{ fontSize: 24, width: 24, height: 24 }} />,

@@ -88,10 +88,11 @@ export const AdminBarberRoute = ({ children }: AdminBarberRouteProps): JSX.Eleme
   console.log('AdminBarberRoute - User role:', userRole);
   console.log('AdminBarberRoute - Full user object:', user);
 
-  if (userRole !== 'ADMIN' && userRole !== 'BARBER') {
-    console.log('AdminBarberRoute - User is not admin or barber');
+  // Solo permitir acceso a administradores
+  if (userRole !== 'ADMIN') {
+    console.log('AdminBarberRoute - User is not admin');
     toast.error('No tienes permisos para acceder a esta página');
-    return <Navigate to="/" replace />;
+    return <Navigate to="/appointments" replace />;
   }
 
   console.log('AdminBarberRoute - Access granted, rendering children');
