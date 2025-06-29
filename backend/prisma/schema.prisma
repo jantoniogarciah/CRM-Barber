@@ -16,7 +16,7 @@ model User {
   password  String
   firstName String
   lastName  String
-  role      String   @default("CLIENT") // ADMIN, BARBER, CLIENT
+  role      String   @default("CLIENT") // ADMIN, ADMINBARBER, BARBER, CLIENT
   status    String   @default("ACTIVE") // ACTIVE, INACTIVE
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
