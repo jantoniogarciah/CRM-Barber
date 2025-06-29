@@ -10,7 +10,11 @@ interface JwtPayload {
   role: string;
 }
 
-export const adminOnly = async (req: Request, res: Response, next: NextFunction) => {
+export const adminOnly = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void | Response> => {
   try {
     // Obtener el token del header
     const token = req.headers.authorization?.split(' ')[1];
@@ -34,9 +38,9 @@ export const adminOnly = async (req: Request, res: Response, next: NextFunction)
     // Agregar el usuario al request para uso posterior
     req.user = user;
 
-    next();
+    return next();
   } catch (error) {
     console.error('Error en middleware adminOnly:', error);
-    res.status(401).json({ message: 'No autorizado' });
+    return res.status(401).json({ message: 'No autorizado' });
   }
 }; 
