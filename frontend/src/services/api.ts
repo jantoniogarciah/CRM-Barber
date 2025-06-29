@@ -460,41 +460,41 @@ export const api = createApi({
     }),
 
     // Users endpoints
-    getUsers: builder.query<User[], void>({
-      query: () => '/users',
-      providesTags: ['User'],
-    }),
+getUsers: builder.query<User[], void>({
+  query: () => '/users',
+  providesTags: ['User'],
+}),
 
-    getUserById: builder.query<User, string>({
-      query: (id) => `/users/${id}`,
-      providesTags: (_result, _error, id) => [{ type: 'User', id }],
-    }),
+getUserById: builder.query<User, string>({
+  query: (id) => `/users/${id}`,
+  providesTags: (_result, _error, id) => [{ type: 'User', id }],
+}),
 
-    createUser: builder.mutation<User, Partial<User>>({
-      query: (user) => ({
-        url: '/users',
-        method: 'POST',
-        body: user,
-      }),
-      invalidatesTags: ['User'],
-    }),
+createUser: builder.mutation<User, Partial<User>>({
+  query: (user) => ({
+    url: '/users',
+    method: 'POST',
+    body: user,
+  }),
+  invalidatesTags: ['User'],
+}),
 
-    updateUser: builder.mutation<User, { id: string; user: Partial<User> }>({
-      query: ({ id, user }) => ({
-        url: `/users/${id}`,
-        method: 'PUT',
-        body: user,
-      }),
-      invalidatesTags: (_result, _error, { id }) => [{ type: 'User', id }],
-    }),
+updateUser: builder.mutation<User, { id: string; user: Partial<User> }>({
+  query: ({ id, user }) => ({
+    url: `/users/${id}`,
+    method: 'PUT',
+    body: user,
+  }),
+  invalidatesTags: (_result, _error, { id }) => [{ type: 'User', id }],
+}),
 
-    deleteUser: builder.mutation<void, string>({
-      query: (id) => ({
-        url: `/users/${id}`,
-        method: 'DELETE',
-      }),
-      invalidatesTags: ['User'],
-    }),
+deleteUser: builder.mutation<void, string>({
+  query: (id) => ({
+    url: `/users/${id}`,
+    method: 'DELETE',
+  }),
+  invalidatesTags: ['User'],
+}),
   }),
 });
 
