@@ -145,7 +145,7 @@ export const api = createApi({
         method: 'POST',
       }),
     }),
-    updateUser: builder.mutation<{ user: User; token: string }, Partial<User>>({
+    updateProfile: builder.mutation<{ user: User; token: string }, Partial<User>>({
       query: (userData) => ({
         url: '/auth/update',
         method: 'PUT',
@@ -503,7 +503,7 @@ export const {
   useRegisterMutation,
   useGetCurrentUserQuery,
   useLogoutMutation,
-  useUpdateUserMutation,
+  useUpdateProfileMutation,
   useGetClientsQuery,
   useGetClientByPhoneQuery,
   useGetLastCompletedAppointmentsQuery,
