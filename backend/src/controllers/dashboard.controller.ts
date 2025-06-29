@@ -177,6 +177,11 @@ export const getServicesByDate = async (req: Request, res: Response) => {
     const startDateUTC = new Date(startOfDay(startDate).getTime() - (offset * 60 * 1000));
     const endDateUTC = new Date(endOfDay(endDate).getTime() - (offset * 60 * 1000));
 
+    console.log('Fechas de búsqueda:', {
+      startDateUTC: startDateUTC.toISOString(),
+      endDateUTC: endDateUTC.toISOString()
+    });
+
     // Obtener las citas con sus servicios
     const appointments = await prisma.appointment.findMany({
       where: {
@@ -190,6 +195,8 @@ export const getServicesByDate = async (req: Request, res: Response) => {
         service: true
       }
     });
+
+    console.log('Citas encontradas:', appointments.length);
 
     // Agrupar servicios por fecha
     const servicesByDate = appointments.reduce((acc: { [key: string]: { [key: string]: number } }, appointment) => {
@@ -206,6 +213,8 @@ export const getServicesByDate = async (req: Request, res: Response) => {
       return acc;
     }, {});
 
+    console.log('Servicios agrupados por fecha:', servicesByDate);
+
     // Obtener todos los servicios únicos para asegurar que cada fecha tenga todos los servicios
     const allServices = await prisma.service.findMany({
       where: {
@@ -216,6 +225,8 @@ export const getServicesByDate = async (req: Request, res: Response) => {
       }
     });
 
+    console.log('Servicios activos:', allServices.map(s => s.name));
+
     // Asegurar que cada fecha tenga todos los servicios (incluso con valor 0)
     const dates = Object.keys(servicesByDate);
     dates.forEach(date => {
@@ -225,6 +236,8 @@ export const getServicesByDate = async (req: Request, res: Response) => {
         }
       });
     });
+
+    console.log('Respuesta final:', servicesByDate);
 
     res.json(servicesByDate);
   } catch (error) {
