@@ -182,10 +182,10 @@ export const getServicesByDate = async (req: Request, res: Response) => {
       endDateUTC: endDateUTC.toISOString()
     });
 
-    // Obtener las citas con sus servicios
-    const appointments = await prisma.appointment.findMany({
+    // Obtener las ventas completadas con sus servicios
+    const sales = await prisma.sale.findMany({
       where: {
-        date: {
+        saleDate: {
           gte: startDateUTC,
           lte: endDateUTC,
         },
@@ -196,26 +196,30 @@ export const getServicesByDate = async (req: Request, res: Response) => {
       }
     });
 
-    console.log('Citas encontradas:', appointments.length);
+    console.log('Ventas completadas encontradas:', sales.length);
 
     // Agrupar servicios por fecha
-    const servicesByDate = appointments.reduce((acc: { [key: string]: { [key: string]: number } }, appointment) => {
-      const localDate = new Date(appointment.date.getTime() + (offset * 60 * 1000));
+    const servicesByDate = sales.reduce((acc: { [key: string]: { [key: string]: number } }, sale) => {
+      const localDate = new Date(sale.saleDate.getTime() + (offset * 60 * 1000));
       const date = format(localDate, 'yyyy-MM-dd');
       
       if (!acc[date]) {
         acc[date] = {};
       }
       
-      const serviceName = appointment.service.name;
+      const serviceName = sale.service.name;
+      console.log('Procesando venta:', {
+        date,
+        serviceName,
+        saleStatus: sale.status
+      });
+      
       acc[date][serviceName] = (acc[date][serviceName] || 0) + 1;
       
       return acc;
     }, {});
 
-    console.log('Servicios agrupados por fecha:', servicesByDate);
-
-    // Obtener todos los servicios únicos para asegurar que cada fecha tenga todos los servicios
+    // Obtener todos los servicios activos
     const allServices = await prisma.service.findMany({
       where: {
         isActive: true
@@ -225,7 +229,7 @@ export const getServicesByDate = async (req: Request, res: Response) => {
       }
     });
 
-    console.log('Servicios activos:', allServices.map(s => s.name));
+    console.log('Servicios activos encontrados:', allServices.length);
 
     // Asegurar que cada fecha tenga todos los servicios (incluso con valor 0)
     const dates = Object.keys(servicesByDate);
@@ -237,7 +241,10 @@ export const getServicesByDate = async (req: Request, res: Response) => {
       });
     });
 
-    console.log('Respuesta final:', servicesByDate);
+    console.log('Respuesta final:', {
+      fechasEncontradas: dates.length,
+      serviciosPorFecha: servicesByDate
+    });
 
     res.json(servicesByDate);
   } catch (error) {
