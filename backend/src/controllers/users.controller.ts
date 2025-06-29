@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
+// Get all users
 export const getUsers = async (req: Request, res: Response): Promise<Response> => {
   try {
     const users = await prisma.user.findMany({
@@ -14,20 +15,24 @@ export const getUsers = async (req: Request, res: Response): Promise<Response> =
         lastName: true,
         role: true,
         status: true,
+        phone: true,
         createdAt: true,
         updatedAt: true,
       },
     });
+
     return res.json(users);
   } catch (error) {
-    console.error('Error al obtener usuarios:', error);
+    console.error('Error getting users:', error);
     return res.status(500).json({ message: 'Error al obtener usuarios' });
   }
 };
 
+// Get user by ID
 export const getUserById = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { id } = req.params;
+
     const user = await prisma.user.findUnique({
       where: { id },
       select: {
@@ -37,6 +42,7 @@ export const getUserById = async (req: Request, res: Response): Promise<Response
         lastName: true,
         role: true,
         status: true,
+        phone: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -48,14 +54,15 @@ export const getUserById = async (req: Request, res: Response): Promise<Response
 
     return res.json(user);
   } catch (error) {
-    console.error('Error al obtener usuario:', error);
+    console.error('Error getting user:', error);
     return res.status(500).json({ message: 'Error al obtener usuario' });
   }
 };
 
+// Create user
 export const createUser = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const { email, password, firstName, lastName, role } = req.body;
+    const { email, password, firstName, lastName, role, phone } = req.body;
 
     // Verificar si el email ya existe
     const existingUser = await prisma.user.findUnique({
@@ -76,6 +83,8 @@ export const createUser = async (req: Request, res: Response): Promise<Response>
         firstName,
         lastName,
         role,
+        phone,
+        status: 'ACTIVE',
       },
       select: {
         id: true,
@@ -84,6 +93,7 @@ export const createUser = async (req: Request, res: Response): Promise<Response>
         lastName: true,
         role: true,
         status: true,
+        phone: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -91,15 +101,16 @@ export const createUser = async (req: Request, res: Response): Promise<Response>
 
     return res.status(201).json(user);
   } catch (error) {
-    console.error('Error al crear usuario:', error);
+    console.error('Error creating user:', error);
     return res.status(500).json({ message: 'Error al crear usuario' });
   }
 };
 
+// Update user
 export const updateUser = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { id } = req.params;
-    const { email, password, firstName, lastName, role, status } = req.body;
+    const { email, firstName, lastName, role, status, phone } = req.body;
 
     // Verificar si el usuario existe
     const existingUser = await prisma.user.findUnique({
@@ -121,23 +132,16 @@ export const updateUser = async (req: Request, res: Response): Promise<Response>
       }
     }
 
-    // Preparar los datos para actualizar
-    const updateData: any = {
-      ...(email && { email }),
-      ...(firstName && { firstName }),
-      ...(lastName && { lastName }),
-      ...(role && { role }),
-      ...(status && { status }),
-    };
-
-    // Si hay una nueva contraseña, hashearla
-    if (password) {
-      updateData.password = await bcrypt.hash(password, 10);
-    }
-
-    const updatedUser = await prisma.user.update({
+    const user = await prisma.user.update({
       where: { id },
-      data: updateData,
+      data: {
+        email,
+        firstName,
+        lastName,
+        role,
+        status,
+        phone,
+      },
       select: {
         id: true,
         email: true,
@@ -145,18 +149,20 @@ export const updateUser = async (req: Request, res: Response): Promise<Response>
         lastName: true,
         role: true,
         status: true,
+        phone: true,
         createdAt: true,
         updatedAt: true,
       },
     });
 
-    return res.json(updatedUser);
+    return res.json(user);
   } catch (error) {
-    console.error('Error al actualizar usuario:', error);
+    console.error('Error updating user:', error);
     return res.status(500).json({ message: 'Error al actualizar usuario' });
   }
 };
 
+// Delete user
 export const deleteUser = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { id } = req.params;
@@ -170,13 +176,15 @@ export const deleteUser = async (req: Request, res: Response): Promise<Response>
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    await prisma.user.delete({
+    // En lugar de eliminar, marcar como inactivo
+    await prisma.user.update({
       where: { id },
+      data: { status: 'INACTIVE' },
     });
 
     return res.json({ message: 'Usuario eliminado correctamente' });
   } catch (error) {
-    console.error('Error al eliminar usuario:', error);
+    console.error('Error deleting user:', error);
     return res.status(500).json({ message: 'Error al eliminar usuario' });
   }
 }; 

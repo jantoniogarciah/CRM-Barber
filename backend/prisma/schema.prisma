@@ -18,6 +18,7 @@ model User {
   lastName  String
   role      String   @default("CLIENT") // ADMIN, ADMINBARBER, BARBER, CLIENT
   status    String   @default("ACTIVE") // ACTIVE, INACTIVE
+  phone     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

@@ -1,10 +1,13 @@
 export interface User {
-  id: number;
+  id: string;
   email: string;
   firstName: string;
   lastName: string;
   role: string;
+  status: 'ACTIVE' | 'INACTIVE';
   phone?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Client {
