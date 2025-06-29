@@ -103,6 +103,8 @@ export const getSalesByBarber = async (req: Request, res: Response) => {
 export const getInactiveClients = async (req: Request, res: Response) => {
   try {
     const daysThreshold = parseInt(req.query.days as string) || 15;
+    const page = parseInt(req.query.page as string) || 1;
+    const pageSize = 5;
     const thresholdDate = subDays(new Date(), daysThreshold);
 
     // Obtener todos los clientes activos
@@ -157,7 +159,30 @@ export const getInactiveClients = async (req: Request, res: Response) => {
         : null
     }));
 
-    res.json(inactiveClients);
+    // Ordenar por días desde última visita (los que nunca han visitado al final)
+    const sortedClients = inactiveClients.sort((a, b) => {
+      if (a.daysSinceLastVisit === null) return 1;
+      if (b.daysSinceLastVisit === null) return -1;
+      return a.daysSinceLastVisit - b.daysSinceLastVisit;
+    });
+
+    // Calcular el total de páginas
+    const totalClients = sortedClients.length;
+    const totalPages = Math.ceil(totalClients / pageSize);
+
+    // Obtener los clientes de la página actual
+    const startIndex = (page - 1) * pageSize;
+    const paginatedClients = sortedClients.slice(startIndex, startIndex + pageSize);
+
+    res.json({
+      clients: paginatedClients,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalClients,
+        pageSize
+      }
+    });
   } catch (error) {
     console.error("Error getting inactive clients:", error);
     throw new AppError("Error al obtener los clientes inactivos", 500);

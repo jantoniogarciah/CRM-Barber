@@ -11,6 +11,7 @@ import Sales from '../pages/Sales';
 import NotFound from '../pages/NotFound';
 import { PrivateRoute } from '../components/PrivateRoute';
 import { AdminRoute } from '../components/AdminRoute';
+import { AdminBarberRoute } from '../components/AdminBarberRoute';
 
 // Lazy load the Barbers component
 const BarbersPage = lazy(() => {
@@ -41,22 +42,18 @@ const LoadingComponent = () => {
   );
 };
 
-const AppRoutes: React.FC = () => {
-  console.log('Router - Rendering AppRoutes');
-
+const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
-
       <Route
         path="/"
         element={
-          <PrivateRoute>
+          <AdminBarberRoute>
             <Dashboard />
-          </PrivateRoute>
+          </AdminBarberRoute>
         }
       />
-
       <Route
         path="/profile"
         element={
@@ -65,7 +62,6 @@ const AppRoutes: React.FC = () => {
           </PrivateRoute>
         }
       />
-
       <Route
         path="/clients"
         element={
@@ -74,7 +70,6 @@ const AppRoutes: React.FC = () => {
           </AdminRoute>
         }
       />
-
       <Route
         path="/services"
         element={
@@ -83,7 +78,6 @@ const AppRoutes: React.FC = () => {
           </AdminRoute>
         }
       />
-
       <Route
         path="/appointments"
         element={
@@ -92,7 +86,6 @@ const AppRoutes: React.FC = () => {
           </PrivateRoute>
         }
       />
-
       <Route
         path="/sales"
         element={
@@ -101,7 +94,6 @@ const AppRoutes: React.FC = () => {
           </PrivateRoute>
         }
       />
-
       <Route
         path="/barbers"
         element={
@@ -112,8 +104,6 @@ const AppRoutes: React.FC = () => {
           </AdminRoute>
         }
       />
-
-      {/* Catch-all route for 404 errors */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

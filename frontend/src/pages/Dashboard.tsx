@@ -15,6 +15,7 @@ import {
   IconButton,
   Tooltip,
   Link,
+  TablePagination,
 } from '@mui/material';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { format } from 'date-fns';
@@ -45,6 +46,9 @@ interface ServiceData {
 }
 
 const Dashboard = () => {
+  const [page, setPage] = useState(1);
+  const pageSize = 5;
+
   const { 
     data: salesByDay,
     isLoading: isLoadingSalesByDay,
@@ -64,10 +68,10 @@ const Dashboard = () => {
   } = useGetDashboardDataQuery('/services-by-date');
 
   const {
-    data: inactiveClients,
+    data: inactiveClientsData,
     isLoading: isLoadingInactiveClients,
     error: inactiveClientsError
-  } = useGetDashboardDataQuery('/inactive-clients');
+  } = useGetDashboardDataQuery(`/inactive-clients?page=${page}`);
 
   const formatPhoneForWhatsApp = (phone: string) => {
     return phone.replace(/\D/g, '');
@@ -115,6 +119,10 @@ const Dashboard = () => {
 
   // Obtener el mes actual para el título
   const currentMonth = format(new Date(), "MMMM 'de' yyyy", { locale: es });
+
+  const handlePageChange = (_: unknown, newPage: number) => {
+    setPage(newPage + 1);
+  };
 
   return (
     <Box sx={{ p: 3 }}>
@@ -229,46 +237,59 @@ const Dashboard = () => {
             ) : inactiveClientsError ? (
               <Alert severity="error">Error al cargar los datos de clientes inactivos</Alert>
             ) : (
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Cliente</TableCell>
-                      <TableCell>Teléfono</TableCell>
-                      <TableCell>Última Visita</TableCell>
-                      <TableCell>Días sin visita</TableCell>
-                      <TableCell>Acciones</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {inactiveClients?.map((client: any) => (
-                      <TableRow key={client.id}>
-                        <TableCell>{client.name}</TableCell>
-                        <TableCell>{client.phone}</TableCell>
-                        <TableCell>
-                          {client.lastVisit
-                            ? format(new Date(client.lastVisit), "d 'de' MMMM 'de' yyyy", { locale: es })
-                            : 'Sin visitas'}
-                        </TableCell>
-                        <TableCell>{client.daysSinceLastVisit || 'N/A'}</TableCell>
-                        <TableCell>
-                          <Tooltip title="Enviar mensaje por WhatsApp">
-                            <Link
-                              href={`https://wa.me/${formatPhoneForWhatsApp(client.phone)}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <IconButton size="small" color="success">
-                                <WhatsAppIcon />
-                              </IconButton>
-                            </Link>
-                          </Tooltip>
-                        </TableCell>
+              <>
+                <TableContainer>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Cliente</TableCell>
+                        <TableCell>Teléfono</TableCell>
+                        <TableCell>Última Visita</TableCell>
+                        <TableCell>Días sin visita</TableCell>
+                        <TableCell>Acciones</TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                    </TableHead>
+                    <TableBody>
+                      {inactiveClientsData?.clients?.map((client: any) => (
+                        <TableRow key={client.id}>
+                          <TableCell>{client.name}</TableCell>
+                          <TableCell>{client.phone}</TableCell>
+                          <TableCell>
+                            {client.lastVisit
+                              ? format(new Date(client.lastVisit), "d 'de' MMMM 'de' yyyy", { locale: es })
+                              : 'Sin visitas'}
+                          </TableCell>
+                          <TableCell>{client.daysSinceLastVisit || 'N/A'}</TableCell>
+                          <TableCell>
+                            <Tooltip title="Enviar mensaje por WhatsApp">
+                              <Link
+                                href={`https://wa.me/${formatPhoneForWhatsApp(client.phone)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <IconButton size="small" color="success">
+                                  <WhatsAppIcon />
+                                </IconButton>
+                              </Link>
+                            </Tooltip>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+                <Box sx={{ p: 2 }}>
+                  <TablePagination
+                    component="div"
+                    count={inactiveClientsData?.pagination?.totalClients || 0}
+                    page={page - 1}
+                    onPageChange={handlePageChange}
+                    rowsPerPage={pageSize}
+                    rowsPerPageOptions={[5]}
+                    labelRowsPerPage="Clientes por página"
+                  />
+                </Box>
+              </>
             )}
           </Paper>
         </Grid>
