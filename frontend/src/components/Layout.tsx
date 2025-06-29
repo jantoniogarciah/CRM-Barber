@@ -25,6 +25,7 @@ import {
   ContentCut,
   AccountCircle,
   ShoppingCart,
+  SupervisorAccount,
 } from '@mui/icons-material';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { selectUser, clearCredentials } from '../store/slices/authSlice';
@@ -80,8 +81,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     const items = [];
     const userRole = user?.role?.toUpperCase();
 
-    // Dashboard solo para ADMIN
-    if (userRole === 'ADMIN') {
+    // Dashboard solo para ADMIN y ADMINBARBER
+    if (userRole === 'ADMIN' || userRole === 'ADMINBARBER') {
       items.push({
         text: 'Dashboard',
         icon: <Dashboard sx={{ fontSize: 24, width: 24, height: 24 }} />,
@@ -103,14 +104,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       }
     );
 
-    // Clientes, Servicios y Barberos solo para administradores
-    if (userRole === 'ADMIN') {
+    // Clientes para ADMIN, ADMINBARBER y BARBER
+    if (userRole === 'ADMIN' || userRole === 'ADMINBARBER' || userRole === 'BARBER') {
+      items.push({
+        text: 'Clientes',
+        icon: <People sx={{ fontSize: 24, width: 24, height: 24 }} />,
+        path: '/clients',
+      });
+    }
+
+    // Servicios y Barberos para ADMIN y ADMINBARBER
+    if (userRole === 'ADMIN' || userRole === 'ADMINBARBER') {
       items.push(
-        {
-          text: 'Clientes',
-          icon: <People sx={{ fontSize: 24, width: 24, height: 24 }} />,
-          path: '/clients',
-        },
         {
           text: 'Servicios',
           icon: <ContentCut sx={{ fontSize: 24, width: 24, height: 24 }} />,
@@ -122,6 +127,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           path: '/barbers',
         }
       );
+    }
+
+    // Usuarios solo para ADMIN
+    if (userRole === 'ADMIN') {
+      items.push({
+        text: 'Usuarios',
+        icon: <SupervisorAccount sx={{ fontSize: 24, width: 24, height: 24 }} />,
+        path: '/users',
+      });
     }
 
     return items;
