@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-export const getUsers = async (req: Request, res: Response) => {
+export const getUsers = async (req: Request, res: Response): Promise<Response> => {
   try {
     const users = await prisma.user.findMany({
       select: {
@@ -18,14 +18,14 @@ export const getUsers = async (req: Request, res: Response) => {
         updatedAt: true,
       },
     });
-    res.json(users);
+    return res.json(users);
   } catch (error) {
     console.error('Error al obtener usuarios:', error);
-    res.status(500).json({ message: 'Error al obtener usuarios' });
+    return res.status(500).json({ message: 'Error al obtener usuarios' });
   }
 };
 
-export const getUserById = async (req: Request, res: Response) => {
+export const getUserById = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { id } = req.params;
     const user = await prisma.user.findUnique({
@@ -46,14 +46,14 @@ export const getUserById = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    res.json(user);
+    return res.json(user);
   } catch (error) {
     console.error('Error al obtener usuario:', error);
-    res.status(500).json({ message: 'Error al obtener usuario' });
+    return res.status(500).json({ message: 'Error al obtener usuario' });
   }
 };
 
-export const createUser = async (req: Request, res: Response) => {
+export const createUser = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { email, password, firstName, lastName, role } = req.body;
 
@@ -89,14 +89,14 @@ export const createUser = async (req: Request, res: Response) => {
       },
     });
 
-    res.status(201).json(user);
+    return res.status(201).json(user);
   } catch (error) {
     console.error('Error al crear usuario:', error);
-    res.status(500).json({ message: 'Error al crear usuario' });
+    return res.status(500).json({ message: 'Error al crear usuario' });
   }
 };
 
-export const updateUser = async (req: Request, res: Response) => {
+export const updateUser = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { id } = req.params;
     const { email, password, firstName, lastName, role, status } = req.body;
@@ -150,14 +150,14 @@ export const updateUser = async (req: Request, res: Response) => {
       },
     });
 
-    res.json(updatedUser);
+    return res.json(updatedUser);
   } catch (error) {
     console.error('Error al actualizar usuario:', error);
-    res.status(500).json({ message: 'Error al actualizar usuario' });
+    return res.status(500).json({ message: 'Error al actualizar usuario' });
   }
 };
 
-export const deleteUser = async (req: Request, res: Response) => {
+export const deleteUser = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { id } = req.params;
 
@@ -174,9 +174,9 @@ export const deleteUser = async (req: Request, res: Response) => {
       where: { id },
     });
 
-    res.json({ message: 'Usuario eliminado correctamente' });
+    return res.json({ message: 'Usuario eliminado correctamente' });
   } catch (error) {
     console.error('Error al eliminar usuario:', error);
-    res.status(500).json({ message: 'Error al eliminar usuario' });
+    return res.status(500).json({ message: 'Error al eliminar usuario' });
   }
 }; 
