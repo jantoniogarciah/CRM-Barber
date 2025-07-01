@@ -124,13 +124,13 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
 
   const formik = useFormik({
     initialValues: {
-      clientId: appointment?.clientId || '',
-      serviceId: appointment?.serviceId || '',
-      barberId: appointment?.barberId || '',
-      date: appointment?.date ? format(new Date(appointment.date), 'yyyy-MM-dd') : tomorrow,
-      time: appointment?.time || '',
-      status: appointment?.status || 'pending',
-      notes: appointment?.notes || '',
+      clientId: '',
+      serviceId: '',
+      barberId: '',
+      date: tomorrow,
+      time: '',
+      status: 'pending',
+      notes: '',
       isNewClient: false,
       firstName: '',
       lastName: '',
@@ -186,16 +186,63 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
     },
   });
 
+  // Efecto para restaurar valores cuando se abre el formulario
   useEffect(() => {
-    if (clientByPhone && phoneSearch.length === 10) {
-      setFoundClient(clientByPhone);
-      formik.setFieldValue('clientId', clientByPhone.id);
-      setIsNewClient(false);
-    } else if (phoneSearch.length === 10 && !clientByPhone) {
+    if (open) {
+      if (appointment) {
+        // Si es edición, restaurar valores de la cita existente
+        const client = clients.find(c => c.id === appointment.clientId);
+        if (client) {
+          setFoundClient(client);
+        }
+        formik.resetForm({
+          values: {
+            clientId: appointment.clientId || '',
+            serviceId: appointment.serviceId || '',
+            barberId: appointment.barberId || '',
+            date: appointment.date ? format(new Date(appointment.date), 'yyyy-MM-dd') : tomorrow,
+            time: appointment.time || '',
+            status: appointment.status || 'pending',
+            notes: appointment.notes || '',
+            isNewClient: false,
+            firstName: '',
+            lastName: '',
+            phone: '',
+            email: '',
+          }
+        });
+      } else {
+        // Si es nueva cita, limpiar todo
+        setPhoneSearch('');
+        setFoundClient(null);
+        setIsNewClient(false);
+        formik.resetForm();
+      }
+    }
+  }, [open, appointment]);
+
+  // Efecto para manejar la búsqueda de cliente
+  useEffect(() => {
+    if (phoneSearch.length === 10) {
+      if (clientByPhone) {
+        setFoundClient(clientByPhone);
+        setIsNewClient(false);
+        formik.setFieldValue('clientId', clientByPhone.id);
+        formik.setFieldValue('isNewClient', false);
+      } else {
+        setFoundClient(null);
+        setIsNewClient(true);
+        formik.setFieldValue('clientId', '');
+        formik.setFieldValue('isNewClient', true);
+        formik.setFieldValue('phone', phoneSearch);
+        formik.setFieldValue('firstName', '');
+        formik.setFieldValue('lastName', '');
+        formik.setFieldValue('email', '');
+      }
+    } else if (phoneSearch.length < 10) {
       setFoundClient(null);
-      formik.setFieldValue('clientId', '');
-      setIsNewClient(true);
-      formik.setFieldValue('phone', phoneSearch);
+      setIsNewClient(false);
+      formik.setFieldValue('isNewClient', false);
     }
   }, [clientByPhone, phoneSearch]);
 
@@ -205,6 +252,8 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
     if (value.length !== 10) {
       setFoundClient(null);
       setIsNewClient(false);
+      formik.setFieldValue('clientId', '');
+      formik.setFieldValue('isNewClient', false);
     }
   };
 
