@@ -237,7 +237,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
           email: '',
         });
       } else {
-        // Limpiar completamente el estado anterior
+        // Limpiar completamente el estado anterior y preparar para nuevo cliente
         setFoundClient(null);
         setIsNewClient(true);
         formik.setValues({
@@ -250,7 +250,12 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
           email: '',
         });
       }
-    } else if (phoneSearch.length < 10) {
+    }
+  }, [clientByPhone]);
+
+  // Efecto separado para manejar cambios en phoneSearch
+  useEffect(() => {
+    if (phoneSearch.length < 10) {
       setFoundClient(null);
       setIsNewClient(false);
       formik.setValues({
@@ -259,30 +264,15 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
         isNewClient: false,
         firstName: '',
         lastName: '',
-        phone: '',
+        phone: phoneSearch,
         email: '',
       });
     }
-  }, [clientByPhone, phoneSearch]);
+  }, [phoneSearch]);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 10);
     setPhoneSearch(value);
-    
-    // Limpiar inmediatamente si el número cambia
-    if (value.length !== 10 || value !== phoneSearch) {
-      setFoundClient(null);
-      setIsNewClient(false);
-      formik.setValues({
-        ...formik.values,
-        clientId: '',
-        isNewClient: false,
-        firstName: '',
-        lastName: '',
-        phone: '',
-        email: '',
-      });
-    }
   };
 
   if (isLoadingClients || isLoadingServices || isLoadingBarbers) {
@@ -315,7 +305,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
                     helperText={
                       isSearchingClient 
                         ? 'Buscando...' 
-                        : phoneSearch.length === 10 && !foundClient && !clientByPhone
+                        : phoneSearch.length === 10 && !clientByPhone
                         ? 'Cliente no encontrado. Se registrará como nuevo.' 
                         : 'Ingrese el número telefónico del cliente'
                     }
@@ -323,7 +313,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
                 </Grid>
               )}
 
-              {foundClient && !isNewClient && (
+              {foundClient && !isNewClient && phoneSearch.length === 10 && clientByPhone && (
                 <Grid item xs={12}>
                   <Alert severity="success">
                     Cliente encontrado: {foundClient.firstName} {foundClient.lastName}
@@ -331,7 +321,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
                 </Grid>
               )}
 
-              {isNewClient && phoneSearch.length === 10 && !foundClient && (
+              {isNewClient && phoneSearch.length === 10 && !clientByPhone && (
                 <>
                   <Grid item xs={12}>
                     <Typography variant="subtitle1" gutterBottom>
@@ -374,7 +364,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
                 </>
               )}
 
-              {(appointment || foundClient) && (
+              {((appointment || foundClient) && !isNewClient) && (
                 <Grid item xs={12}>
                   <FormControl fullWidth error={formik.touched.clientId && Boolean(formik.errors.clientId)}>
                     <InputLabel>Cliente</InputLabel>
