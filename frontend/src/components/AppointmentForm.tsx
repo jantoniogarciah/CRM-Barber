@@ -237,7 +237,6 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
           email: '',
         });
       } else {
-        // Limpiar completamente el estado anterior y preparar para nuevo cliente
         setFoundClient(null);
         setIsNewClient(true);
         formik.setValues({
@@ -250,12 +249,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
           email: '',
         });
       }
-    }
-  }, [clientByPhone]);
-
-  // Efecto separado para manejar cambios en phoneSearch
-  useEffect(() => {
-    if (phoneSearch.length < 10) {
+    } else {
       setFoundClient(null);
       setIsNewClient(false);
       formik.setValues({
@@ -268,7 +262,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
         email: '',
       });
     }
-  }, [phoneSearch]);
+  }, [clientByPhone, phoneSearch]);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 10);
@@ -356,7 +350,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
               )}
 
               {/* Alerta de cliente encontrado */}
-              {foundClient && !isNewClient && phoneSearch.length === 10 && clientByPhone && !appointment && (
+              {foundClient && !isNewClient && phoneSearch.length === 10 && !appointment && (
                 <Grid item xs={12}>
                   <Alert severity="success">
                     Cliente encontrado: {foundClient.firstName} {foundClient.lastName}
@@ -365,7 +359,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
               )}
 
               {/* Formulario de nuevo cliente */}
-              {isNewClient && phoneSearch.length === 10 && !clientByPhone && !appointment && (
+              {isNewClient && phoneSearch.length === 10 && !appointment && (
                 <>
                   <Grid item xs={12}>
                     <Typography variant="subtitle1" gutterBottom>
@@ -419,18 +413,16 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
               )}
 
               {/* Selector de cliente o display de cliente en edición */}
-              <Grid item xs={12}>
-                {appointment ? (
-                  // En modo edición, mostrar el nombre del cliente sin poder modificarlo
-                  <TextField
-                    fullWidth
-                    label="Cliente"
-                    value={`${appointment.client?.firstName} ${appointment.client?.lastName}`}
-                    disabled
-                  />
-                ) : (
-                  // En modo nueva cita, mostrar el selector solo si hay cliente encontrado
-                  foundClient && !isNewClient && (
+              {(foundClient || appointment) && (
+                <Grid item xs={12}>
+                  {appointment ? (
+                    <TextField
+                      fullWidth
+                      label="Cliente"
+                      value={`${appointment.client?.firstName} ${appointment.client?.lastName}`}
+                      disabled
+                    />
+                  ) : foundClient && !isNewClient && (
                     <FormControl fullWidth error={formik.touched.clientId && Boolean(formik.errors.clientId)}>
                       <InputLabel>Cliente</InputLabel>
                       <Select
@@ -439,16 +431,14 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
                         onChange={formik.handleChange}
                         label="Cliente"
                       >
-                        {clients.map((client: Client) => (
-                          <MenuItem key={client.id} value={client.id}>
-                            {client.firstName} {client.lastName}
-                          </MenuItem>
-                        ))}
+                        <MenuItem value={foundClient.id}>
+                          {foundClient.firstName} {foundClient.lastName}
+                        </MenuItem>
                       </Select>
                     </FormControl>
-                  )
-                )}
-              </Grid>
+                  )}
+                </Grid>
+              )}
 
               <Grid item xs={12}>
                 <FormControl fullWidth error={formik.touched.serviceId && Boolean(formik.errors.serviceId)}>
