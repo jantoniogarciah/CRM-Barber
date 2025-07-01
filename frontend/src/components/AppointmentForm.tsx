@@ -26,6 +26,7 @@ import {
 } from '../services/api';
 import { Appointment, Client, Service, Barber } from '../types';
 import { format, addDays, isAfter, startOfToday, parseISO } from 'date-fns';
+import { zonedTimeToUtc } from 'date-fns-tz';
 import { toast } from 'react-hot-toast';
 
 interface AppointmentFormProps {
@@ -109,7 +110,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
           clientId: values.clientId,
           serviceId: values.serviceId,
           barberId: values.barberId,
-          date: new Date(values.date).toISOString(),
+          date: zonedTimeToUtc(new Date(`${values.date}T${values.time}`), 'America/Mexico_City').toISOString(),
           time: values.time,
           status: values.status,
           notes: values.notes || undefined,
