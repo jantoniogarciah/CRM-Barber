@@ -210,10 +210,28 @@ export const getServicesByDate = async (req: Request, res: Response) => {
     const startDateUTC = new Date(startOfDay(startDate).getTime() - (offset * 60 * 1000));
     const endDateUTC = new Date(endOfDay(endDate).getTime() - (offset * 60 * 1000));
 
-    console.log('Fechas de búsqueda:', {
-      startDateUTC: startDateUTC.toISOString(),
-      endDateUTC: endDateUTC.toISOString()
+    // Obtener todos los servicios activos primero
+    const allServices = await prisma.service.findMany({
+      where: {
+        isActive: true
+      },
+      select: {
+        name: true
+      }
     });
+
+    // Crear un objeto con todas las fechas del mes y todos los servicios inicializados en 0
+    const allDates: { [key: string]: { [key: string]: number } } = {};
+    let currentDate = startOfDay(startDate);
+    while (currentDate <= endDate) {
+      const dateStr = format(currentDate, 'yyyy-MM-dd');
+      allDates[dateStr] = {};
+      // Inicializar todos los servicios en 0 para esta fecha
+      allServices.forEach(service => {
+        allDates[dateStr][service.name] = 0;
+      });
+      currentDate = new Date(currentDate.setDate(currentDate.getDate() + 1));
+    }
 
     // Obtener las ventas completadas con sus servicios
     const sales = await prisma.sale.findMany({
@@ -229,57 +247,16 @@ export const getServicesByDate = async (req: Request, res: Response) => {
       }
     });
 
-    console.log('Ventas completadas encontradas:', sales.length);
-
-    // Agrupar servicios por fecha
-    const servicesByDate = sales.reduce((acc: { [key: string]: { [key: string]: number } }, sale) => {
+    // Actualizar los conteos de servicios por fecha
+    sales.forEach(sale => {
       const localDate = new Date(sale.saleDate.getTime() + (offset * 60 * 1000));
-      const date = format(localDate, 'yyyy-MM-dd');
-      
-      if (!acc[date]) {
-        acc[date] = {};
-      }
-      
-      const serviceName = sale.service.name;
-      console.log('Procesando venta:', {
-        date,
-        serviceName,
-        saleStatus: sale.status
-      });
-      
-      acc[date][serviceName] = (acc[date][serviceName] || 0) + 1;
-      
-      return acc;
-    }, {});
-
-    // Obtener todos los servicios activos
-    const allServices = await prisma.service.findMany({
-      where: {
-        isActive: true
-      },
-      select: {
-        name: true
+      const dateStr = format(localDate, 'yyyy-MM-dd');
+      if (allDates[dateStr] && sale.service.name) {
+        allDates[dateStr][sale.service.name]++;
       }
     });
 
-    console.log('Servicios activos encontrados:', allServices.length);
-
-    // Asegurar que cada fecha tenga todos los servicios (incluso con valor 0)
-    const dates = Object.keys(servicesByDate);
-    dates.forEach(date => {
-      allServices.forEach(service => {
-        if (!servicesByDate[date][service.name]) {
-          servicesByDate[date][service.name] = 0;
-        }
-      });
-    });
-
-    console.log('Respuesta final:', {
-      fechasEncontradas: dates.length,
-      serviciosPorFecha: servicesByDate
-    });
-
-    res.json(servicesByDate);
+    res.json(allDates);
   } catch (error) {
     console.error("Error getting services by date:", error);
     throw new AppError("Error al obtener los servicios por fecha", 500);
