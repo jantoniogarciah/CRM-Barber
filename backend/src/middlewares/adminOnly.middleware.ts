@@ -31,7 +31,7 @@ export const adminOnly = async (
       where: { id: decoded.id },
     });
 
-    if (!user || user.role !== 'ADMIN') {
+    if (!user || (user.role !== 'ADMIN' && user.role !== 'ADMINBARBER')) {
       return res.status(403).json({ message: 'Acceso denegado' });
     }
 
