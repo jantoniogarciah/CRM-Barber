@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import {
@@ -16,6 +16,7 @@ import {
   Alert,
   Grid,
   CircularProgress,
+  Typography,
 } from '@mui/material';
 import {
   useCreateAppointmentMutation,
@@ -23,6 +24,8 @@ import {
   useGetClientsQuery,
   useGetServicesQuery,
   useGetBarbersQuery,
+  useGetClientByPhoneQuery,
+  useCreateClientMutation,
 } from '../services/api';
 import { Appointment, Client, Service, Barber } from '../types';
 import { format, addDays, isAfter, startOfToday, parseISO } from 'date-fns';
@@ -44,10 +47,19 @@ interface AppointmentFormValues {
   time: string;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   notes: string;
+  isNewClient: boolean;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string;
 }
 
 const validationSchema = Yup.object({
-  clientId: Yup.string().required('Por favor seleccione un cliente'),
+  clientId: Yup.string().when(['isNewClient'], {
+    is: (isNewClient: boolean) => !isNewClient,
+    then: (schema) => schema.required('Por favor seleccione un cliente'),
+    otherwise: (schema) => schema
+  }),
   serviceId: Yup.string().required('Por favor seleccione un servicio'),
   barberId: Yup.string().required('Por favor seleccione un barbero'),
   date: Yup.string()
@@ -61,6 +73,24 @@ const validationSchema = Yup.object({
   time: Yup.string().required('Por favor seleccione una hora'),
   status: Yup.string().oneOf(['pending', 'confirmed', 'completed', 'cancelled']).required(),
   notes: Yup.string(),
+  // Campos para nuevo cliente
+  firstName: Yup.string().when(['isNewClient'], {
+    is: (isNewClient: boolean) => isNewClient,
+    then: (schema) => schema.required('El nombre es requerido'),
+    otherwise: (schema) => schema
+  }),
+  lastName: Yup.string().when(['isNewClient'], {
+    is: (isNewClient: boolean) => isNewClient,
+    then: (schema) => schema.required('El apellido es requerido'),
+    otherwise: (schema) => schema
+  }),
+  phone: Yup.string().when(['isNewClient'], {
+    is: (isNewClient: boolean) => isNewClient,
+    then: (schema) => schema.required('El teléfono es requerido').length(10, 'El teléfono debe tener 10 dígitos'),
+    otherwise: (schema) => schema
+  }),
+  email: Yup.string().email('Email inválido'),
+  isNewClient: Yup.boolean()
 });
 
 const AppointmentForm: React.FC<AppointmentFormProps> = ({
@@ -69,12 +99,20 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
   onSuccess,
   appointment,
 }) => {
+  const [phoneSearch, setPhoneSearch] = useState('');
+  const [isNewClient, setIsNewClient] = useState(false);
+  const [foundClient, setFoundClient] = useState<Client | null>(null);
+
   const [createAppointment] = useCreateAppointmentMutation();
   const [updateAppointment] = useUpdateAppointmentMutation();
+  const [createClient] = useCreateClientMutation();
   
   const { data: clientsData, isLoading: isLoadingClients } = useGetClientsQuery({ showInactive: false });
   const { data: servicesData, isLoading: isLoadingServices } = useGetServicesQuery({ showInactive: false });
   const { data: barbersData, isLoading: isLoadingBarbers } = useGetBarbersQuery({ showInactive: false });
+  const { data: clientByPhone, isFetching: isSearchingClient } = useGetClientByPhoneQuery(phoneSearch, {
+    skip: !phoneSearch || phoneSearch.length < 10,
+  });
 
   // Asegurarse de que los datos existan y sean arrays
   const clients = clientsData?.clients || [];
@@ -84,7 +122,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
   // Obtener la fecha mínima (mañana)
   const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd');
 
-  const formik = useFormik<AppointmentFormValues>({
+  const formik = useFormik({
     initialValues: {
       clientId: appointment?.clientId || '',
       serviceId: appointment?.serviceId || '',
@@ -93,21 +131,33 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
       time: appointment?.time || '',
       status: appointment?.status || 'pending',
       notes: appointment?.notes || '',
+      isNewClient: false,
+      firstName: '',
+      lastName: '',
+      phone: '',
+      email: '',
     },
     validationSchema,
     onSubmit: async (values) => {
       try {
-        // Validar que la fecha sea posterior a hoy
-        const selectedDate = parseISO(values.date);
-        const today = startOfToday();
-        
-        if (!isAfter(selectedDate, today)) {
-          toast.error('La fecha debe ser posterior al día de hoy');
-          return;
+        let clientId = values.clientId;
+
+        // Si es un cliente nuevo, crearlo primero
+        if (isNewClient) {
+          const newClientData = {
+            firstName: values.firstName,
+            lastName: values.lastName,
+            phone: values.phone,
+            email: values.email || undefined,
+          };
+
+          const createdClient = await createClient(newClientData).unwrap();
+          clientId = createdClient.id;
+          toast.success('Cliente registrado exitosamente');
         }
 
         const appointmentData = {
-          clientId: values.clientId,
+          clientId: clientId,
           serviceId: values.serviceId,
           barberId: values.barberId,
           date: zonedTimeToUtc(new Date(`${values.date}T${values.time}`), 'America/Mexico_City').toISOString(),
@@ -137,20 +187,26 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
   });
 
   useEffect(() => {
-    if (open) {
-      formik.resetForm({
-        values: {
-          clientId: appointment?.clientId || '',
-          serviceId: appointment?.serviceId || '',
-          barberId: appointment?.barberId || '',
-          date: appointment?.date ? format(new Date(appointment.date), 'yyyy-MM-dd') : tomorrow,
-          time: appointment?.time || '',
-          status: appointment?.status || 'pending',
-          notes: appointment?.notes || '',
-        },
-      });
+    if (clientByPhone && phoneSearch.length === 10) {
+      setFoundClient(clientByPhone);
+      formik.setFieldValue('clientId', clientByPhone.id);
+      setIsNewClient(false);
+    } else if (phoneSearch.length === 10 && !clientByPhone) {
+      setFoundClient(null);
+      formik.setFieldValue('clientId', '');
+      setIsNewClient(true);
+      formik.setFieldValue('phone', phoneSearch);
     }
-  }, [open, appointment]);
+  }, [clientByPhone, phoneSearch]);
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+    setPhoneSearch(value);
+    if (value.length !== 10) {
+      setFoundClient(null);
+      setIsNewClient(false);
+    }
+  };
 
   if (isLoadingClients || isLoadingServices || isLoadingBarbers) {
     return (
@@ -171,23 +227,95 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
         <DialogContent>
           <Box sx={{ mt: 2 }}>
             <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <FormControl fullWidth error={formik.touched.clientId && Boolean(formik.errors.clientId)}>
-                  <InputLabel>Cliente</InputLabel>
-                  <Select
-                    name="clientId"
-                    value={formik.values.clientId}
-                    onChange={formik.handleChange}
-                    label="Cliente"
-                  >
-                    {clients.map((client: Client) => (
-                      <MenuItem key={client.id} value={client.id}>
-                        {client.firstName} {client.lastName}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
+              {!appointment && (
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Buscar cliente por teléfono"
+                    value={phoneSearch}
+                    onChange={handlePhoneChange}
+                    placeholder="Ingrese 10 dígitos"
+                    helperText={
+                      isSearchingClient 
+                        ? 'Buscando...' 
+                        : phoneSearch.length === 10 && !foundClient 
+                        ? 'Cliente no encontrado. Se registrará como nuevo.' 
+                        : 'Ingrese el número telefónico del cliente'
+                    }
+                  />
+                </Grid>
+              )}
+
+              {foundClient && (
+                <Grid item xs={12}>
+                  <Alert severity="success">
+                    Cliente encontrado: {foundClient.firstName} {foundClient.lastName}
+                  </Alert>
+                </Grid>
+              )}
+
+              {isNewClient && (
+                <>
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle1" gutterBottom>
+                      Registrar Nuevo Cliente
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      name="firstName"
+                      label="Nombre"
+                      value={formik.values.firstName}
+                      onChange={formik.handleChange}
+                      error={formik.touched.firstName && Boolean(formik.errors.firstName)}
+                      helperText={formik.touched.firstName && formik.errors.firstName}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      name="lastName"
+                      label="Apellido"
+                      value={formik.values.lastName}
+                      onChange={formik.handleChange}
+                      error={formik.touched.lastName && Boolean(formik.errors.lastName)}
+                      helperText={formik.touched.lastName && formik.errors.lastName}
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      name="email"
+                      label="Email (opcional)"
+                      value={formik.values.email}
+                      onChange={formik.handleChange}
+                      error={formik.touched.email && Boolean(formik.errors.email)}
+                      helperText={formik.touched.email && formik.errors.email}
+                    />
+                  </Grid>
+                </>
+              )}
+
+              {(appointment || foundClient) && (
+                <Grid item xs={12}>
+                  <FormControl fullWidth error={formik.touched.clientId && Boolean(formik.errors.clientId)}>
+                    <InputLabel>Cliente</InputLabel>
+                    <Select
+                      name="clientId"
+                      value={formik.values.clientId}
+                      onChange={formik.handleChange}
+                      label="Cliente"
+                    >
+                      {clients.map((client: Client) => (
+                        <MenuItem key={client.id} value={client.id}>
+                          {client.firstName} {client.lastName}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+              )}
 
               <Grid item xs={12}>
                 <FormControl fullWidth error={formik.touched.serviceId && Boolean(formik.errors.serviceId)}>
@@ -291,7 +419,12 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
         </DialogContent>
         <DialogActions>
           <Button onClick={onClose}>Cancelar</Button>
-          <Button type="submit" variant="contained" color="primary">
+          <Button 
+            type="submit" 
+            variant="contained" 
+            color="primary"
+            disabled={isSearchingClient}
+          >
             {appointment ? 'Actualizar' : 'Crear'}
           </Button>
         </DialogActions>
