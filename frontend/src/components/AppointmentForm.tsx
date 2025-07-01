@@ -162,7 +162,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
           barberId: values.barberId,
           date: zonedTimeToUtc(new Date(`${values.date}T${values.time}`), 'America/Mexico_City').toISOString(),
           time: values.time,
-          status: values.status,
+          status: values.status as 'pending' | 'confirmed' | 'completed' | 'cancelled',
           notes: values.notes || undefined,
         };
 
@@ -273,6 +273,47 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 10);
     setPhoneSearch(value);
+    
+    if (value.length !== 10 || value !== phoneSearch) {
+      setFoundClient(null);
+    }
+    
+    if (!isNewClient) {
+      formik.setValues({
+        ...formik.values,
+        phone: value,
+      });
+    }
+  };
+
+  const handleCreateClient = async () => {
+    try {
+      if (!formik.values.firstName || !formik.values.lastName || !formik.values.phone) {
+        toast.error('Por favor completa los campos requeridos');
+        return;
+      }
+
+      const newClientData = {
+        firstName: formik.values.firstName,
+        lastName: formik.values.lastName,
+        phone: formik.values.phone,
+        email: formik.values.email || undefined,
+      };
+
+      const createdClient = await createClient(newClientData).unwrap();
+      toast.success('Cliente registrado exitosamente');
+      setIsNewClient(false);
+      setPhoneSearch(createdClient.phone);
+      setFoundClient(createdClient);
+      formik.setValues({
+        ...formik.values,
+        clientId: createdClient.id,
+        isNewClient: false,
+      });
+    } catch (error: any) {
+      console.error('Error al crear el cliente:', error);
+      toast.error(error.data?.message || 'Error al crear el cliente');
+    }
   };
 
   if (isLoadingClients || isLoadingServices || isLoadingBarbers) {
@@ -363,6 +404,16 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
                       error={formik.touched.email && Boolean(formik.errors.email)}
                       helperText={formik.touched.email && formik.errors.email}
                     />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      color="primary"
+                      onClick={handleCreateClient}
+                    >
+                      Registrar Cliente
+                    </Button>
                   </Grid>
                 </>
               )}
