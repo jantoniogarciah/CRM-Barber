@@ -55,19 +55,19 @@ const Dashboard = () => {
     data: salesByDay,
     isLoading: isLoadingSalesByDay,
     error: salesByDayError
-  } = useGetDashboardDataQuery(`/sales-by-day?date=${selectedMonth}-01`);
+  } = useGetDashboardDataQuery(`/sales-by-day?date=${selectedMonth}-15`);
 
   const {
     data: salesByBarber,
     isLoading: isLoadingSalesByBarber,
     error: salesByBarberError
-  } = useGetDashboardDataQuery(`/sales-by-barber?date=${selectedMonth}-01`);
+  } = useGetDashboardDataQuery(`/sales-by-barber?date=${selectedMonth}-15`);
 
   const {
     data: servicesByDate,
     isLoading: isLoadingServicesByDate,
     error: servicesByDateError
-  } = useGetDashboardDataQuery(`/services-by-date?date=${selectedMonth}-01`);
+  } = useGetDashboardDataQuery(`/services-by-date?date=${selectedMonth}-15`);
 
   const {
     data: inactiveClientsData,
@@ -140,6 +140,7 @@ const Dashboard = () => {
           inputProps={{
             max: format(new Date(), 'yyyy-MM')
           }}
+          label="Seleccionar Mes"
         />
       </Box>
 
@@ -151,11 +152,15 @@ const Dashboard = () => {
               Ventas Diarias - {currentMonth}
             </Typography>
             {isLoadingSalesByDay ? (
-              <CircularProgress />
+              <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+                <CircularProgress />
+              </Box>
             ) : salesByDayError ? (
               <Alert severity="error">Error al cargar los datos de ventas</Alert>
-            ) : barChartData.length === 0 ? (
-              <Alert severity="info">No hay datos de ventas para mostrar</Alert>
+            ) : !barChartData || barChartData.length === 0 || barChartData.every(data => data.total === 0) ? (
+              <Alert severity="info" sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+                No hay datos de ventas para el mes seleccionado
+              </Alert>
             ) : (
               <Box sx={{ width: '100%', height: 400 }}>
                 <ResponsiveContainer>
@@ -182,9 +187,17 @@ const Dashboard = () => {
               Servicios por Fecha - {currentMonth}
             </Typography>
             {isLoadingServicesByDate ? (
-              <CircularProgress />
+              <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+                <CircularProgress />
+              </Box>
             ) : servicesByDateError ? (
               <Alert severity="error">Error al cargar los datos de servicios</Alert>
+            ) : !serviceChartData || serviceChartData.length === 0 || serviceChartData.every((data: ServiceData) => 
+              Object.entries(data).every(([key, value]) => key === 'date' || key === 'originalDate' || value === 0)
+            ) ? (
+              <Alert severity="info" sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+                No hay datos de servicios para el mes seleccionado
+              </Alert>
             ) : (
               <Box sx={{ width: '100%', height: 400 }}>
                 <ResponsiveContainer>
@@ -215,11 +228,15 @@ const Dashboard = () => {
           <Paper sx={{ p: 2 }}>
             <Typography variant="h6" gutterBottom>Distribución por Barbero - {currentMonth}</Typography>
             {isLoadingSalesByBarber ? (
-              <CircularProgress />
+              <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+                <CircularProgress />
+              </Box>
             ) : salesByBarberError ? (
               <Alert severity="error">Error al cargar los datos de barberos</Alert>
-            ) : pieChartData.length === 0 ? (
-              <Alert severity="info">No hay datos de barberos para mostrar</Alert>
+            ) : !pieChartData || pieChartData.length === 0 || pieChartData.every(data => data.value === 0) ? (
+              <Alert severity="info" sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+                No hay datos de ventas por barbero para el mes seleccionado
+              </Alert>
             ) : (
               <Box sx={{ width: '100%', height: 400 }}>
                 <ResponsiveContainer>
