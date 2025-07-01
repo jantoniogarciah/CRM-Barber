@@ -227,33 +227,61 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
       if (clientByPhone) {
         setFoundClient(clientByPhone);
         setIsNewClient(false);
-        formik.setFieldValue('clientId', clientByPhone.id);
-        formik.setFieldValue('isNewClient', false);
+        formik.setValues({
+          ...formik.values,
+          clientId: clientByPhone.id,
+          isNewClient: false,
+          firstName: '',
+          lastName: '',
+          phone: '',
+          email: '',
+        });
       } else {
+        // Limpiar completamente el estado anterior
         setFoundClient(null);
         setIsNewClient(true);
-        formik.setFieldValue('clientId', '');
-        formik.setFieldValue('isNewClient', true);
-        formik.setFieldValue('phone', phoneSearch);
-        formik.setFieldValue('firstName', '');
-        formik.setFieldValue('lastName', '');
-        formik.setFieldValue('email', '');
+        formik.setValues({
+          ...formik.values,
+          clientId: '',
+          isNewClient: true,
+          firstName: '',
+          lastName: '',
+          phone: phoneSearch,
+          email: '',
+        });
       }
     } else if (phoneSearch.length < 10) {
       setFoundClient(null);
       setIsNewClient(false);
-      formik.setFieldValue('isNewClient', false);
+      formik.setValues({
+        ...formik.values,
+        clientId: '',
+        isNewClient: false,
+        firstName: '',
+        lastName: '',
+        phone: '',
+        email: '',
+      });
     }
   }, [clientByPhone, phoneSearch]);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 10);
     setPhoneSearch(value);
-    if (value.length !== 10) {
+    
+    // Limpiar inmediatamente si el número cambia
+    if (value.length !== 10 || value !== phoneSearch) {
       setFoundClient(null);
       setIsNewClient(false);
-      formik.setFieldValue('clientId', '');
-      formik.setFieldValue('isNewClient', false);
+      formik.setValues({
+        ...formik.values,
+        clientId: '',
+        isNewClient: false,
+        firstName: '',
+        lastName: '',
+        phone: '',
+        email: '',
+      });
     }
   };
 
@@ -287,7 +315,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
                     helperText={
                       isSearchingClient 
                         ? 'Buscando...' 
-                        : phoneSearch.length === 10 && !foundClient 
+                        : phoneSearch.length === 10 && !foundClient && !clientByPhone
                         ? 'Cliente no encontrado. Se registrará como nuevo.' 
                         : 'Ingrese el número telefónico del cliente'
                     }
@@ -295,7 +323,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
                 </Grid>
               )}
 
-              {foundClient && (
+              {foundClient && !isNewClient && (
                 <Grid item xs={12}>
                   <Alert severity="success">
                     Cliente encontrado: {foundClient.firstName} {foundClient.lastName}
@@ -303,7 +331,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
                 </Grid>
               )}
 
-              {isNewClient && (
+              {isNewClient && phoneSearch.length === 10 && !foundClient && (
                 <>
                   <Grid item xs={12}>
                     <Typography variant="subtitle1" gutterBottom>
