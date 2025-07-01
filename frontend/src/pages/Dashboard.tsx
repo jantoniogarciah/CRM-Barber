@@ -35,8 +35,8 @@ interface SaleData {
 }
 
 interface BarberData {
-  barber: string;
-  total: number;
+  name: string;
+  value: number;
 }
 
 interface ServiceData {
@@ -82,10 +82,10 @@ const Dashboard = () => {
     .map(([date, amounts]: [string, any]): SaleData => ({
       originalDate: date,
       date: format(new Date(date + 'T00:00:00'), "d 'de' MMMM", { locale: es }),
-      EFECTIVO: amounts.EFECTIVO,
-      DEBITO: amounts.DEBITO,
-      CREDITO: amounts.CREDITO,
-      total: amounts.EFECTIVO + amounts.DEBITO + amounts.CREDITO
+      EFECTIVO: amounts.EFECTIVO || 0,
+      DEBITO: amounts.DEBITO || 0,
+      CREDITO: amounts.CREDITO || 0,
+      total: (amounts.EFECTIVO || 0) + (amounts.DEBITO || 0) + (amounts.CREDITO || 0)
     }))
     .sort((a, b) => {
       const dateA = new Date(a.originalDate + 'T00:00:00');
@@ -94,7 +94,7 @@ const Dashboard = () => {
     }) : [];
 
   // Transformar datos para la gráfica de pie
-  const pieChartData: BarberData[] = salesByBarber || [];
+  const pieChartData = salesByBarber || [];
 
   // Transformar datos para la gráfica de servicios
   const serviceChartData = servicesByDate ? Object.entries(servicesByDate)
@@ -139,6 +139,8 @@ const Dashboard = () => {
               <CircularProgress />
             ) : salesByDayError ? (
               <Alert severity="error">Error al cargar los datos de ventas</Alert>
+            ) : barChartData.length === 0 ? (
+              <Alert severity="info">No hay datos de ventas para mostrar</Alert>
             ) : (
               <Box sx={{ width: '100%', height: 400 }}>
                 <ResponsiveContainer>
@@ -163,7 +165,7 @@ const Dashboard = () => {
           <Paper sx={{ p: 2 }}>
             <Typography variant="h6" gutterBottom>
               Servicios por Fecha - {currentMonth}
-      </Typography>
+            </Typography>
             {isLoadingServicesByDate ? (
               <CircularProgress />
             ) : servicesByDateError ? (
@@ -201,19 +203,21 @@ const Dashboard = () => {
               <CircularProgress />
             ) : salesByBarberError ? (
               <Alert severity="error">Error al cargar los datos de barberos</Alert>
+            ) : pieChartData.length === 0 ? (
+              <Alert severity="info">No hay datos de barberos para mostrar</Alert>
             ) : (
               <Box sx={{ width: '100%', height: 400 }}>
                 <ResponsiveContainer>
                   <PieChart>
                     <Pie
                       data={pieChartData}
-                      dataKey="total"
-                      nameKey="barber"
+                      dataKey="value"
+                      nameKey="name"
                       cx="50%"
                       cy="50%"
                       outerRadius={150}
                       fill="#8884d8"
-                      label={(entry) => `${entry.barber}: $${entry.total.toLocaleString()}`}
+                      label={({ name, value }) => `${name}: $${(value || 0).toLocaleString()}`}
                     >
                       {pieChartData.map((entry: BarberData, index: number) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -288,7 +292,7 @@ const Dashboard = () => {
                     rowsPerPageOptions={[5]}
                     labelRowsPerPage="Clientes por página"
                   />
-      </Box>
+                </Box>
               </>
             )}
           </Paper>

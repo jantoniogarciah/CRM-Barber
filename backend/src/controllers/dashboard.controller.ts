@@ -34,23 +34,29 @@ export const getSalesByDay = async (req: Request, res: Response) => {
       }
     });
 
-    const formattedSales = sales.reduce((acc: any, curr) => {
-      // Ajustar la fecha con el offset de la zona horaria
-      const localDate = new Date(curr.saleDate.getTime() + (offset * 60 * 1000));
-      const date = format(localDate, 'yyyy-MM-dd');
-      
-      if (!acc[date]) {
-        acc[date] = {
-          EFECTIVO: 0,
-          DEBITO: 0,
-          CREDITO: 0,
-        };
-      }
-      acc[date][curr.paymentMethod] = curr._sum.amount || 0;
-      return acc;
-    }, {});
+    // Crear un objeto con todas las fechas del mes
+    const allDates: { [key: string]: any } = {};
+    let currentDate = startOfDay(startDate);
+    while (currentDate <= endDate) {
+      const dateStr = format(currentDate, 'yyyy-MM-dd');
+      allDates[dateStr] = {
+        EFECTIVO: 0,
+        DEBITO: 0,
+        CREDITO: 0
+      };
+      currentDate = new Date(currentDate.setDate(currentDate.getDate() + 1));
+    }
 
-    res.json(formattedSales);
+    // Llenar con los datos reales
+    sales.forEach(sale => {
+      const localDate = new Date(sale.saleDate.getTime() + (offset * 60 * 1000));
+      const dateStr = format(localDate, 'yyyy-MM-dd');
+      if (allDates[dateStr]) {
+        allDates[dateStr][sale.paymentMethod] = sale._sum.amount || 0;
+      }
+    });
+
+    res.json(allDates);
   } catch (error) {
     console.error("Error getting sales by day:", error);
     throw new AppError("Error al obtener las ventas por día", 500);
@@ -86,11 +92,13 @@ export const getSalesByBarber = async (req: Request, res: Response) => {
       }
     });
 
-    const formattedSales = sales.map(sale => ({
-      barber: barbers.find(b => b.id === sale.barberId)?.firstName + ' ' + 
-              barbers.find(b => b.id === sale.barberId)?.lastName,
-      total: sale._sum.amount || 0
-    }));
+    const formattedSales = sales.map(sale => {
+      const barber = barbers.find(b => b.id === sale.barberId);
+      return {
+        name: `${barber?.firstName} ${barber?.lastName}`.trim(),
+        value: sale._sum.amount || 0
+      };
+    });
 
     res.json(formattedSales);
   } catch (error) {
