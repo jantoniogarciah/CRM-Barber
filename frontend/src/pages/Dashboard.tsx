@@ -73,41 +73,54 @@ const Dashboard = () => {
     error: inactiveClientsError
   } = useGetDashboardDataQuery(`/inactive-clients?page=${page}`);
 
+  console.log('Raw data from API:', {
+    salesByDay,
+    salesByBarber,
+    servicesByDate
+  });
+
   const formatPhoneForWhatsApp = (phone: string) => {
     return phone.replace(/\D/g, '');
   };
 
   // Transformar datos para la gráfica de barras
   const barChartData = salesByDay ? Object.entries(salesByDay)
-    .map(([date, amounts]: [string, any]): SaleData => ({
-      originalDate: date,
-      date: format(new Date(date + 'T00:00:00'), "d 'de' MMMM", { locale: es }),
-      EFECTIVO: amounts.EFECTIVO || 0,
-      DEBITO: amounts.DEBITO || 0,
-      CREDITO: amounts.CREDITO || 0,
-      total: (amounts.EFECTIVO || 0) + (amounts.DEBITO || 0) + (amounts.CREDITO || 0)
-    }))
-    .sort((a, b) => {
-      const dateA = new Date(a.originalDate + 'T00:00:00');
-      const dateB = new Date(b.originalDate + 'T00:00:00');
-      return dateA.getTime() - dateB.getTime();
-    }) : [];
+    .map(([date, amounts]: [string, any]): SaleData => {
+      console.log('Processing date:', date, 'amounts:', amounts);
+      return {
+        originalDate: date,
+        date: format(new Date(date), "d 'de' MMMM", { locale: es }),
+        EFECTIVO: amounts.EFECTIVO || 0,
+        DEBITO: amounts.DEBITO || 0,
+        CREDITO: amounts.CREDITO || 0,
+        total: (amounts.EFECTIVO || 0) + (amounts.DEBITO || 0) + (amounts.CREDITO || 0)
+      };
+    })
+    .sort((a, b) => new Date(a.originalDate).getTime() - new Date(b.originalDate).getTime()) : [];
 
   // Transformar datos para la gráfica de pie
-  const pieChartData = salesByBarber || [];
+  const pieChartData = salesByBarber ? salesByBarber.map(barber => ({
+    name: barber.name,
+    value: barber.value || 0
+  })) : [];
 
   // Transformar datos para la gráfica de servicios
   const serviceChartData = servicesByDate ? Object.entries(servicesByDate)
-    .map(([date, services]: [string, any]): ServiceData => ({
-      originalDate: date,
-      date: format(new Date(date + 'T00:00:00'), "d 'de' MMMM", { locale: es }),
-      ...services
-    }))
-    .sort((a, b) => {
-      const dateA = new Date(a.originalDate + 'T00:00:00');
-      const dateB = new Date(b.originalDate + 'T00:00:00');
-      return dateA.getTime() - dateB.getTime();
-    }) : [];
+    .map(([date, services]: [string, any]): ServiceData => {
+      console.log('Processing service date:', date, 'services:', services);
+      return {
+        originalDate: date,
+        date: format(new Date(date), "d 'de' MMMM", { locale: es }),
+        ...services
+      };
+    })
+    .sort((a, b) => new Date(a.originalDate).getTime() - new Date(b.originalDate).getTime()) : [];
+
+  console.log('Transformed data:', {
+    barChartData,
+    pieChartData,
+    serviceChartData
+  });
 
   // Obtener todos los tipos de servicios únicos
   const serviceTypes = serviceChartData.length > 0
