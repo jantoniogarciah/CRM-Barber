@@ -104,8 +104,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       }
     );
 
-    // Clientes para ADMIN, ADMINBARBER y BARBER
-    if (userRole === 'ADMIN' || userRole === 'ADMINBARBER' || userRole === 'BARBER') {
+    // Clientes para ADMIN y ADMINBARBER solamente
+    if (userRole === 'ADMIN' || userRole === 'ADMINBARBER') {
       items.push({
         text: 'Clientes',
         icon: <People sx={{ fontSize: 24, width: 24, height: 24 }} />,
