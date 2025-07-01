@@ -294,6 +294,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
         <DialogContent>
           <Box sx={{ mt: 2 }}>
             <Grid container spacing={2}>
+              {/* Campo de búsqueda solo visible en nueva cita */}
               {!appointment && (
                 <Grid item xs={12}>
                   <TextField
@@ -313,7 +314,8 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
                 </Grid>
               )}
 
-              {foundClient && !isNewClient && phoneSearch.length === 10 && clientByPhone && (
+              {/* Alerta de cliente encontrado */}
+              {foundClient && !isNewClient && phoneSearch.length === 10 && clientByPhone && !appointment && (
                 <Grid item xs={12}>
                   <Alert severity="success">
                     Cliente encontrado: {foundClient.firstName} {foundClient.lastName}
@@ -321,7 +323,8 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
                 </Grid>
               )}
 
-              {isNewClient && phoneSearch.length === 10 && !clientByPhone && (
+              {/* Formulario de nuevo cliente */}
+              {isNewClient && phoneSearch.length === 10 && !clientByPhone && !appointment && (
                 <>
                   <Grid item xs={12}>
                     <Typography variant="subtitle1" gutterBottom>
@@ -364,25 +367,37 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
                 </>
               )}
 
-              {((appointment || foundClient) && !isNewClient) && (
-                <Grid item xs={12}>
-                  <FormControl fullWidth error={formik.touched.clientId && Boolean(formik.errors.clientId)}>
-                    <InputLabel>Cliente</InputLabel>
-                    <Select
-                      name="clientId"
-                      value={formik.values.clientId}
-                      onChange={formik.handleChange}
-                      label="Cliente"
-                    >
-                      {clients.map((client: Client) => (
-                        <MenuItem key={client.id} value={client.id}>
-                          {client.firstName} {client.lastName}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-              )}
+              {/* Selector de cliente o display de cliente en edición */}
+              <Grid item xs={12}>
+                {appointment ? (
+                  // En modo edición, mostrar el nombre del cliente sin poder modificarlo
+                  <TextField
+                    fullWidth
+                    label="Cliente"
+                    value={`${appointment.client?.firstName} ${appointment.client?.lastName}`}
+                    disabled
+                  />
+                ) : (
+                  // En modo nueva cita, mostrar el selector solo si hay cliente encontrado
+                  foundClient && !isNewClient && (
+                    <FormControl fullWidth error={formik.touched.clientId && Boolean(formik.errors.clientId)}>
+                      <InputLabel>Cliente</InputLabel>
+                      <Select
+                        name="clientId"
+                        value={formik.values.clientId}
+                        onChange={formik.handleChange}
+                        label="Cliente"
+                      >
+                        {clients.map((client: Client) => (
+                          <MenuItem key={client.id} value={client.id}>
+                            {client.firstName} {client.lastName}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  )
+                )}
+              </Grid>
 
               <Grid item xs={12}>
                 <FormControl fullWidth error={formik.touched.serviceId && Boolean(formik.errors.serviceId)}>
