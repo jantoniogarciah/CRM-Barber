@@ -10,11 +10,17 @@ const timeZone = 'America/Mexico_City';
 // Obtener ventas por día y método de pago
 export const getSalesByDay = async (req: Request, res: Response) => {
   try {
-    // Obtener el primer y último día del mes actual en la zona horaria local
-    const now = new Date();
-    const offset = getTimezoneOffset(timeZone, now) / (60 * 1000); // convertir a minutos
-    const startDate = startOfMonth(now);
-    const endDate = endOfMonth(now);
+    // Obtener la fecha del query o usar la fecha actual
+    const targetDate = req.query.date ? new Date(req.query.date as string) : new Date();
+    const offset = getTimezoneOffset(timeZone, targetDate) / (60 * 1000); // convertir a minutos
+    const startDate = startOfMonth(targetDate);
+    const endDate = endOfMonth(targetDate);
+
+    console.log('Fechas de búsqueda:', {
+      targetDate,
+      startDate,
+      endDate
+    });
 
     // Ajustar las fechas con el offset de la zona horaria
     const startDateUTC = new Date(startOfDay(startDate).getTime() - (offset * 60 * 1000));
@@ -33,6 +39,8 @@ export const getSalesByDay = async (req: Request, res: Response) => {
         amount: true
       }
     });
+
+    console.log('Ventas encontradas:', sales);
 
     // Crear un objeto con todas las fechas del mes
     const allDates: { [key: string]: any } = {};
@@ -66,9 +74,9 @@ export const getSalesByDay = async (req: Request, res: Response) => {
 // Obtener distribución de ventas por barbero
 export const getSalesByBarber = async (req: Request, res: Response) => {
   try {
-    const days = parseInt(req.query.days as string) || 30;
-    const endDate = new Date();
-    const startDate = subDays(endDate, days - 1);
+    const targetDate = req.query.date ? new Date(req.query.date as string) : new Date();
+    const startDate = startOfMonth(targetDate);
+    const endDate = endOfMonth(targetDate);
 
     const sales = await prisma.sale.groupBy({
       by: ['barberId'],
@@ -200,11 +208,17 @@ export const getInactiveClients = async (req: Request, res: Response) => {
 // Obtener servicios por fecha
 export const getServicesByDate = async (req: Request, res: Response) => {
   try {
-    // Obtener el primer y último día del mes actual en la zona horaria local
-    const now = new Date();
-    const offset = getTimezoneOffset(timeZone, now) / (60 * 1000); // convertir a minutos
-    const startDate = startOfMonth(now);
-    const endDate = endOfMonth(now);
+    // Obtener la fecha del query o usar la fecha actual
+    const targetDate = req.query.date ? new Date(req.query.date as string) : new Date();
+    const offset = getTimezoneOffset(timeZone, targetDate) / (60 * 1000); // convertir a minutos
+    const startDate = startOfMonth(targetDate);
+    const endDate = endOfMonth(targetDate);
+
+    console.log('Fechas de búsqueda servicios:', {
+      targetDate,
+      startDate,
+      endDate
+    });
 
     // Ajustar las fechas con el offset de la zona horaria
     const startDateUTC = new Date(startOfDay(startDate).getTime() - (offset * 60 * 1000));
@@ -246,6 +260,8 @@ export const getServicesByDate = async (req: Request, res: Response) => {
         service: true
       }
     });
+
+    console.log('Ventas de servicios encontradas:', sales);
 
     // Actualizar los conteos de servicios por fecha
     sales.forEach(sale => {

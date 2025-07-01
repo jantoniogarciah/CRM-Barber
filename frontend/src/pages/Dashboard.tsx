@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -16,9 +16,10 @@ import {
   Tooltip,
   Link,
   TablePagination,
+  TextField,
 } from '@mui/material';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { format } from 'date-fns';
+import { format, startOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import { useGetDashboardDataQuery } from '../services/api';
@@ -34,7 +35,7 @@ interface SaleData {
   total: number;
 }
 
-interface BarberData {
+interface BarberSaleData {
   name: string;
   value: number;
 }
@@ -48,36 +49,31 @@ interface ServiceData {
 const Dashboard = () => {
   const [page, setPage] = useState(1);
   const pageSize = 5;
+  const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
 
   const { 
     data: salesByDay,
     isLoading: isLoadingSalesByDay,
     error: salesByDayError
-  } = useGetDashboardDataQuery('/sales-by-day');
+  } = useGetDashboardDataQuery(`/sales-by-day?date=${selectedMonth}-01`);
 
   const {
     data: salesByBarber,
     isLoading: isLoadingSalesByBarber,
     error: salesByBarberError
-  } = useGetDashboardDataQuery('/sales-by-barber');
+  } = useGetDashboardDataQuery(`/sales-by-barber?date=${selectedMonth}-01`);
 
   const {
     data: servicesByDate,
     isLoading: isLoadingServicesByDate,
     error: servicesByDateError
-  } = useGetDashboardDataQuery('/services-by-date');
+  } = useGetDashboardDataQuery(`/services-by-date?date=${selectedMonth}-01`);
 
   const {
     data: inactiveClientsData,
     isLoading: isLoadingInactiveClients,
     error: inactiveClientsError
   } = useGetDashboardDataQuery(`/inactive-clients?page=${page}`);
-
-  console.log('Raw data from API:', {
-    salesByDay,
-    salesByBarber,
-    servicesByDate
-  });
 
   const formatPhoneForWhatsApp = (phone: string) => {
     return phone.replace(/\D/g, '');
@@ -86,10 +82,10 @@ const Dashboard = () => {
   // Transformar datos para la gráfica de barras
   const barChartData = salesByDay ? Object.entries(salesByDay)
     .map(([date, amounts]: [string, any]): SaleData => {
-      console.log('Processing date:', date, 'amounts:', amounts);
+      const [year, month, day] = date.split('-').map(Number);
       return {
         originalDate: date,
-        date: format(new Date(date), "d 'de' MMMM", { locale: es }),
+        date: format(new Date(year, month - 1, day), "d 'de' MMMM", { locale: es }),
         EFECTIVO: amounts.EFECTIVO || 0,
         DEBITO: amounts.DEBITO || 0,
         CREDITO: amounts.CREDITO || 0,
@@ -99,7 +95,7 @@ const Dashboard = () => {
     .sort((a, b) => new Date(a.originalDate).getTime() - new Date(b.originalDate).getTime()) : [];
 
   // Transformar datos para la gráfica de pie
-  const pieChartData = salesByBarber ? salesByBarber.map(barber => ({
+  const pieChartData = salesByBarber ? salesByBarber.map((barber: BarberSaleData) => ({
     name: barber.name,
     value: barber.value || 0
   })) : [];
@@ -107,39 +103,45 @@ const Dashboard = () => {
   // Transformar datos para la gráfica de servicios
   const serviceChartData = servicesByDate ? Object.entries(servicesByDate)
     .map(([date, services]: [string, any]): ServiceData => {
-      console.log('Processing service date:', date, 'services:', services);
+      const [year, month, day] = date.split('-').map(Number);
       return {
         originalDate: date,
-        date: format(new Date(date), "d 'de' MMMM", { locale: es }),
+        date: format(new Date(year, month - 1, day), "d 'de' MMMM", { locale: es }),
         ...services
       };
     })
     .sort((a, b) => new Date(a.originalDate).getTime() - new Date(b.originalDate).getTime()) : [];
-
-  console.log('Transformed data:', {
-    barChartData,
-    pieChartData,
-    serviceChartData
-  });
 
   // Obtener todos los tipos de servicios únicos
   const serviceTypes = serviceChartData.length > 0
     ? Object.keys(serviceChartData[0]).filter(key => !['originalDate', 'date'].includes(key))
     : [];
 
-  // Colores para los servicios
-  const serviceColors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#0088fe', '#00c49f'];
-
   // Obtener el mes actual para el título
-  const currentMonth = format(new Date(), "MMMM 'de' yyyy", { locale: es });
+  const currentMonth = format(new Date(selectedMonth), "MMMM 'de' yyyy", { locale: es });
 
   const handlePageChange = (_: unknown, newPage: number) => {
     setPage(newPage + 1);
   };
 
+  const handleMonthChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSelectedMonth(event.target.value);
+  };
+
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>Dashboard</Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4">Dashboard</Typography>
+        <TextField
+          type="month"
+          value={selectedMonth}
+          onChange={handleMonthChange}
+          sx={{ minWidth: 200 }}
+          inputProps={{
+            max: format(new Date(), 'yyyy-MM')
+          }}
+        />
+      </Box>
 
       <Grid container spacing={3}>
         {/* Gráfica de Ventas por Día */}
@@ -197,7 +199,7 @@ const Dashboard = () => {
                         key={service}
                         dataKey={service}
                         stackId="a"
-                        fill={serviceColors[index % serviceColors.length]}
+                        fill={COLORS[index % COLORS.length]}
                         name={service}
                       />
                     ))}
@@ -211,7 +213,7 @@ const Dashboard = () => {
         {/* Gráfica de Distribución por Barbero */}
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom>Distribución por Barbero</Typography>
+            <Typography variant="h6" gutterBottom>Distribución por Barbero - {currentMonth}</Typography>
             {isLoadingSalesByBarber ? (
               <CircularProgress />
             ) : salesByBarberError ? (
@@ -232,7 +234,7 @@ const Dashboard = () => {
                       fill="#8884d8"
                       label={({ name, value }) => `${name}: $${(value || 0).toLocaleString()}`}
                     >
-                      {pieChartData.map((entry: BarberData, index: number) => (
+                      {pieChartData.map((entry: BarberSaleData, index: number) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
