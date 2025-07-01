@@ -118,7 +118,7 @@ const Dashboard = () => {
     : [];
 
   // Obtener el mes actual para el título
-  const currentMonth = format(new Date(selectedMonth), "MMMM 'de' yyyy", { locale: es });
+  const currentMonth = format(new Date(`${selectedMonth}-15`), "MMMM 'de' yyyy", { locale: es });
 
   const handlePageChange = (_: unknown, newPage: number) => {
     setPage(newPage + 1);
