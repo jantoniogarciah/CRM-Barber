@@ -64,10 +64,17 @@ const validationSchema = Yup.object({
   barberId: Yup.string().required('Por favor seleccione un barbero'),
   date: Yup.string()
     .required('Por favor seleccione una fecha')
-    .test('is-future-date', 'La fecha debe ser posterior al día de hoy', (value) => {
+    .test('is-valid-date', 'La fecha debe ser posterior al día de hoy', function(value) {
       if (!value) return false;
       const selectedDate = parseISO(value);
       const today = startOfToday();
+      
+      // Si estamos editando una cita (appointment existe), permitir cualquier fecha
+      if (this.parent.isEditing) {
+        return true;
+      }
+      
+      // Si es una nueva cita, la fecha debe ser posterior a hoy
       return isAfter(selectedDate, today);
     }),
   time: Yup.string().required('Por favor seleccione una hora'),
@@ -90,7 +97,8 @@ const validationSchema = Yup.object({
     otherwise: (schema) => schema
   }),
   email: Yup.string().email('Email inválido'),
-  isNewClient: Yup.boolean()
+  isNewClient: Yup.boolean(),
+  isEditing: Yup.boolean()
 });
 
 const AppointmentForm: React.FC<AppointmentFormProps> = ({
@@ -136,6 +144,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
       lastName: '',
       phone: '',
       email: '',
+      isEditing: false,
     },
     validationSchema,
     onSubmit: async (values) => {
@@ -209,6 +218,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
             lastName: '',
             phone: '',
             email: '',
+            isEditing: true,
           }
         });
       } else {
@@ -216,7 +226,12 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
         setPhoneSearch('');
         setFoundClient(null);
         setIsNewClient(false);
-        formik.resetForm();
+        formik.resetForm({
+          values: {
+            ...formik.initialValues,
+            isEditing: false,
+          }
+        });
       }
     }
   }, [open, appointment]);
