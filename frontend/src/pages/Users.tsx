@@ -24,6 +24,7 @@ import {
   MenuItem,
   Alert,
   CircularProgress,
+  SelectChangeEvent,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -39,6 +40,15 @@ import {
 import { User } from '../types';
 import { toast } from 'react-hot-toast';
 
+interface FormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  role: 'ADMIN' | 'ADMINBARBER' | 'BARBER' | 'CLIENTE';
+  status: 'ACTIVE' | 'INACTIVE';
+}
+
 const Users = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -46,7 +56,7 @@ const Users = () => {
   const [openEditUser, setOpenEditUser] = useState(false);
   const [openDeleteConfirm, setOpenDeleteConfirm] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     firstName: '',
     lastName: '',
     email: '',
@@ -142,7 +152,7 @@ const Users = () => {
     }));
   };
 
-  const handleSelectChange = (e: any) => {
+  const handleSelectChange = (e: SelectChangeEvent) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -327,7 +337,9 @@ const Users = () => {
                 label="Rol"
               >
                 <MenuItem value="ADMIN">Administrador</MenuItem>
+                <MenuItem value="ADMINBARBER">Administrador Barbero</MenuItem>
                 <MenuItem value="BARBER">Barbero</MenuItem>
+                <MenuItem value="CLIENTE">Cliente</MenuItem>
               </Select>
             </FormControl>
             <FormControl fullWidth>
@@ -396,7 +408,9 @@ const Users = () => {
                 label="Rol"
               >
                 <MenuItem value="ADMIN">Administrador</MenuItem>
+                <MenuItem value="ADMINBARBER">Administrador Barbero</MenuItem>
                 <MenuItem value="BARBER">Barbero</MenuItem>
+                <MenuItem value="CLIENTE">Cliente</MenuItem>
               </Select>
             </FormControl>
             <FormControl fullWidth>
