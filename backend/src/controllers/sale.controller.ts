@@ -9,20 +9,42 @@ export const getSales = async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
+    const startDate = req.query.startDate as string;
+    const endDate = req.query.endDate as string;
     const skip = (page - 1) * limit;
 
-    // Get total count
-    const total = await prisma.sale.count();
+    // Construir el where clause base
+    const whereClause: any = {};
 
-    // Get paginated sales
+    // Agregar filtros de fecha si están presentes
+    if (startDate || endDate) {
+      whereClause.saleDate = {};
+      if (startDate) {
+        whereClause.saleDate.gte = new Date(startDate);
+      }
+      if (endDate) {
+        // Ajustar la fecha final al final del día
+        const endDateTime = new Date(endDate);
+        endDateTime.setHours(23, 59, 59, 999);
+        whereClause.saleDate.lte = endDateTime;
+      }
+    }
+
+    // Get total count with filters
+    const total = await prisma.sale.count({
+      where: whereClause
+    });
+
+    // Get paginated sales with filters
     const sales = await prisma.sale.findMany({
+      where: whereClause,
       include: {
         client: true,
         service: true,
         barber: true,
       },
       orderBy: {
-        createdAt: "desc",
+        saleDate: "desc",
       },
       skip,
       take: limit,

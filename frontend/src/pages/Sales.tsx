@@ -80,6 +80,8 @@ const Sales: React.FC = () => {
   const [foundClient, setFoundClient] = useState<Client | null>(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   const { 
     data: services = [], 
@@ -110,7 +112,9 @@ const Sales: React.FC = () => {
     refetch: refetchSales
   } = useGetSalesQuery({
     page: page + 1,
-    limit: rowsPerPage
+    limit: rowsPerPage,
+    startDate,
+    endDate
   });
   const [createClient] = useCreateClientMutation();
   const [deleteSale] = useDeleteSaleMutation();
@@ -386,6 +390,32 @@ const Sales: React.FC = () => {
         </Button>
       </Box>
 
+      <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center' }}>
+        <TextField
+          type="date"
+          label="Fecha inicial"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+          InputLabelProps={{ shrink: true }}
+        />
+        <TextField
+          type="date"
+          label="Fecha final"
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+          InputLabelProps={{ shrink: true }}
+        />
+        <Button
+          variant="outlined"
+          onClick={() => {
+            setStartDate('');
+            setEndDate('');
+          }}
+        >
+          Limpiar filtros
+        </Button>
+      </Box>
+
       {sales.length === 0 ? (
         <Alert severity="info">No hay ventas registradas.</Alert>
       ) : (
@@ -405,7 +435,9 @@ const Sales: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {sales.map((sale: Sale) => (
+              {sales
+                .sort((a, b) => new Date(b.saleDate || b.createdAt).getTime() - new Date(a.saleDate || a.createdAt).getTime())
+                .map((sale: Sale) => (
                 <TableRow key={sale.id}>
                   <TableCell>
                     {format(new Date(sale.saleDate || sale.createdAt), "d 'de' MMMM 'de' yyyy", { 

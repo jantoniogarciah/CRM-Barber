@@ -421,12 +421,19 @@ export const api = createApi({
       totalPages: number;
       hasNextPage: boolean;
       hasPrevPage: boolean;
-    }, { page?: number; limit?: number }>({
+    }, { 
+      page?: number; 
+      limit?: number;
+      startDate?: string;
+      endDate?: string;
+    }>({
       query: (params) => ({
         url: '/sales',
         params: {
           page: params?.page || 1,
-          limit: params?.limit || 10
+          limit: params?.limit || 10,
+          startDate: params?.startDate,
+          endDate: params?.endDate
         }
       }),
       providesTags: ['Sales'],
