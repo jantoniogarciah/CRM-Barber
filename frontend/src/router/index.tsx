@@ -66,17 +66,17 @@ const AppRoutes = () => {
       <Route
         path="/clients"
         element={
-          <AdminRoute>
+          <AdminBarberRoute>
             <Clients />
-          </AdminRoute>
+          </AdminBarberRoute>
         }
       />
       <Route
         path="/services"
         element={
-          <AdminRoute>
+          <AdminBarberRoute>
             <Services />
-          </AdminRoute>
+          </AdminBarberRoute>
         }
       />
       <Route
@@ -98,11 +98,11 @@ const AppRoutes = () => {
       <Route
         path="/barbers"
         element={
-          <AdminRoute>
+          <AdminBarberRoute>
             <Suspense fallback={<LoadingComponent />}>
               <BarbersPage />
             </Suspense>
-          </AdminRoute>
+          </AdminBarberRoute>
         }
       />
       <Route
