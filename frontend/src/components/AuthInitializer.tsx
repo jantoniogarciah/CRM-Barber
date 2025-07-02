@@ -25,19 +25,32 @@ const AuthInitializer: React.FC<AuthInitializerProps> = ({ children }) => {
         const storedUser = localStorage.getItem('user');
         const storedToken = localStorage.getItem('token');
 
+        console.log('AuthInitializer - Starting initialization');
+        console.log('AuthInitializer - Stored token:', storedToken ? 'exists' : 'not found');
+        console.log('AuthInitializer - Stored user:', storedUser);
+
         if (!reduxUser && storedUser && storedToken) {
           const user = JSON.parse(storedUser);
+          console.log('AuthInitializer - Parsed stored user:', user);
+          console.log('AuthInitializer - Original role:', user.role);
+
           if (user && user.role) {
+            // Asegurarse de que el rol esté en mayúsculas
             user.role = user.role.toUpperCase();
+            console.log('AuthInitializer - Normalized role:', user.role);
+
             dispatch(
               setCredentials({
                 user,
                 token: storedToken,
               })
             );
+            console.log('AuthInitializer - User restored to Redux:', user);
           } else {
             throw new Error('Invalid user data in localStorage');
           }
+        } else {
+          console.log('AuthInitializer - No stored user or already in Redux');
         }
       } catch (error) {
         console.error('Error restoring user from localStorage:', error);
@@ -55,17 +68,25 @@ const AuthInitializer: React.FC<AuthInitializerProps> = ({ children }) => {
       console.error('Error fetching current user:', error);
       handleAuthError('Error al verificar la sesión actual');
     } else if (currentUser) {
+      console.log('AuthInitializer - Current user from API:', currentUser);
+      console.log('AuthInitializer - Original role from API:', currentUser.role);
+
       const token = localStorage.getItem('token');
       if (token) {
+        // Asegurarse de que el rol esté en mayúsculas
+        const normalizedUser = {
+          ...currentUser,
+          role: currentUser.role?.toUpperCase(),
+        };
+        console.log('AuthInitializer - Normalized user:', normalizedUser);
+
         dispatch(
           setCredentials({
-            user: {
-              ...currentUser,
-              role: currentUser.role?.toUpperCase(),
-            },
+            user: normalizedUser,
             token,
           })
         );
+        console.log('AuthInitializer - User set in Redux:', normalizedUser);
       } else {
         handleAuthError('Token no encontrado');
       }

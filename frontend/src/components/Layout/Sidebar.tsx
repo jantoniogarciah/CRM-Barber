@@ -19,8 +19,8 @@ import {
   Person as PersonIcon,
   SupervisorAccount as SupervisorAccountIcon,
 } from '@mui/icons-material';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../store/store';
+import { useAppSelector } from '../../store/hooks';
+import { selectUser } from '../../store/slices/authSlice';
 
 interface MenuItem {
   title: string;
@@ -32,7 +32,7 @@ interface MenuItem {
 const menuItems: MenuItem[] = [
   {
     title: 'Dashboard',
-    path: '/dashboard',
+    path: '/',
     icon: <DashboardIcon />,
     roles: ['ADMIN', 'ADMINBARBER'],
   },
@@ -83,50 +83,53 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
   const theme = useTheme();
   const location = useLocation();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const { user } = useSelector((state: RootState) => {
-    console.log('Auth state:', state.auth);
-    return state.auth;
-  });
+  const user = useAppSelector(selectUser);
 
   console.log('Sidebar - Current user:', user);
   console.log('Sidebar - User role:', user?.role);
   console.log('Sidebar - Local Storage user:', localStorage.getItem('user'));
 
+  const filteredMenuItems = menuItems.filter((item) => {
+    const userRole = user?.role?.toUpperCase() || '';
+    const hasPermission = item.roles.includes(userRole);
+    console.log(`Sidebar - Menu item "${item.title}":`, {
+      userRole,
+      requiredRoles: item.roles,
+      hasPermission,
+    });
+    return hasPermission;
+  });
+
+  console.log('Sidebar - Filtered menu items:', filteredMenuItems);
+
   const drawerContent = (
     <Box sx={{ width: 240 }}>
       <List>
-        {menuItems
-          .filter((item) => {
-            const userRole = user?.role?.toUpperCase() || '';
-            const hasPermission = item.roles.includes(userRole);
-            console.log(`Menu item "${item.title}" - User role: "${userRole}" - Required roles:`, item.roles, '- Has permission:', hasPermission);
-            return hasPermission;
-          })
-          .map((item) => (
-            <ListItem
-              key={item.path}
-              component={Link}
-              to={item.path}
-              selected={location.pathname === item.path}
-              onClick={isMobile ? onClose : undefined}
-              sx={{
-                '&.Mui-selected': {
-                  backgroundColor: theme.palette.action.selected,
-                  '&:hover': {
-                    backgroundColor: theme.palette.action.hover,
-                  },
-                },
+        {filteredMenuItems.map((item) => (
+          <ListItem
+            key={item.path}
+            component={Link}
+            to={item.path}
+            selected={location.pathname === item.path}
+            onClick={isMobile ? onClose : undefined}
+            sx={{
+              '&.Mui-selected': {
+                backgroundColor: theme.palette.action.selected,
                 '&:hover': {
                   backgroundColor: theme.palette.action.hover,
                 },
-                color: 'inherit',
-                textDecoration: 'none',
-              }}
-            >
-              <ListItemIcon sx={{ color: 'inherit' }}>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.title} />
-            </ListItem>
-          ))}
+              },
+              '&:hover': {
+                backgroundColor: theme.palette.action.hover,
+              },
+              color: 'inherit',
+              textDecoration: 'none',
+            }}
+          >
+            <ListItemIcon sx={{ color: 'inherit' }}>{item.icon}</ListItemIcon>
+            <ListItemText primary={item.title} />
+          </ListItem>
+        ))}
       </List>
     </Box>
   );
