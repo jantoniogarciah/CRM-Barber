@@ -12,11 +12,13 @@ import {
 } from "../controllers/client.controller";
 import { validateRequest } from "../middleware/validate-request";
 import { requireAuth } from "../middleware/require-auth";
+import { requireClientAccess } from "../middleware/require-client-access";
 
 const router: Router = Router();
 
-// All routes require authentication
+// All routes require authentication and client access
 router.use(requireAuth);
+router.use(requireClientAccess);
 
 // Get all clients
 router.get("/", getClients);
