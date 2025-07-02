@@ -282,6 +282,7 @@ const Sales: React.FC = () => {
     setSaleToEdit(sale);
     setPaymentMethod(sale.paymentMethod);
     setNotes(sale.notes || '');
+    setSaleDate(format(new Date(sale.saleDate || sale.createdAt), 'yyyy-MM-dd'));
     setOpenEditSale(true);
   };
 
@@ -296,11 +297,16 @@ const Sales: React.FC = () => {
     if (!saleToEdit) return;
 
     try {
+      // Crear la fecha de venta manteniendo la fecha seleccionada exactamente
+      const [year, month, day] = saleDate.split('-').map(Number);
+      const saleDateTime = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+
       await updateSale({
         id: saleToEdit.id,
         sale: {
           paymentMethod,
           notes: notes || undefined,
+          saleDate: saleDateTime.toISOString(),
         },
       }).unwrap();
 
@@ -687,6 +693,18 @@ const Sales: React.FC = () => {
                 <br />
                 Monto: ${saleToEdit?.amount}
               </Alert>
+            </Grid>
+
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                type="date"
+                name="saleDate"
+                label="Fecha de Venta"
+                value={saleDate}
+                onChange={(e) => setSaleDate(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+              />
             </Grid>
 
             <Grid item xs={12}>
