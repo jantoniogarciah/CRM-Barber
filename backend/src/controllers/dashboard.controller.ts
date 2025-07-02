@@ -26,8 +26,8 @@ export const getSalesByDay = async (req: Request, res: Response) => {
     const startDateUTC = new Date(startOfDay(startDate).getTime() - (offset * 60 * 1000));
     const endDateUTC = new Date(endOfDay(endDate).getTime() - (offset * 60 * 1000));
 
-    const sales = await prisma.sale.groupBy({
-      by: ['saleDate', 'paymentMethod'],
+    // Obtener todas las ventas del mes
+    const sales = await prisma.sale.findMany({
       where: {
         saleDate: {
           gte: startDateUTC,
@@ -35,7 +35,9 @@ export const getSalesByDay = async (req: Request, res: Response) => {
         },
         status: 'completed'
       },
-      _sum: {
+      select: {
+        saleDate: true,
+        paymentMethod: true,
         amount: true
       }
     });
@@ -60,7 +62,7 @@ export const getSalesByDay = async (req: Request, res: Response) => {
       const localDate = new Date(sale.saleDate.getTime() + (offset * 60 * 1000));
       const dateStr = format(localDate, 'yyyy-MM-dd');
       if (allDates[dateStr]) {
-        allDates[dateStr][sale.paymentMethod] = sale._sum.amount || 0;
+        allDates[dateStr][sale.paymentMethod] += sale.amount;
       }
     });
 
@@ -230,6 +232,7 @@ export const getServicesByDate = async (req: Request, res: Response) => {
         isActive: true
       },
       select: {
+        id: true,
         name: true
       }
     });
@@ -257,7 +260,11 @@ export const getServicesByDate = async (req: Request, res: Response) => {
         status: 'completed'
       },
       include: {
-        service: true
+        service: {
+          select: {
+            name: true
+          }
+        }
       }
     });
 
@@ -267,8 +274,10 @@ export const getServicesByDate = async (req: Request, res: Response) => {
     sales.forEach(sale => {
       const localDate = new Date(sale.saleDate.getTime() + (offset * 60 * 1000));
       const dateStr = format(localDate, 'yyyy-MM-dd');
-      if (allDates[dateStr] && sale.service.name) {
-        allDates[dateStr][sale.service.name]++;
+      if (allDates[dateStr] && sale.service?.name) {
+        if (allDates[dateStr][sale.service.name] !== undefined) {
+          allDates[dateStr][sale.service.name]++;
+        }
       }
     });
 
