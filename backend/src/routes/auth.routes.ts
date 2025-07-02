@@ -5,6 +5,7 @@ import {
   register,
   getCurrentUser,
   updateUser,
+  updatePassword,
 } from "../controllers/auth.controller";
 import { validateRequest } from "../middleware/validate-request";
 import { requireAuth } from "../middleware/require-auth";
@@ -64,6 +65,22 @@ router.put(
   ],
   validateRequest,
   updateUser
+);
+
+// Update password
+router.post(
+  '/update-password',
+  requireAuth,
+  [
+    body('currentPassword')
+      .notEmpty()
+      .withMessage('La contraseña actual es requerida'),
+    body('newPassword')
+      .isLength({ min: 6 })
+      .withMessage('La nueva contraseña debe tener al menos 6 caracteres'),
+    validateRequest,
+  ],
+  updatePassword
 );
 
 export { router as authRouter };

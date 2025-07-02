@@ -166,3 +166,51 @@ export const updateUser = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Error updating user" });
   }
 };
+
+export const updatePassword = async (req: Request, res: Response) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({ message: "No autenticado" });
+    }
+
+    const { currentPassword, newPassword } = req.body;
+
+    // Verificar que se proporcionaron ambas contraseñas
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Se requiere la contraseña actual y la nueva contraseña" });
+    }
+
+    // Obtener el usuario con la contraseña
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: {
+        id: true,
+        password: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    // Verificar la contraseña actual
+    const isValidPassword = await bcrypt.compare(currentPassword, user.password);
+    if (!isValidPassword) {
+      return res.status(400).json({ message: "La contraseña actual es incorrecta" });
+    }
+
+    // Hash de la nueva contraseña
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Actualizar la contraseña
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { password: hashedPassword },
+    });
+
+    return res.json({ message: "Contraseña actualizada correctamente" });
+  } catch (error) {
+    console.error('Error updating password:', error);
+    return res.status(500).json({ message: "Error al actualizar la contraseña" });
+  }
+};

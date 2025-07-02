@@ -60,6 +60,14 @@ const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
   }
 };
 
+export interface UpdateProfileDto {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  currentPassword?: string;
+  newPassword?: string;
+}
+
 export const api = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithRetry,
@@ -93,13 +101,20 @@ export const api = createApi({
         method: 'POST',
       }),
     }),
-    updateProfile: builder.mutation<{ user: User; token: string }, Partial<User>>({
-      query: (userData) => ({
-        url: '/auth/update',
+    updateProfile: builder.mutation<User, Partial<UpdateProfileDto>>({
+      query: (data) => ({
+        url: '/auth/update-profile',
         method: 'PUT',
-        body: userData,
+        body: data,
       }),
       invalidatesTags: ['User'],
+    }),
+    updatePassword: builder.mutation<{ message: string }, { currentPassword: string; newPassword: string }>({
+      query: (data) => ({
+        url: '/auth/update-password',
+        method: 'POST',
+        body: data,
+      }),
     }),
 
     // Client endpoints
