@@ -435,7 +435,7 @@ const Sales: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {sales
+              {[...sales]
                 .sort((a, b) => new Date(b.saleDate || b.createdAt).getTime() - new Date(a.saleDate || a.createdAt).getTime())
                 .map((sale: Sale) => (
                 <TableRow key={sale.id}>
