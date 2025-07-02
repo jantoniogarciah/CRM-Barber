@@ -503,7 +503,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
                   helperText={formik.touched.date && formik.errors.date}
                   InputLabelProps={{ shrink: true }}
                   inputProps={{
-                    min: tomorrow
+                    min: appointment ? undefined : tomorrow
                   }}
                 />
               </Grid>
