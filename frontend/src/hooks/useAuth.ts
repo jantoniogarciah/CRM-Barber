@@ -6,14 +6,19 @@ interface UseAuth {
   user: User | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  isAdminBarber: boolean;
+  isBarber: boolean;
 }
 
 export const useAuth = (): UseAuth => {
   const user = useAppSelector(selectUser);
+  const userRole = user?.role?.toUpperCase();
 
   return {
     user,
     isAuthenticated: !!user,
-    isAdmin: user?.role === 'admin',
+    isAdmin: userRole === 'ADMIN',
+    isAdminBarber: userRole === 'ADMINBARBER',
+    isBarber: userRole === 'BARBER',
   };
 };

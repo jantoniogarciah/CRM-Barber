@@ -13,6 +13,7 @@ import NotFound from '../pages/NotFound';
 import { PrivateRoute } from '../components/PrivateRoute';
 import { AdminRoute } from '../components/AdminRoute';
 import { AdminBarberRoute } from '../components/AdminBarberRoute';
+import { BarberRoute } from '../components/BarberRoute';
 
 // Lazy load the Barbers component
 const BarbersPage = lazy(() => {
@@ -82,9 +83,9 @@ const AppRoutes = () => {
       <Route
         path="/appointments"
         element={
-          <PrivateRoute>
+          <BarberRoute>
             <Appointments />
-          </PrivateRoute>
+          </BarberRoute>
         }
       />
       <Route
