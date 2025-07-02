@@ -77,9 +77,9 @@ router.post(
       .withMessage('La contraseña actual es requerida'),
     body('newPassword')
       .isLength({ min: 6 })
-      .withMessage('La nueva contraseña debe tener al menos 6 caracteres'),
-    validateRequest,
+      .withMessage('La nueva contraseña debe tener al menos 6 caracteres')
   ],
+  validateRequest,
   updatePassword
 );
 

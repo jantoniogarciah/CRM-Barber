@@ -470,6 +470,7 @@ export const {
   useGetCurrentUserQuery,
   useLogoutMutation,
   useUpdateProfileMutation,
+  useUpdatePasswordMutation,
   useGetClientsQuery,
   useGetClientByPhoneQuery,
   useGetLastCompletedAppointmentsQuery,

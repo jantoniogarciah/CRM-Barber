@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { Box, Button, TextField, Typography, Paper, Grid, Divider } from '@mui/material';
+import { Box, Button, TextField, Typography, Paper, Grid } from '@mui/material';
 import { toast } from 'react-hot-toast';
 import { useAppSelector } from '../store/hooks';
 import { selectUser } from '../store/slices/authSlice';
-import { useUpdateProfileMutation } from '../services/api';
+import { useUpdateProfileMutation, useUpdatePasswordMutation } from '../services/api';
 
 const Profile = () => {
   const user = useAppSelector(selectUser);
-  const [updateProfile, { isLoading }] = useUpdateProfileMutation();
+  const [updateProfile, { isLoading: isUpdatingProfile }] = useUpdateProfileMutation();
+  const [updatePassword, { isLoading: isUpdatingPassword }] = useUpdatePasswordMutation();
+  
   const [formData, setFormData] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
@@ -59,7 +61,7 @@ const Profile = () => {
     }
 
     try {
-      await updateProfile({
+      await updatePassword({
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword,
       }).unwrap();
@@ -119,9 +121,9 @@ const Profile = () => {
                   type="submit"
                   variant="contained"
                   color="primary"
-                  disabled={isLoading}
+                  disabled={isUpdatingProfile}
                 >
-                  {isLoading ? 'Actualizando...' : 'Actualizar Perfil'}
+                  {isUpdatingProfile ? 'Actualizando...' : 'Actualizar Perfil'}
                 </Button>
               </Box>
             </form>
@@ -168,9 +170,9 @@ const Profile = () => {
                   type="submit"
                   variant="contained"
                   color="primary"
-                  disabled={isLoading}
+                  disabled={isUpdatingPassword}
                 >
-                  Cambiar Contraseña
+                  {isUpdatingPassword ? 'Actualizando...' : 'Cambiar Contraseña'}
                 </Button>
               </Box>
             </form>
