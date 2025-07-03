@@ -68,8 +68,13 @@ const Login: React.FC = () => {
         // Mostrar mensaje de éxito
         toast.success('¡Bienvenido!');
 
-        // Navegar al dashboard
-        navigate('/', { replace: true });
+        // Navegar según el rol del usuario
+        const userRole = result.user.role?.toUpperCase();
+        if (userRole === 'BARBER') {
+          navigate('/appointments', { replace: true });
+        } else {
+          navigate('/', { replace: true });
+        }
       } catch (err: any) {
         console.error('Login error:', err);
         
@@ -160,14 +165,6 @@ const Login: React.FC = () => {
             >
               {isLoading ? <CircularProgress size={24} /> : 'Iniciar Sesión'}
             </Button>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Link href="/forgot-password" variant="body2" color="primary">
-                ¿Olvidaste tu contraseña?
-              </Link>
-              <Link href="/register" variant="body2" color="primary">
-                ¿No tienes cuenta? Regístrate
-              </Link>
-            </Box>
           </Box>
         </Paper>
       </Box>
