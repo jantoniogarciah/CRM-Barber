@@ -35,7 +35,7 @@ const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
         
         if (window.location.pathname !== '/login') {
           toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
-          window.location.href = '/login';
+          window.location.replace('/login');
         }
       } else {
         console.error('API Error:', error);

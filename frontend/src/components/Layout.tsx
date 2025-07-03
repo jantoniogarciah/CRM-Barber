@@ -72,8 +72,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       sessionStorage.clear();
       dispatch(clearCredentials());
 
-      // Force a full page reload to clear all state
-      window.location.replace('/login');
+      // Navigate to login
+      navigate('/login', { replace: true });
     }
   };
 

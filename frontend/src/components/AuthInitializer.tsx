@@ -102,7 +102,7 @@ const AuthInitializer: React.FC<AuthInitializerProps> = ({ children }) => {
     // Solo mostrar mensaje y redirigir si no estamos en la página de login
     if (window.location.pathname !== '/login') {
       toast.error(message);
-      window.location.href = '/login';
+      window.location.replace('/login');
     }
   };
 
