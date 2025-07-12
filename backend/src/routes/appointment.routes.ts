@@ -112,9 +112,9 @@ router.post(
           clientId: client.id,
           serviceId: service.id,
           barberId: barber.id,
-          date: `${req.body.date}T${req.body.time}:00.000Z`,
+          date: new Date(`${req.body.date}T${req.body.time}:00.000Z`),
           time: req.body.time,
-          status: 'Pendiente',
+          status: 'pending',
           notes: 'Cita creada desde la página web'
         },
         include: {
@@ -126,7 +126,7 @@ router.post(
 
       // Formatear la respuesta para el cliente
       const formattedResponse = {
-        message: "Cita agendada con éxito",
+        message: "¡Cita agendada con éxito! Te contactaremos para confirmar.",
         appointment: {
           ...appointment,
           serviceName: appointment.service.name,
