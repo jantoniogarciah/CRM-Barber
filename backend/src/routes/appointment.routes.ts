@@ -112,7 +112,7 @@ router.post(
           clientId: client.id,
           serviceId: service.id,
           barberId: barber.id,
-          date: req.body.date,
+          date: `${req.body.date}T${req.body.time}:00.000Z`,
           time: req.body.time,
           status: 'PENDING',
           notes: 'Cita creada desde la página web'
