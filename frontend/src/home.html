@@ -511,12 +511,24 @@
       appointmentForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         
+        // Validar que la fecha no sea anterior a hoy
+        const selectedDate = new Date(formData.get('date'));
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        if (selectedDate < today) {
+          formMessage.style.display = 'block';
+          formMessage.style.color = '#ff0000';
+          formMessage.textContent = 'La fecha seleccionada no puede ser anterior a hoy';
+          return;
+        }
+
         const formData = new FormData(appointmentForm);
         const appointmentData = {
           name: formData.get('name'),
           date: formData.get('date'),
           time: formData.get('time'),
-          phone: formData.get('phone'),
+          phone: formData.get('phone')?.toString().replace(/\D/g, ''), // Eliminar caracteres no numéricos
           email: formData.get('email')
         };
 
@@ -529,11 +541,8 @@
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'Origin': 'https://clippercut.com.mx'
+              'Accept': 'application/json'
             },
-            mode: 'cors',
-            credentials: 'include',
             body: JSON.stringify(appointmentData)
           });
 

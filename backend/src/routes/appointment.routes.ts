@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import { body } from "express-validator";
 import {
   getAppointments,
@@ -28,19 +28,20 @@ router.post(
     body("time").notEmpty().withMessage("Time is required"),
     validateRequest,
   ],
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       // Create a new client if doesn't exist
       const client = await prisma.client.upsert({
         where: { phone: req.body.phone },
         update: {
-          name: req.body.name,
+          firstName: req.body.name, // Cambiado de name a firstName
           email: req.body.email
         },
         create: {
-          name: req.body.name,
+          firstName: req.body.name, // Cambiado de name a firstName
           phone: req.body.phone,
-          email: req.body.email
+          email: req.body.email,
+          lastName: "" // Campo requerido por el modelo
         }
       });
 
@@ -76,7 +77,7 @@ router.post(
   }
 );
 
-// Protected routes below this line
+// Apply authentication middleware to all routes
 router.use(requireAuth);
 router.use(requireBarber);
 
@@ -89,7 +90,7 @@ router.get("/last-completed", getLastCompletedAppointments);
 // Get single appointment
 router.get("/:id", getAppointment);
 
-// Create appointment (protected)
+// Create appointment
 router.post(
   "/",
   [
@@ -100,8 +101,8 @@ router.post(
     body("time").notEmpty().withMessage("Time is required"),
     body("status")
       .optional()
-      .isIn(["PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"])
-      .withMessage("Invalid status"),
+      .isIn(["pending", "confirmed", "completed", "cancelled"])
+      .withMessage("Invalid status. Must be one of: pending, confirmed, completed, cancelled"),
     body("notes").optional(),
     validateRequest,
   ],
