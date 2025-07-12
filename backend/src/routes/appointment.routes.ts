@@ -58,37 +58,51 @@ router.post(
         }
       });
 
+      console.log('Service search criteria:', {
+        name: { contains: 'Corte', mode: 'insensitive' },
+        isActive: true
+      });
+      console.log('Found service:', service);
+
       if (!service) {
         return res.status(500).json({ 
           message: "Error: No se encontró el servicio de corte. Por favor, contacta al administrador." 
         });
       }
 
-      console.log('Found service:', service);
+      // First try to find all active barbers to debug
+      const allActiveBarbers = await prisma.barber.findMany({
+        where: { isActive: true }
+      });
+      console.log('All active barbers:', allActiveBarbers);
 
       const barber = await prisma.barber.findFirst({
         where: {
           firstName: {
             equals: 'Barbero',
-            mode: 'default'
+            mode: 'insensitive'
           },
           lastName: {
             equals: 'ClipperCut',
-            mode: 'default'
+            mode: 'insensitive'
           },
           isActive: true
         }
       });
 
+      console.log('Barber search criteria:', {
+        firstName: { equals: 'Barbero', mode: 'insensitive' },
+        lastName: { equals: 'ClipperCut', mode: 'insensitive' },
+        isActive: true
+      });
       console.log('Barber search result:', barber);
 
       if (!barber) {
-        // Log all barbers to see what's available
-        const allBarbers = await prisma.barber.findMany();
-        console.log('All available barbers:', allBarbers);
-        
         return res.status(500).json({ 
-          message: "Error: No se encontró el barbero disponible. Por favor, contacta al administrador." 
+          message: "Error: No se encontró el barbero disponible. Por favor, contacta al administrador.",
+          debug: {
+            activeBarbers: allActiveBarbers
+          }
         });
       }
 
