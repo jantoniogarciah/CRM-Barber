@@ -66,10 +66,8 @@ router.post(
 
       const barber = await prisma.barber.findFirst({
         where: {
-          firstName: {
-            contains: 'Clipper',
-            mode: 'insensitive'
-          },
+          firstName: 'Barbero',
+          lastName: 'ClipperCut',
           isActive: true
         }
       });
