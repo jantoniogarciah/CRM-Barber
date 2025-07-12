@@ -49,13 +49,35 @@ router.post(
 
       // Get default service and barber
       const service = await prisma.service.findFirst({
-        where: { name: "Corte de cabello" }
+        where: {
+          name: {
+            contains: 'Corte',
+            mode: 'insensitive'
+          },
+          isActive: true
+        }
       });
 
-      const barber = await prisma.barber.findFirst();
+      if (!service) {
+        return res.status(500).json({ 
+          message: "Error: No se encontró el servicio de corte. Por favor, contacta al administrador." 
+        });
+      }
 
-      if (!service || !barber) {
-        return res.status(500).json({ message: "Error: No se encontró servicio o barbero disponible" });
+      const barber = await prisma.barber.findFirst({
+        where: {
+          firstName: {
+            contains: 'Clipper',
+            mode: 'insensitive'
+          },
+          isActive: true
+        }
+      });
+
+      if (!barber) {
+        return res.status(500).json({ 
+          message: "Error: No se encontró el barbero disponible. Por favor, contacta al administrador." 
+        });
       }
 
       // Create the appointment
@@ -68,10 +90,26 @@ router.post(
           time: req.body.time,
           status: 'PENDING',
           notes: 'Cita creada desde la página web'
+        },
+        include: {
+          service: true,
+          barber: true,
+          client: true
         }
       });
 
-      return res.status(201).json(appointment);
+      // Formatear la respuesta para el cliente
+      const formattedResponse = {
+        message: "Cita agendada con éxito",
+        appointment: {
+          ...appointment,
+          serviceName: appointment.service.name,
+          barberName: `${appointment.barber.firstName} ${appointment.barber.lastName}`,
+          clientName: `${appointment.client.firstName} ${appointment.client.lastName}`
+        }
+      };
+
+      return res.status(201).json(formattedResponse);
     } catch (error) {
       console.error('Error creating public appointment:', error);
       return next(error);
