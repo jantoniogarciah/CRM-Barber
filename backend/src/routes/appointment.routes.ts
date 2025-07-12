@@ -14,8 +14,10 @@ import { requireBarber } from "../middleware/require-barber";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
-
 const router: Router = Router();
+
+// Crear un router separado para rutas protegidas
+const protectedRouter: Router = Router();
 
 // Public route for creating appointments from the website
 router.post(
@@ -77,21 +79,21 @@ router.post(
   }
 );
 
-// Protected routes below this line
-router.use(requireAuth);
-router.use(requireBarber);
+// Protected routes
+protectedRouter.use(requireAuth);
+protectedRouter.use(requireBarber);
 
 // Get all appointments
-router.get("/", getAppointments);
+protectedRouter.get("/", getAppointments);
 
 // Get last completed appointment for each client
-router.get("/last-completed", getLastCompletedAppointments);
+protectedRouter.get("/last-completed", getLastCompletedAppointments);
 
 // Get single appointment
-router.get("/:id", getAppointment);
+protectedRouter.get("/:id", getAppointment);
 
-// Create appointment
-router.post(
+// Create appointment (protected)
+protectedRouter.post(
   "/",
   [
     body("clientId").notEmpty().withMessage("Client ID is required"),
@@ -102,7 +104,7 @@ router.post(
     body("status")
       .optional()
       .isIn(["pending", "confirmed", "completed", "cancelled"])
-      .withMessage("Invalid status. Must be one of: pending, confirmed, completed, cancelled"),
+      .withMessage("Invalid status"),
     body("notes").optional(),
     validateRequest,
   ],
@@ -110,33 +112,18 @@ router.post(
 );
 
 // Update appointment
-router.put(
+protectedRouter.put(
   "/:id",
   [
-    body("clientId")
-      .optional()
-      .notEmpty()
-      .withMessage("Client ID cannot be empty"),
-    body("serviceId")
-      .optional()
-      .notEmpty()
-      .withMessage("Service ID cannot be empty"),
-    body("barberId")
-      .optional()
-      .notEmpty()
-      .withMessage("Barber ID cannot be empty"),
-    body("date")
-      .optional()
-      .notEmpty()
-      .withMessage("Date cannot be empty"),
-    body("time")
-      .optional()
-      .notEmpty()
-      .withMessage("Time cannot be empty"),
+    body("clientId").optional().notEmpty().withMessage("Client ID cannot be empty"),
+    body("serviceId").optional().notEmpty().withMessage("Service ID cannot be empty"),
+    body("barberId").optional().notEmpty().withMessage("Barber ID cannot be empty"),
+    body("date").optional().notEmpty().withMessage("Date cannot be empty"),
+    body("time").optional().notEmpty().withMessage("Time cannot be empty"),
     body("status")
       .optional()
       .isIn(["pending", "confirmed", "completed", "cancelled"])
-      .withMessage("Invalid status. Must be one of: pending, confirmed, completed, cancelled"),
+      .withMessage("Invalid status"),
     body("notes").optional(),
     validateRequest,
   ],
@@ -144,6 +131,9 @@ router.put(
 );
 
 // Delete appointment
-router.delete("/:id", deleteAppointment);
+protectedRouter.delete("/:id", deleteAppointment);
+
+// Usar las rutas protegidas bajo la ruta base
+router.use('/', protectedRouter);
 
 export default router;

@@ -511,6 +511,8 @@
       appointmentForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         
+        const formData = new FormData(appointmentForm);
+        
         // Validar que la fecha no sea anterior a hoy
         const selectedDate = new Date(formData.get('date'));
         const today = new Date();
@@ -523,7 +525,6 @@
           return;
         }
 
-        const formData = new FormData(appointmentForm);
         const appointmentData = {
           name: formData.get('name'),
           date: formData.get('date'),
@@ -531,6 +532,15 @@
           phone: formData.get('phone')?.toString().replace(/\D/g, ''), // Eliminar caracteres no numéricos
           email: formData.get('email')
         };
+
+        // Validar que todos los campos estén llenos
+        if (!appointmentData.name || !appointmentData.date || !appointmentData.time || 
+            !appointmentData.phone || !appointmentData.email) {
+          formMessage.style.display = 'block';
+          formMessage.style.color = '#ff0000';
+          formMessage.textContent = 'Por favor, completa todos los campos';
+          return;
+        }
 
         formMessage.style.display = 'block';
         formMessage.style.color = '#666';
@@ -546,13 +556,7 @@
             body: JSON.stringify(appointmentData)
           });
 
-          let responseData;
-          try {
-            responseData = await response.json();
-          } catch (e) {
-            console.error('Respuesta no JSON:', await response.text());
-            throw new Error('Error en el formato de respuesta del servidor');
-          }
+          const responseData = await response.json();
 
           if (!response.ok) {
             throw new Error(responseData.message || 'Error al agendar la cita');
