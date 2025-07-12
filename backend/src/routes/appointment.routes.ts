@@ -1,4 +1,4 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { body } from "express-validator";
 import {
   getAppointments,
@@ -26,22 +26,22 @@ router.post(
     body("phone").notEmpty().withMessage("Phone is required"),
     body("date").notEmpty().withMessage("Date is required"),
     body("time").notEmpty().withMessage("Time is required"),
-    validateRequest,
   ],
-  async (req: Request, res: Response) => {
+  validateRequest,
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
       // Create a new client if doesn't exist
       const client = await prisma.client.upsert({
         where: { phone: req.body.phone },
         update: {
-          firstName: req.body.name, // Cambiado de name a firstName
+          firstName: req.body.name,
           email: req.body.email
         },
         create: {
-          firstName: req.body.name, // Cambiado de name a firstName
+          firstName: req.body.name,
           phone: req.body.phone,
           email: req.body.email,
-          lastName: "" // Campo requerido por el modelo
+          lastName: ""
         }
       });
 
@@ -69,15 +69,15 @@ router.post(
         }
       });
 
-      res.status(201).json(appointment);
+      return res.status(201).json(appointment);
     } catch (error) {
       console.error('Error creating public appointment:', error);
-      res.status(500).json({ message: 'Error al crear la cita' });
+      return next(error);
     }
   }
 );
 
-// Apply authentication middleware to all routes
+// Protected routes below this line
 router.use(requireAuth);
 router.use(requireBarber);
 
