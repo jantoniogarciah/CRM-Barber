@@ -64,15 +64,29 @@ router.post(
         });
       }
 
+      console.log('Found service:', service);
+
       const barber = await prisma.barber.findFirst({
         where: {
-          firstName: 'Barbero',
-          lastName: 'ClipperCut',
+          firstName: {
+            equals: 'Barbero',
+            mode: 'default'
+          },
+          lastName: {
+            equals: 'ClipperCut',
+            mode: 'default'
+          },
           isActive: true
         }
       });
 
+      console.log('Barber search result:', barber);
+
       if (!barber) {
+        // Log all barbers to see what's available
+        const allBarbers = await prisma.barber.findMany();
+        console.log('All available barbers:', allBarbers);
+        
         return res.status(500).json({ 
           message: "Error: No se encontró el barbero disponible. Por favor, contacta al administrador." 
         });
