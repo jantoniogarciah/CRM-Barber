@@ -12,7 +12,9 @@ app.use(cors({
     'https://crm-barber-frontend.onrender.com',
     'http://localhost:5173',
     'http://localhost:3000',
-    'http://localhost:3001'
+    'http://localhost:3001',
+    'https://clippercut.com.mx',
+    'http://clippercut.com.mx'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
