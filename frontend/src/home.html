@@ -517,8 +517,7 @@
           date: formData.get('date'),
           time: formData.get('time'),
           phone: formData.get('phone'),
-          email: formData.get('email'),
-          status: 'PENDING'
+          email: formData.get('email')
         };
 
         formMessage.style.display = 'block';
@@ -526,7 +525,7 @@
         formMessage.textContent = 'Enviando solicitud...';
 
         try {
-          const response = await fetch('https://crm-barber-backend.onrender.com/api/appointments', {
+          const response = await fetch('https://crm-barber-backend.onrender.com/api/appointments/public', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -542,9 +541,7 @@
           try {
             responseData = await response.json();
           } catch (e) {
-            // Si la respuesta no es JSON, intentamos obtener el texto
-            const textResponse = await response.text();
-            console.error('Respuesta no JSON:', textResponse);
+            console.error('Respuesta no JSON:', await response.text());
             throw new Error('Error en el formato de respuesta del servidor');
           }
 
@@ -569,11 +566,8 @@
           formMessage.style.display = 'block';
           formMessage.style.color = '#ff0000';
           
-          // Mensajes de error más específicos
           if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
             formMessage.textContent = 'Error de conexión con el servidor. Por favor, verifica tu conexión a internet e intenta nuevamente.';
-          } else if (error.message.includes('CORS')) {
-            formMessage.textContent = 'Error de acceso al servidor. Por favor, intenta más tarde.';
           } else {
             formMessage.textContent = error.message || 'Error al agendar la cita. Por favor, intenta nuevamente.';
           }
