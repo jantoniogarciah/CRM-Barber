@@ -287,7 +287,15 @@ const Dashboard = () => {
                     </TableHead>
                     <TableBody>
                       {inactiveClientsData?.clients?.map((client: any) => (
-                        <TableRow key={client.id}>
+                        <TableRow 
+                          key={client.id}
+                          sx={{
+                            color: client.daysSinceLastVisit >= 20 ? 'error.main' : 'inherit',
+                            '& .MuiTableCell-root': {
+                              color: client.daysSinceLastVisit >= 20 ? 'error.main' : 'inherit'
+                            }
+                          }}
+                        >
                           <TableCell>{client.name}</TableCell>
                           <TableCell>{client.phone}</TableCell>
                           <TableCell>
