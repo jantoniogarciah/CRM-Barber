@@ -114,7 +114,7 @@ router.post(
           barberId: barber.id,
           date: `${req.body.date}T${req.body.time}:00.000Z`,
           time: req.body.time,
-          status: 'PENDING',
+          status: 'Pendiente',
           notes: 'Cita creada desde la página web'
         },
         include: {
