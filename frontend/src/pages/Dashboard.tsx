@@ -309,7 +309,7 @@ const Dashboard = () => {
                           <TableCell>
                             <Tooltip title="Enviar mensaje por WhatsApp">
                               <Link
-                                href={`https://wa.me/${formatPhoneForWhatsApp(client.phone)}`}
+                                href={`https://wa.me/${formatPhoneForWhatsApp(client.phone)}?text=${encodeURIComponent(`¡Hola ${client.name}! Te extrañamos en ClipperCut, agenda la cita para tu próxima visita. ¡Te esperamos!`)}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                               >
