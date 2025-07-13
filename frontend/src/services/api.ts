@@ -33,7 +33,8 @@ const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
         sessionStorage.clear();
         api.dispatch(clearCredentials());
         
-        if (window.location.pathname !== '/login') {
+        // Solo redirigir si no estamos ya en la página de login y no es una llamada a getCurrentUser
+        if (window.location.pathname !== '/login' && !args.url.includes('/auth/me')) {
           toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
           window.location.replace('/login');
         }

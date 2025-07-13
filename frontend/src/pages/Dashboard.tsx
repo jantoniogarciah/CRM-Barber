@@ -286,7 +286,7 @@ const Dashboard = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {inactiveClientsData?.clients
+                      {[...(inactiveClientsData?.clients || [])]
                         ?.sort((a: any, b: any) => b.daysSinceLastVisit - a.daysSinceLastVisit) // Sort by days without visits (descending)
                         ?.map((client: any) => (
                         <TableRow 

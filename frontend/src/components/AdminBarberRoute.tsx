@@ -55,10 +55,13 @@ export const AdminBarberRoute = ({ children }: AdminBarberRouteProps): JSX.Eleme
   // Si no hay usuario en Redux ni en localStorage, redirigir al login
   if (!user && !storedUser) {
     console.log('AdminBarberRoute - No user found in Redux or localStorage');
-    if (location.pathname !== '/login') {
+    // Solo mostrar mensaje si no estamos en login
+    const isLoginPage = location.pathname === '/login';
+    if (!isLoginPage) {
       toast.error('Por favor inicia sesión para acceder a esta página');
+      return <Navigate to="/login" state={{ from: location }} replace />;
     }
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return null;
   }
 
   // Si hay usuario en localStorage pero no en Redux, mostrar pantalla de carga
