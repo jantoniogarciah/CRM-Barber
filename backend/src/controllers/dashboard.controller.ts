@@ -166,22 +166,21 @@ export const getInactiveClients = async (req: Request, res: Response) => {
         lastVisit = lastSale;
       }
 
-      return !lastVisit || new Date(lastVisit) < thresholdDate;
+      // Solo incluir clientes que tienen una última visita y está antes del umbral
+      return lastVisit && new Date(lastVisit) < thresholdDate;
     }).map(client => ({
       id: client.id,
       name: `${client.firstName} ${client.lastName}`,
       phone: client.phone,
-      lastVisit: client.appointments[0]?.date || client.sales[0]?.saleDate || null,
-      daysSinceLastVisit: client.appointments[0]?.date || client.sales[0]?.saleDate
-        ? Math.floor((new Date().getTime() - new Date(client.appointments[0]?.date || client.sales[0]?.saleDate).getTime()) / (1000 * 60 * 60 * 24))
-        : null
+      lastVisit: client.appointments[0]?.date || client.sales[0]?.saleDate,
+      daysSinceLastVisit: Math.floor((new Date().getTime() - new Date(client.appointments[0]?.date || client.sales[0]?.saleDate).getTime()) / (1000 * 60 * 60 * 24))
     }));
 
     // Ordenar por días desde última visita (los que nunca han visitado al final)
     const sortedClients = inactiveClients.sort((a, b) => {
       if (a.daysSinceLastVisit === null) return 1;
       if (b.daysSinceLastVisit === null) return -1;
-      return a.daysSinceLastVisit - b.daysSinceLastVisit;
+      return b.daysSinceLastVisit - a.daysSinceLastVisit; // Changed to descending order
     });
 
     // Calcular el total de páginas
