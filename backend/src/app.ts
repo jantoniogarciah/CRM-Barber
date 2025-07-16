@@ -14,7 +14,9 @@ app.use(cors({
     'http://localhost:3000',
     'http://localhost:3001',
     'https://clippercut.com.mx',
-    'http://clippercut.com.mx'
+    'http://clippercut.com.mx',
+    'https://www.clippercut.com.mx',
+    'http://www.clippercut.com.mx'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
