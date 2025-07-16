@@ -26,20 +26,31 @@ const corsOptions = {
       'http://clippercut.com.mx',
       'https://www.clippercut.com.mx',
       'http://www.clippercut.com.mx',
-      'https://crm-barber-backend.onrender.com'
+      'https://crm-barber-backend.onrender.com',
+      'https://clippercut.com.mx:443',
+      'http://clippercut.com.mx:80',
+      'https://www.clippercut.com.mx:443',
+      'http://www.clippercut.com.mx:80'
     ];
 
     // Check if the origin matches any allowed origin pattern
     const isAllowed = allowedOrigins.some(allowedOrigin => {
-      // Convert wildcards to regex patterns
-      const pattern = allowedOrigin
-        .replace(/\./g, '\\.')
-        .replace(/\*/g, '.*');
-      const regex = new RegExp(`^${pattern}$`);
-      return regex.test(origin);
+      const originUrl = new URL(origin);
+      const allowedUrl = new URL(allowedOrigin);
+      
+      // Compare hostname without www if present
+      const originHostname = originUrl.hostname.replace(/^www\./, '');
+      const allowedHostname = allowedUrl.hostname.replace(/^www\./, '');
+      
+      return originHostname === allowedHostname && 
+             (originUrl.protocol === allowedUrl.protocol || allowedUrl.protocol === 'http:');
     });
 
-    console.log('Origin allowed?', isAllowed);
+    console.log('Origin check details:', {
+      origin,
+      isAllowed,
+      allowedOrigins
+    });
 
     if (isAllowed || process.env.NODE_ENV === 'development') {
       callback(null, true);
