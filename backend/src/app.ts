@@ -8,8 +8,13 @@ const app: Application = express();
 // CORS configuration
 const corsOptions = {
   origin: function(origin: any, callback: any) {
+    console.log('Incoming request from origin:', origin);
+    
     // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
+    if (!origin) {
+      console.log('No origin provided, allowing request');
+      return callback(null, true);
+    }
     
     const allowedOrigins = [
       'https://crm-barber.onrender.com',
@@ -24,9 +29,22 @@ const corsOptions = {
       'https://crm-barber-backend.onrender.com'
     ];
 
-    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+    // Check if the origin matches any allowed origin pattern
+    const isAllowed = allowedOrigins.some(allowedOrigin => {
+      // Convert wildcards to regex patterns
+      const pattern = allowedOrigin
+        .replace(/\./g, '\\.')
+        .replace(/\*/g, '.*');
+      const regex = new RegExp(`^${pattern}$`);
+      return regex.test(origin);
+    });
+
+    console.log('Origin allowed?', isAllowed);
+
+    if (isAllowed || process.env.NODE_ENV === 'development') {
       callback(null, true);
     } else {
+      console.log('Origin rejected:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -35,10 +53,15 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept', 'X-Requested-With'],
   exposedHeaders: ['Content-Range', 'X-Content-Range'],
   preflightContinue: false,
-  optionsSuccessStatus: 204
+  optionsSuccessStatus: 204,
+  maxAge: 86400 // Cache preflight request results for 24 hours
 };
 
+// Enable CORS for all routes
 app.use(cors(corsOptions));
+
+// Enable pre-flight requests for all routes
+app.options('*', cors(corsOptions));
 
 // Middlewares
 app.use(express.json());
