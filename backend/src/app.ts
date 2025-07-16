@@ -16,11 +16,13 @@ app.use(cors({
     'https://clippercut.com.mx',
     'http://clippercut.com.mx',
     'https://www.clippercut.com.mx',
-    'http://www.clippercut.com.mx'
+    'http://www.clippercut.com.mx',
+    'https://crm-barber-backend.onrender.com',
+    '*'  // Temporarily allow all origins while debugging
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept', 'X-Requested-With'],
   exposedHeaders: ['Content-Range', 'X-Content-Range']
 }));
 
