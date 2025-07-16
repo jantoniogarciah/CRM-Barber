@@ -531,31 +531,25 @@
           return;
         }
 
-        const appointmentData = {
-          name: formData.get('name'),
-          date: formData.get('date'),
-          time: formData.get('time'),
-          phone: formData.get('phone')?.toString().replace(/\D/g, ''), // Eliminar caracteres no numéricos
-          email: formData.get('email')
-        };
-
-        // Validar que todos los campos estén llenos
-        if (!appointmentData.name || !appointmentData.date || !appointmentData.time || 
-            !appointmentData.phone || !appointmentData.email) {
-          showMessage('Por favor, completa todos los campos', true);
-          return;
-        }
+        const API_URL = 'https://crm-barber-backend.onrender.com/api'
 
         showMessage('Enviando solicitud...');
 
         try {
-          const response = await fetch('https://crm-barber-backend.onrender.com/api/appointments/public', {
+          const response = await fetch(`${API_URL}/appointments/public`, {
             method: 'POST',
+            credentials: 'include',
             headers: {
               'Content-Type': 'application/json',
               'Accept': 'application/json'
             },
-            body: JSON.stringify(appointmentData)
+            body: JSON.stringify({
+              name: formData.get('name'),
+              email: formData.get('email'),
+              phone: formData.get('phone'),
+              date: formData.get('date'),
+              time: formData.get('time')
+            })
           });
 
           const responseData = await response.json();

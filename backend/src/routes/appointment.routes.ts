@@ -16,9 +16,6 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 const router: Router = Router();
 
-// Crear un router separado para rutas protegidas
-const protectedRouter: Router = Router();
-
 // Public route for creating appointments from the website
 router.post(
   "/public",
@@ -32,6 +29,8 @@ router.post(
   validateRequest,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
+      console.log('Received public appointment request:', req.body);
+      
       // Create a new client if doesn't exist
       const client = await prisma.client.upsert({
         where: { phone: req.body.phone },
@@ -47,6 +46,8 @@ router.post(
         }
       });
 
+      console.log('Client created/updated:', client);
+
       // Get default service and barber
       const service = await prisma.service.findFirst({
         where: {
@@ -58,11 +59,7 @@ router.post(
         }
       });
 
-      console.log('Service search criteria:', {
-        name: { contains: 'Corte', mode: 'insensitive' },
-        isActive: true
-      });
-      console.log('Found service:', service);
+      console.log('Service search result:', service);
 
       if (!service) {
         return res.status(500).json({ 
@@ -90,11 +87,6 @@ router.post(
         }
       });
 
-      console.log('Barber search criteria:', {
-        firstName: { equals: 'Barbero', mode: 'insensitive' },
-        lastName: { equals: 'ClipperCut', mode: 'insensitive' },
-        isActive: true
-      });
       console.log('Barber search result:', barber);
 
       if (!barber) {
@@ -124,6 +116,8 @@ router.post(
         }
       });
 
+      console.log('Appointment created:', appointment);
+
       // Formatear la respuesta para el cliente
       const formattedResponse = {
         message: "¡Cita agendada con éxito! Te contactaremos para confirmar.",
@@ -143,7 +137,8 @@ router.post(
   }
 );
 
-// Protected routes
+// Create protected router for authenticated routes
+const protectedRouter: Router = Router();
 protectedRouter.use(requireAuth);
 protectedRouter.use(requireBarber);
 
@@ -197,7 +192,7 @@ protectedRouter.put(
 // Delete appointment
 protectedRouter.delete("/:id", deleteAppointment);
 
-// Usar las rutas protegidas bajo la ruta base
-router.use('/', protectedRouter);
+// Mount protected routes AFTER public routes
+router.use(protectedRouter);
 
 export default router;
