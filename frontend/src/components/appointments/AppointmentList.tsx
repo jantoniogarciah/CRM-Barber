@@ -255,125 +255,129 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
         </Alert>
       )}
 
-      <Box
-        sx={{
-          mb: 3,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: 2
-        }}
-      >
-        {/* Filtros de búsqueda y vista */}
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-          {/* Toggle de vista */}
-          <Button
-            variant={viewMode === 'list' ? "contained" : "outlined"}
-            onClick={() => setViewMode('list')}
-            startIcon={<ListIcon />}
-            size="small"
-          >
-            Lista
-          </Button>
-          <Button
-            variant={viewMode === 'calendar' ? "contained" : "outlined"}
-            onClick={() => setViewMode('calendar')}
-            startIcon={<CalendarIcon />}
-            size="small"
-          >
-            Calendario
-          </Button>
-
-          {viewMode === 'list' && (
-            <>
-              <TextField
-                placeholder="Buscar citas..."
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setPage(0);
-                }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{ width: 250 }}
-              />
-              
-              <FormControl sx={{ minWidth: 150 }}>
-                <InputLabel>Estado</InputLabel>
-                <Select value={status} onChange={(e) => {
-                  setStatus(e.target.value);
-                  setPage(0);
-                }} label="Estado">
-                  <MenuItem value="">Todos</MenuItem>
-                  <MenuItem value="pending">Pendiente</MenuItem>
-                  <MenuItem value="confirmed">Confirmada</MenuItem>
-                  <MenuItem value="completed">Completada</MenuItem>
-                  <MenuItem value="cancelled">Cancelada</MenuItem>
-                </Select>
-              </FormControl>
-            </>
-          )}
-
-          {/* Control de fecha */}
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: 1,
-            bgcolor: 'background.paper',
-            borderRadius: 1,
-            p: 1,
-            boxShadow: 1
-          }}>
-            <IconButton onClick={handlePrevDay} size="small">
-              <PrevIcon />
-            </IconButton>
-            
+      {/* Sección de filtros */}
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} md={4}>
             <TextField
-              type="date"
-              value={selectedDate}
-              onChange={(e) => handleDateChange(e.target.value)}
-              sx={{ 
-                width: 150,
-                '& .MuiOutlinedInput-notchedOutline': {
-                  border: 'none'
-                },
-                '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
-                  border: 'none'
-                },
-                '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                  border: 'none'
-                }
+              fullWidth
+              placeholder="Buscar por nombre o teléfono..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(0);
               }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <CalendarIcon fontSize="small" />
+                    <SearchIcon />
                   </InputAdornment>
                 ),
               }}
             />
-            
-            <IconButton onClick={handleNextDay} size="small">
-              <NextIcon />
-            </IconButton>
-            
-            <IconButton 
-              onClick={handleToday} 
-              size="small" 
-              color={isToday(parseISO(selectedDate)) ? "primary" : "default"}
-            >
-              <TodayIcon />
-            </IconButton>
-          </Box>
-        </Box>
+          </Grid>
+          
+          <Grid item xs={12} md={3}>
+            <FormControl fullWidth>
+              <InputLabel>Estado</InputLabel>
+              <Select 
+                value={status} 
+                onChange={(e) => {
+                  setStatus(e.target.value);
+                  setPage(0);
+                }} 
+                label="Estado"
+              >
+                <MenuItem value="">Todos</MenuItem>
+                <MenuItem value="pending">Pendiente</MenuItem>
+                <MenuItem value="confirmed">Confirmada</MenuItem>
+                <MenuItem value="completed">Completada</MenuItem>
+                <MenuItem value="cancelled">Cancelada</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
 
-        {/* Botón de nueva cita */}
+          <Grid item xs={12} md={3}>
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 1,
+              bgcolor: 'background.default',
+              borderRadius: 1,
+              border: '1px solid',
+              borderColor: 'divider',
+              p: 1
+            }}>
+              <IconButton onClick={handlePrevDay} size="small">
+                <PrevIcon />
+              </IconButton>
+              
+              <TextField
+                type="date"
+                value={selectedDate}
+                onChange={(e) => handleDateChange(e.target.value)}
+                sx={{ 
+                  width: '100%',
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    border: 'none'
+                  },
+                  '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
+                    border: 'none'
+                  },
+                  '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    border: 'none'
+                  }
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <CalendarIcon fontSize="small" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              
+              <IconButton onClick={handleNextDay} size="small">
+                <NextIcon />
+              </IconButton>
+              
+              <IconButton 
+                onClick={handleToday} 
+                size="small" 
+                color={isToday(parseISO(selectedDate)) ? "primary" : "default"}
+              >
+                <TodayIcon />
+              </IconButton>
+            </Box>
+          </Grid>
+
+          <Grid item xs={12} md={2}>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                fullWidth
+                variant={viewMode === 'list' ? "contained" : "outlined"}
+                onClick={() => setViewMode('list')}
+                startIcon={<ListIcon />}
+                size="medium"
+              >
+                Lista
+              </Button>
+              <Button
+                fullWidth
+                variant={viewMode === 'calendar' ? "contained" : "outlined"}
+                onClick={() => setViewMode('calendar')}
+                startIcon={<CalendarIcon />}
+                size="medium"
+              >
+                Calendario
+              </Button>
+            </Box>
+          </Grid>
+        </Grid>
+      </Paper>
+
+      {/* Botón de nueva cita */}
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
         <Button
           variant="contained"
           color="primary"
@@ -384,6 +388,7 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
         </Button>
       </Box>
 
+      {/* Contenido principal */}
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
           <CircularProgress />
@@ -395,8 +400,6 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
       ) : viewMode === 'calendar' ? (
         <AppointmentCalendar
           appointments={appointments}
-          selectedDate={selectedDate}
-          onDateChange={handleDateChange}
           onViewClick={handleViewClick}
           onEditClick={handleEditClick}
           onDeleteClick={handleDeleteClick}
