@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Paper,
@@ -21,8 +21,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Tabs,
-  Tab,
   Grid,
   SelectChangeEvent,
 } from '@mui/material';
@@ -38,102 +36,67 @@ import {
   NavigateBefore as PrevIcon,
   NavigateNext as NextIcon,
 } from '@mui/icons-material';
-import { format, parseISO, isToday, isTomorrow, isPast, addDays, subDays } from 'date-fns';
-import axios from 'axios';
+import { format, parseISO, isToday } from 'date-fns';
 import AppointmentForm from '../../components/AppointmentForm';
 import AppointmentDetails from './AppointmentDetails';
 import AppointmentCalendar from './AppointmentCalendar';
-import { Appointment } from '../../types';
+import { useGetAppointmentsQuery, useDeleteAppointmentMutation } from '../../services/api';
+import { toast } from 'react-hot-toast';
 
 interface AppointmentListProps {
   barberId?: string;
 }
 
-interface AppointmentWithRelations extends Appointment {
+interface AppointmentWithRelations {
+  id: string;
+  date: string;
+  time: string;
+  status: string;
+  notes?: string;
   barber: {
-    id: string;
     firstName: string;
     lastName: string;
-    isActive?: boolean;
   };
   client: {
-    id: string;
     firstName: string;
     lastName: string;
-    phone: string;
-    email?: string;
-    status?: string;
   };
   service: {
-    id: string;
     name: string;
-    price: number;
-    duration: number;
-    isActive?: boolean;
   };
 }
 
 const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
-  const [appointments, setAppointments] = useState<AppointmentWithRelations[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [totalCount, setTotalCount] = useState(0);
-  const [selectedAppointment, setSelectedAppointment] = useState<AppointmentWithRelations | null>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [openForm, setOpenForm] = useState(false);
   const [openDetails, setOpenDetails] = useState(false);
   const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
 
-  const fetchAppointments = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      const token = localStorage.getItem('token');
-      const response = await axios.get('/api/appointments', {
-        headers: { Authorization: `Bearer ${token}` },
-        params: {
-          barberId,
-          search,
-          status,
-          date: selectedDate,
-          page: page + 1,
-          limit: rowsPerPage,
-        },
-      });
+  // Usar RTK Query hooks
+  const { 
+    data: appointmentsData, 
+    isLoading, 
+    error: fetchError,
+    refetch: refetchAppointments
+  } = useGetAppointmentsQuery({
+    date: selectedDate,
+    status,
+    search,
+    page: page + 1,
+    limit: rowsPerPage,
+    barberId
+  });
 
-      if (response.data && Array.isArray(response.data.appointments)) {
-        // Ordenar citas por barbero y hora
-        const sortedAppointments = response.data.appointments.sort((a: AppointmentWithRelations, b: AppointmentWithRelations) => {
-          // Primero ordenar por barbero
-          const barberCompare = a.barber.firstName.localeCompare(b.barber.firstName);
-          if (barberCompare !== 0) return barberCompare;
-          
-          // Luego por hora
-          return a.time.localeCompare(b.time);
-        });
-        
-        setAppointments(sortedAppointments);
-        setTotalCount(response.data.total || sortedAppointments.length);
-      } else {
-        console.error('Invalid response format:', response.data);
-        setError('Invalid response format from server');
-      }
-    } catch (error: any) {
-      console.error('Error fetching appointments:', error);
-      setError(error.response?.data?.message || 'An error occurred while fetching appointments');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [deleteAppointment] = useDeleteAppointmentMutation();
 
-  useEffect(() => {
-    fetchAppointments();
-  }, [page, rowsPerPage, search, status, selectedDate, barberId]);
+  const appointments = (appointmentsData?.appointments || []) as AppointmentWithRelations[];
+  const totalCount = appointmentsData?.total || 0;
 
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
@@ -160,13 +123,15 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
   };
 
   const handlePrevDay = () => {
-    const prevDay = subDays(parseISO(selectedDate), 1);
-    setSelectedDate(format(prevDay, 'yyyy-MM-dd'));
+    const date = parseISO(selectedDate);
+    date.setDate(date.getDate() - 1);
+    setSelectedDate(format(date, 'yyyy-MM-dd'));
   };
 
   const handleNextDay = () => {
-    const nextDay = addDays(parseISO(selectedDate), 1);
-    setSelectedDate(format(nextDay, 'yyyy-MM-dd'));
+    const date = parseISO(selectedDate);
+    date.setDate(date.getDate() + 1);
+    setSelectedDate(format(date, 'yyyy-MM-dd'));
   };
 
   const handleToday = () => {
@@ -179,29 +144,26 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
     setOpenForm(true);
   };
 
-  const handleEditClick = (appointment: AppointmentWithRelations) => {
+  const handleEditClick = (appointment: any) => {
     setFormMode('edit');
     setSelectedAppointment(appointment);
     setOpenForm(true);
   };
 
-  const handleViewClick = (appointment: AppointmentWithRelations) => {
+  const handleViewClick = (appointment: any) => {
     setSelectedAppointment(appointment);
     setOpenDetails(true);
   };
 
-  const handleDeleteClick = async (appointment: AppointmentWithRelations) => {
-    if (window.confirm('Are you sure you want to delete this appointment?')) {
+  const handleDeleteClick = async (appointment: any) => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar esta cita?')) {
       try {
-        const token = localStorage.getItem('token');
-        await axios.delete(`/api/appointments/${appointment.id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        fetchAppointments();
+        await deleteAppointment(appointment.id).unwrap();
+        toast.success('Cita eliminada exitosamente');
+        refetchAppointments();
       } catch (error: any) {
-        setError(
-          error.response?.data?.message || 'An error occurred while deleting the appointment'
-        );
+        console.error('Error al eliminar la cita:', error);
+        toast.error(error.data?.message || 'Error al eliminar la cita');
       }
     }
   };
@@ -217,7 +179,7 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
   };
 
   const handleFormSubmit = async () => {
-    await fetchAppointments();
+    refetchAppointments();
     handleFormClose();
   };
 
@@ -236,25 +198,18 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
     }
   };
 
-  const getDateLabel = (date: string) => {
-    const parsedDate = parseISO(date);
-    if (isToday(parsedDate)) {
-      return 'Today';
-    }
-    if (isTomorrow(parsedDate)) {
-      return 'Tomorrow';
-    }
-    return format(parsedDate, 'MMM d, yyyy');
-  };
+  // Mostrar error si no hay autenticación
+  if (fetchError) {
+    const errorMessage = (fetchError as any)?.data?.message || 'Error al cargar las citas';
+    return (
+      <Alert severity="error" sx={{ mb: 2 }}>
+        {errorMessage}
+      </Alert>
+    );
+  }
 
   return (
     <Box sx={{ p: 3 }}>
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-
       {/* Sección de filtros */}
       <Paper sx={{ p: 1.5, mb: 2 }} elevation={1}>
         <Grid container spacing={1.5} alignItems="center">
@@ -397,7 +352,7 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
       </Box>
 
       {/* Contenido principal */}
-      {loading ? (
+      {isLoading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
           <CircularProgress />
         </Box>
@@ -452,21 +407,21 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
                         onClick={() => handleViewClick(appointment)}
                         title="Ver detalles"
                       >
-                        <ViewIcon />
+                        <ViewIcon fontSize="small" />
                       </IconButton>
                       <IconButton
                         size="small"
                         onClick={() => handleEditClick(appointment)}
                         title="Editar"
                       >
-                        <EditIcon />
+                        <EditIcon fontSize="small" />
                       </IconButton>
                       <IconButton
                         size="small"
                         onClick={() => handleDeleteClick(appointment)}
                         title="Eliminar"
                       >
-                        <DeleteIcon />
+                        <DeleteIcon fontSize="small" />
                       </IconButton>
                     </TableCell>
                   </TableRow>
@@ -487,19 +442,19 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
         </>
       )}
 
-      {/* Mantener los diálogos existentes */}
+      {/* Diálogos */}
       <Dialog open={openForm} onClose={handleFormClose} maxWidth="md" fullWidth>
         <AppointmentForm
           open={openForm}
           onClose={handleFormClose}
           onSuccess={handleFormSubmit}
-          appointment={selectedAppointment as Appointment | undefined}
+          appointment={selectedAppointment}
         />
       </Dialog>
 
       <Dialog open={openDetails} onClose={handleDetailsClose} maxWidth="md" fullWidth>
         <AppointmentDetails
-          appointment={selectedAppointment as Appointment | undefined}
+          appointment={selectedAppointment}
           onClose={handleDetailsClose}
           onEdit={() => {
             handleDetailsClose();

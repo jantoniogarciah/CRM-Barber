@@ -230,8 +230,14 @@ export const api = createApi({
     }),
 
     // Appointment endpoints
-    getAppointments: builder.query<{ appointments: Appointment[]; total: number }, void>({
-      query: () => '/appointments',
+    getAppointments: builder.query<
+      { appointments: Appointment[]; total: number },
+      { date?: string; status?: string; search?: string; page?: number; limit?: number; barberId?: string }
+    >({
+      query: (params) => ({
+        url: '/appointments',
+        params
+      }),
       providesTags: ['Appointment'],
     }),
     getAppointment: builder.query<Appointment, string>({
