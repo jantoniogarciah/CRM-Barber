@@ -1,4 +1,4 @@
-export const API_URL = process.env.REACT_APP_API_URL || 'https://crm-barber-backend.onrender.com/api';
+export const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 export const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'https://crm-barber-backend.onrender.com';
 export const APP_NAME = 'Clipper Cut Barber Sports';
 export const APP_VERSION = '1.0.0';
@@ -11,13 +11,12 @@ export const getBaseUrl = () => {
 // Configuración para RTK Query
 export const API_CONFIG = {
   baseUrl: getBaseUrl(),
-  prepareHeaders: (headers: Headers, { getState }: any) => {
+  prepareHeaders: (headers: Headers) => {
     const token = localStorage.getItem('token');
     if (token) {
       headers.set('authorization', `Bearer ${token}`);
     }
     headers.set('Content-Type', 'application/json');
-    headers.set('Accept', 'application/json');
     return headers;
   },
   credentials: 'include' as const
