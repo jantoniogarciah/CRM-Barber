@@ -49,8 +49,32 @@ interface AppointmentListProps {
   barberId?: string;
 }
 
+interface AppointmentWithRelations extends Appointment {
+  barber: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    isActive?: boolean;
+  };
+  client: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    email?: string;
+    status?: string;
+  };
+  service: {
+    id: string;
+    name: string;
+    price: number;
+    duration: number;
+    isActive?: boolean;
+  };
+}
+
 const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [appointments, setAppointments] = useState<AppointmentWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
@@ -59,7 +83,7 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<AppointmentWithRelations | null>(null);
   const [openForm, setOpenForm] = useState(false);
   const [openDetails, setOpenDetails] = useState(false);
   const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
@@ -84,7 +108,7 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
 
       if (response.data && Array.isArray(response.data.appointments)) {
         // Ordenar citas por barbero y hora
-        const sortedAppointments = response.data.appointments.sort((a, b) => {
+        const sortedAppointments = response.data.appointments.sort((a: AppointmentWithRelations, b: AppointmentWithRelations) => {
           // Primero ordenar por barbero
           const barberCompare = a.barber.firstName.localeCompare(b.barber.firstName);
           if (barberCompare !== 0) return barberCompare;
@@ -155,18 +179,18 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
     setOpenForm(true);
   };
 
-  const handleEditClick = (appointment: Appointment) => {
+  const handleEditClick = (appointment: AppointmentWithRelations) => {
     setFormMode('edit');
     setSelectedAppointment(appointment);
     setOpenForm(true);
   };
 
-  const handleViewClick = (appointment: Appointment) => {
+  const handleViewClick = (appointment: AppointmentWithRelations) => {
     setSelectedAppointment(appointment);
     setOpenDetails(true);
   };
 
-  const handleDeleteClick = async (appointment: Appointment) => {
+  const handleDeleteClick = async (appointment: AppointmentWithRelations) => {
     if (window.confirm('Are you sure you want to delete this appointment?')) {
       try {
         const token = localStorage.getItem('token');
@@ -241,41 +265,71 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
           gap: 2
         }}
       >
-        {/* Filtros de búsqueda */}
+        {/* Filtros de búsqueda y vista */}
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-          <TextField
-            placeholder="Buscar citas..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(0);
-            }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            }}
-            sx={{ width: 250 }}
-          />
-          
-          <FormControl sx={{ minWidth: 150 }}>
-            <InputLabel>Estado</InputLabel>
-            <Select value={status} onChange={(e) => {
-              setStatus(e.target.value);
-              setPage(0);
-            }} label="Estado">
-              <MenuItem value="">Todos</MenuItem>
-              <MenuItem value="pending">Pendiente</MenuItem>
-              <MenuItem value="confirmed">Confirmada</MenuItem>
-              <MenuItem value="completed">Completada</MenuItem>
-              <MenuItem value="cancelled">Cancelada</MenuItem>
-            </Select>
-          </FormControl>
+          {/* Toggle de vista */}
+          <Button
+            variant={viewMode === 'list' ? "contained" : "outlined"}
+            onClick={() => setViewMode('list')}
+            startIcon={<ListIcon />}
+            size="small"
+          >
+            Lista
+          </Button>
+          <Button
+            variant={viewMode === 'calendar' ? "contained" : "outlined"}
+            onClick={() => setViewMode('calendar')}
+            startIcon={<CalendarIcon />}
+            size="small"
+          >
+            Calendario
+          </Button>
+
+          {viewMode === 'list' && (
+            <>
+              <TextField
+                placeholder="Buscar citas..."
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(0);
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{ width: 250 }}
+              />
+              
+              <FormControl sx={{ minWidth: 150 }}>
+                <InputLabel>Estado</InputLabel>
+                <Select value={status} onChange={(e) => {
+                  setStatus(e.target.value);
+                  setPage(0);
+                }} label="Estado">
+                  <MenuItem value="">Todos</MenuItem>
+                  <MenuItem value="pending">Pendiente</MenuItem>
+                  <MenuItem value="confirmed">Confirmada</MenuItem>
+                  <MenuItem value="completed">Completada</MenuItem>
+                  <MenuItem value="cancelled">Cancelada</MenuItem>
+                </Select>
+              </FormControl>
+            </>
+          )}
 
           {/* Control de fecha */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 1,
+            bgcolor: 'background.paper',
+            borderRadius: 1,
+            p: 1,
+            boxShadow: 1
+          }}>
             <IconButton onClick={handlePrevDay} size="small">
               <PrevIcon />
             </IconButton>
@@ -284,7 +338,18 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
               type="date"
               value={selectedDate}
               onChange={(e) => handleDateChange(e.target.value)}
-              sx={{ width: 150 }}
+              sx={{ 
+                width: 150,
+                '& .MuiOutlinedInput-notchedOutline': {
+                  border: 'none'
+                },
+                '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
+                  border: 'none'
+                },
+                '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  border: 'none'
+                }
+              }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -327,6 +392,15 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
         <Alert severity="info">
           No hay citas programadas para esta fecha
         </Alert>
+      ) : viewMode === 'calendar' ? (
+        <AppointmentCalendar
+          appointments={appointments}
+          selectedDate={selectedDate}
+          onDateChange={handleDateChange}
+          onViewClick={handleViewClick}
+          onEditClick={handleEditClick}
+          onDeleteClick={handleDeleteClick}
+        />
       ) : (
         <>
           <TableContainer component={Paper}>
@@ -352,7 +426,7 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
                       {appointment.client.firstName} {appointment.client.lastName}
                     </TableCell>
                     <TableCell>{appointment.service.name}</TableCell>
-                    <TableCell>{appointment.time}</TableCell>
+                    <TableCell>{format(parseISO(`2000-01-01T${appointment.time}`), 'h:mm a')}</TableCell>
                     <TableCell>
                       <Chip
                         label={appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
@@ -405,20 +479,22 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
       {/* Mantener los diálogos existentes */}
       <Dialog open={openForm} onClose={handleFormClose} maxWidth="md" fullWidth>
         <AppointmentForm
+          open={openForm}
           onClose={handleFormClose}
-          onSubmit={handleFormSubmit}
-          appointment={selectedAppointment}
-          mode={formMode}
+          onSuccess={handleFormSubmit}
+          appointment={selectedAppointment as Appointment | undefined}
         />
       </Dialog>
 
       <Dialog open={openDetails} onClose={handleDetailsClose} maxWidth="md" fullWidth>
         <AppointmentDetails
-          appointment={selectedAppointment}
+          appointment={selectedAppointment as Appointment | undefined}
           onClose={handleDetailsClose}
           onEdit={() => {
             handleDetailsClose();
-            handleEditClick(selectedAppointment!);
+            if (selectedAppointment) {
+              handleEditClick(selectedAppointment);
+            }
           }}
         />
       </Dialog>
