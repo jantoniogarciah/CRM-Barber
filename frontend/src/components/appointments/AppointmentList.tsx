@@ -256,10 +256,11 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
       )}
 
       {/* Sección de filtros */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Grid container spacing={2} alignItems="center">
+      <Paper sx={{ p: 1.5, mb: 2 }} elevation={1}>
+        <Grid container spacing={1.5} alignItems="center">
           <Grid item xs={12} md={4}>
             <TextField
+              size="small"
               fullWidth
               placeholder="Buscar por nombre o teléfono..."
               value={search}
@@ -270,15 +271,15 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon />
+                    <SearchIcon fontSize="small" />
                   </InputAdornment>
                 ),
               }}
             />
           </Grid>
           
-          <Grid item xs={12} md={3}>
-            <FormControl fullWidth>
+          <Grid item xs={12} md={2}>
+            <FormControl fullWidth size="small">
               <InputLabel>Estado</InputLabel>
               <Select 
                 value={status} 
@@ -301,18 +302,20 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
             <Box sx={{ 
               display: 'flex', 
               alignItems: 'center', 
-              gap: 1,
+              gap: 0.5,
               bgcolor: 'background.default',
               borderRadius: 1,
               border: '1px solid',
               borderColor: 'divider',
-              p: 1
+              p: 0.5,
+              height: '40px' // Mismo alto que los otros inputs
             }}>
               <IconButton onClick={handlePrevDay} size="small">
-                <PrevIcon />
+                <PrevIcon fontSize="small" />
               </IconButton>
               
               <TextField
+                size="small"
                 type="date"
                 value={selectedDate}
                 onChange={(e) => handleDateChange(e.target.value)}
@@ -326,6 +329,10 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
                   },
                   '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
                     border: 'none'
+                  },
+                  '& .MuiInputBase-input': {
+                    py: 0.5,
+                    px: 1
                   }
                 }}
                 InputProps={{
@@ -338,7 +345,7 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
               />
               
               <IconButton onClick={handleNextDay} size="small">
-                <NextIcon />
+                <NextIcon fontSize="small" />
               </IconButton>
               
               <IconButton 
@@ -346,19 +353,19 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
                 size="small" 
                 color={isToday(parseISO(selectedDate)) ? "primary" : "default"}
               >
-                <TodayIcon />
+                <TodayIcon fontSize="small" />
               </IconButton>
             </Box>
           </Grid>
 
-          <Grid item xs={12} md={2}>
+          <Grid item xs={12} md={3}>
             <Box sx={{ display: 'flex', gap: 1 }}>
               <Button
                 fullWidth
                 variant={viewMode === 'list' ? "contained" : "outlined"}
                 onClick={() => setViewMode('list')}
-                startIcon={<ListIcon />}
-                size="medium"
+                startIcon={<ListIcon fontSize="small" />}
+                size="small"
               >
                 Lista
               </Button>
@@ -366,8 +373,8 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
                 fullWidth
                 variant={viewMode === 'calendar' ? "contained" : "outlined"}
                 onClick={() => setViewMode('calendar')}
-                startIcon={<CalendarIcon />}
-                size="medium"
+                startIcon={<CalendarIcon fontSize="small" />}
+                size="small"
               >
                 Calendario
               </Button>
@@ -383,6 +390,7 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
           color="primary"
           startIcon={<AddIcon />}
           onClick={handleAddClick}
+          size="small"
         >
           Nueva Cita
         </Button>
