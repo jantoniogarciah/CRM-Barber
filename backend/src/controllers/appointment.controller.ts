@@ -8,7 +8,23 @@ const prisma = new PrismaClient();
 // Get all appointments
 export const getAppointments = async (req: Request, res: Response) => {
   try {
+    const { date } = req.query;
+    
+    // Parse the date or use today as default
+    let filterDate = date ? new Date(date as string) : new Date();
+    
+    // Reset time to start of day for comparison
+    filterDate.setHours(0, 0, 0, 0);
+    
+    console.log('Filtering appointments for date:', filterDate);
+
     const appointments = await prisma.appointment.findMany({
+      where: {
+        date: {
+          gte: filterDate,
+          lt: new Date(filterDate.getTime() + 24 * 60 * 60 * 1000), // Next day
+        }
+      },
       include: {
         client: true,
         service: true,
@@ -21,9 +37,6 @@ export const getAppointments = async (req: Request, res: Response) => {
           },
         },
         {
-          date: "asc",
-        },
-        {
           time: "asc",
         },
       ],
@@ -33,7 +46,8 @@ export const getAppointments = async (req: Request, res: Response) => {
 
     res.json({
       appointments,
-      total: appointments.length
+      total: appointments.length,
+      filterDate: filterDate.toISOString()
     });
   } catch (error) {
     console.error("Error getting appointments:", error);
