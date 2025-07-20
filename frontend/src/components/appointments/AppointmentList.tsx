@@ -34,8 +34,10 @@ import {
   Visibility as ViewIcon,
   CalendarMonth as CalendarIcon,
   ViewList as ListIcon,
+  Phone as PhoneIcon,
+  Person as PersonIcon,
 } from '@mui/icons-material';
-import { format, parseISO, isToday, isTomorrow, isPast } from 'date-fns';
+import { format, parseISO, isToday, isTomorrow, isPast, startOfToday, endOfToday } from 'date-fns';
 import axios from 'axios';
 import AppointmentForm from '../../components/AppointmentForm';
 import AppointmentDetails from './AppointmentDetails';
@@ -50,10 +52,11 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [search, setSearch] = useState('');
+  const [nameFilter, setNameFilter] = useState('');
+  const [phoneFilter, setPhoneFilter] = useState('');
   const [status, setStatus] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [startDate, setStartDate] = useState(format(startOfToday(), 'yyyy-MM-dd'));
+  const [endDate, setEndDate] = useState(format(endOfToday(), 'yyyy-MM-dd'));
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
@@ -72,7 +75,8 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
         headers: { Authorization: `Bearer ${token}` },
         params: {
           barberId,
-          search,
+          clientName: nameFilter,
+          clientPhone: phoneFilter,
           status,
           startDate,
           endDate,
@@ -98,7 +102,7 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
 
   useEffect(() => {
     fetchAppointments();
-  }, [page, rowsPerPage, search, status, startDate, endDate, barberId]);
+  }, [page, rowsPerPage, nameFilter, phoneFilter, status, startDate, endDate, barberId]);
 
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
@@ -109,8 +113,13 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
     setPage(0);
   };
 
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearch(event.target.value);
+  const handleNameFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setNameFilter(event.target.value);
+    setPage(0);
+  };
+
+  const handlePhoneFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setPhoneFilter(event.target.value);
     setPage(0);
   };
 
@@ -210,141 +219,147 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
         </Alert>
       )}
 
-      <Box
-        sx={{
-          mb: 3,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-          <TextField
-            placeholder="Search appointments..."
-            value={search}
-            onChange={handleSearchChange}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            }}
-            sx={{ width: 300 }}
-          />
-          <FormControl sx={{ minWidth: 150 }}>
-            <InputLabel>Status</InputLabel>
-            <Select value={status} onChange={handleStatusChange} label="Status">
-              <MenuItem value="">Todos los estados</MenuItem>
-              <MenuItem value="pending">Pendiente</MenuItem>
-              <MenuItem value="confirmed">Confirmada</MenuItem>
-              <MenuItem value="completed">Completada</MenuItem>
-              <MenuItem value="cancelled">Cancelada</MenuItem>
-            </Select>
-          </FormControl>
-          <TextField
-            type="date"
-            label="Start Date"
-            value={startDate}
-            onChange={(e) => handleDateChange('start', e.target.value)}
-            InputLabelProps={{ shrink: true }}
-          />
-          <TextField
-            type="date"
-            label="End Date"
-            value={endDate}
-            onChange={(e) => handleDateChange('end', e.target.value)}
-            InputLabelProps={{ shrink: true }}
-          />
-        </Box>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button
-            variant="outlined"
-            startIcon={viewMode === 'list' ? <CalendarIcon /> : <ListIcon />}
-            onClick={() => setViewMode(viewMode === 'list' ? 'calendar' : 'list')}
+      <Box sx={{ mb: 3 }}>
+        <Grid container spacing={2} alignItems="center">
+          {/* Filtros */}
+          <Grid item xs={12} md={3}>
+            <TextField
+              fullWidth
+              placeholder="Buscar por nombre..."
+              value={nameFilter}
+              onChange={handleNameFilterChange}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <PersonIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <TextField
+              fullWidth
+              placeholder="Buscar por teléfono..."
+              value={phoneFilter}
+              onChange={handlePhoneFilterChange}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <PhoneIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+          <Grid item xs={12} md={2}>
+            <FormControl fullWidth>
+              <InputLabel>Estado</InputLabel>
+              <Select value={status} onChange={handleStatusChange} label="Estado">
+                <MenuItem value="">Todos</MenuItem>
+                <MenuItem value="pending">Pendiente</MenuItem>
+                <MenuItem value="confirmed">Confirmada</MenuItem>
+                <MenuItem value="completed">Completada</MenuItem>
+                <MenuItem value="cancelled">Cancelada</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} md={2}>
+            <TextField
+              fullWidth
+              type="date"
+              label="Fecha Inicio"
+              value={startDate}
+              onChange={(e) => handleDateChange('start', e.target.value)}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+          <Grid item xs={12} md={2}>
+            <TextField
+              fullWidth
+              type="date"
+              label="Fecha Fin"
+              value={endDate}
+              onChange={(e) => handleDateChange('end', e.target.value)}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+        </Grid>
+      </Box>
+
+      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<AddIcon />}
+          onClick={handleAddClick}
+        >
+          Nueva Cita
+        </Button>
+        <Box>
+          <IconButton 
+            onClick={() => setViewMode('list')}
+            color={viewMode === 'list' ? 'primary' : 'default'}
           >
-            {viewMode === 'list' ? 'Calendar View' : 'List View'}
-          </Button>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={handleAddClick}>
-            Add Appointment
-          </Button>
+            <ListIcon />
+          </IconButton>
+          <IconButton
+            onClick={() => setViewMode('calendar')}
+            color={viewMode === 'calendar' ? 'primary' : 'default'}
+          >
+            <CalendarIcon />
+          </IconButton>
         </Box>
       </Box>
 
-      {viewMode === 'list' ? (
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+          <CircularProgress />
+        </Box>
+      ) : viewMode === 'list' ? (
         <TableContainer component={Paper}>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Date</TableCell>
-                <TableCell>Time</TableCell>
-                <TableCell>Client</TableCell>
-                <TableCell>Service</TableCell>
-                <TableCell>Barber</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell align="right">Actions</TableCell>
+                <TableCell>Barbero</TableCell>
+                <TableCell>Cliente</TableCell>
+                <TableCell>Servicio</TableCell>
+                <TableCell>Fecha</TableCell>
+                <TableCell>Hora</TableCell>
+                <TableCell>Estado</TableCell>
+                <TableCell>Notas</TableCell>
+                <TableCell align="right">Acciones</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={7} align="center">
-                    <CircularProgress />
+              {appointments.map((appointment) => (
+                <TableRow key={appointment.id}>
+                  <TableCell>{`${appointment.barber.firstName} ${appointment.barber.lastName}`}</TableCell>
+                  <TableCell>{`${appointment.client.firstName} ${appointment.client.lastName}`}</TableCell>
+                  <TableCell>{appointment.service.name}</TableCell>
+                  <TableCell>{format(parseISO(appointment.date), 'dd/MM/yyyy')}</TableCell>
+                  <TableCell>{appointment.time}</TableCell>
+                  <TableCell>
+                    <Chip
+                      label={appointment.status}
+                      color={getStatusColor(appointment.status)}
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell>{appointment.notes}</TableCell>
+                  <TableCell align="right">
+                    <IconButton size="small" onClick={() => handleViewClick(appointment)}>
+                      <ViewIcon />
+                    </IconButton>
+                    <IconButton size="small" onClick={() => handleEditClick(appointment)}>
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton size="small" onClick={() => handleDeleteClick(appointment)}>
+                      <DeleteIcon />
+                    </IconButton>
                   </TableCell>
                 </TableRow>
-              ) : appointments.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} align="center">
-                    No appointments found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                appointments.map((appointment) => (
-                  <TableRow key={appointment.id}>
-                    <TableCell>{getDateLabel(appointment.date)}</TableCell>
-                    <TableCell>
-                      {format(parseISO(`2000-01-01T${appointment.time}`), 'h:mm a')}
-                    </TableCell>
-                    <TableCell>
-                      {appointment.client?.firstName} {appointment.client?.lastName}
-                    </TableCell>
-                    <TableCell>{appointment.service?.name}</TableCell>
-                    <TableCell>
-                      {appointment.barber?.firstName} {appointment.barber?.lastName}
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={appointment.status}
-                        color={getStatusColor(appointment.status)}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell align="right">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleViewClick(appointment)}
-                        title="View Details"
-                      >
-                        <ViewIcon />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleEditClick(appointment)}
-                        title="Edit Appointment"
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDeleteClick(appointment)}
-                        title="Delete Appointment"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
+              ))}
             </TableBody>
           </Table>
           <TablePagination
@@ -354,41 +369,29 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
             onPageChange={handleChangePage}
             rowsPerPage={rowsPerPage}
             onRowsPerPageChange={handleChangeRowsPerPage}
-            rowsPerPageOptions={[5, 10, 25, 50]}
+            rowsPerPageOptions={[5, 10, 25]}
           />
         </TableContainer>
       ) : (
         <AppointmentCalendar
           appointments={appointments}
-          onViewClick={handleViewClick}
-          onEditClick={handleEditClick}
-          onDeleteClick={handleDeleteClick}
+          onAppointmentClick={handleViewClick}
         />
       )}
 
-      <Dialog open={openForm} onClose={handleFormClose} maxWidth="md" fullWidth>
-        <AppointmentForm
-          open={openForm}
-          onClose={handleFormClose}
-          onSuccess={handleFormSubmit}
-          appointment={selectedAppointment || undefined}
-        />
-      </Dialog>
+      <AppointmentForm
+        open={openForm}
+        onClose={handleFormClose}
+        onSubmit={handleFormSubmit}
+        appointment={selectedAppointment}
+        mode={formMode}
+      />
 
-      {openDetails && selectedAppointment && (
-        <Dialog open={openDetails} onClose={handleDetailsClose} maxWidth="lg" fullWidth>
-          <AppointmentDetails
-            appointment={selectedAppointment}
-            onClose={handleDetailsClose}
-            onEdit={() => {
-              handleDetailsClose();
-              if (selectedAppointment) {
-                handleEditClick(selectedAppointment);
-              }
-            }}
-          />
-        </Dialog>
-      )}
+      <AppointmentDetails
+        open={openDetails}
+        onClose={handleDetailsClose}
+        appointment={selectedAppointment}
+      />
     </Box>
   );
 };
