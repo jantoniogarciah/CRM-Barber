@@ -21,12 +21,14 @@ import {
 import {
   useCreateAppointmentMutation,
   useUpdateAppointmentMutation,
+} from '../store/slices/appointmentSlice';
+import {
   useGetClientsQuery,
-  useGetServicesQuery,
-  useGetBarbersQuery,
   useGetClientByPhoneQuery,
   useCreateClientMutation,
-} from '../services/api';
+} from '../store/slices/clientSlice';
+import { useGetServicesQuery } from '../store/slices/serviceSlice';
+import { useGetBarbersQuery } from '../store/services/barberApi';
 import { Appointment, Client, Service, Barber } from '../types';
 import { format, addDays, isAfter, startOfToday, parseISO } from 'date-fns';
 import { zonedTimeToUtc } from 'date-fns-tz';
@@ -52,6 +54,7 @@ interface AppointmentFormValues {
   lastName: string;
   phone: string;
   email: string;
+  isEditing: boolean;
 }
 
 const validationSchema = Yup.object({
@@ -116,28 +119,28 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
   const [createClient] = useCreateClientMutation();
   
   const { data: clientsData, isLoading: isLoadingClients } = useGetClientsQuery({ showInactive: false });
-  const { data: servicesData, isLoading: isLoadingServices } = useGetServicesQuery({ showInactive: false });
+  const { data: servicesData, isLoading: isLoadingServices } = useGetServicesQuery();
   const { data: barbersData, isLoading: isLoadingBarbers } = useGetBarbersQuery({ showInactive: false });
   const { data: clientByPhone, isFetching: isSearchingClient } = useGetClientByPhoneQuery(phoneSearch, {
     skip: !phoneSearch || phoneSearch.length < 10,
   });
 
   // Asegurarse de que los datos existan y sean arrays
-  const clients = clientsData?.clients || [];
+  const clients = clientsData || [];
   const services = servicesData || [];
   const barbers = barbersData || [];
 
   // Obtener la fecha mínima (mañana)
   const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd');
 
-  const formik = useFormik({
+  const formik = useFormik<AppointmentFormValues>({
     initialValues: {
       clientId: '',
       serviceId: '',
       barberId: '',
       date: tomorrow,
       time: '',
-      status: 'pending',
+      status: 'pending' as AppointmentFormValues['status'],
       notes: '',
       isNewClient: false,
       firstName: '',
@@ -153,11 +156,14 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
 
         // Si es un cliente nuevo, crearlo primero
         if (isNewClient) {
-          const newClientData = {
+          const newClientData: Partial<Client> = {
             firstName: values.firstName,
             lastName: values.lastName,
             phone: values.phone,
-            email: values.email || undefined,
+            email: values.email || null,
+            status: 'ACTIVE' as const,
+            notes: null,
+            lastVisit: null,
           };
 
           const createdClient = await createClient(newClientData).unwrap();
@@ -165,14 +171,16 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
           toast.success('Cliente registrado exitosamente');
         }
 
-        const appointmentData = {
+        const appointmentData: Omit<Appointment, 'id' | 'client' | 'service' | 'barber'> = {
           clientId: clientId,
           serviceId: values.serviceId,
           barberId: values.barberId,
           date: zonedTimeToUtc(new Date(`${values.date}T${values.time}`), 'America/Mexico_City').toISOString(),
           time: values.time,
-          status: values.status as 'pending' | 'confirmed' | 'completed' | 'cancelled',
-          notes: values.notes || undefined,
+          status: values.status,
+          notes: values.notes,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         };
 
         if (appointment?.id) {
@@ -302,11 +310,14 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
         return;
       }
 
-      const newClientData = {
+      const newClientData: Partial<Client> = {
         firstName: formik.values.firstName,
         lastName: formik.values.lastName,
         phone: formik.values.phone,
-        email: formik.values.email || undefined,
+        email: formik.values.email || null,
+        status: 'ACTIVE' as const,
+        notes: null,
+        lastVisit: null,
       };
 
       const createdClient = await createClient(newClientData).unwrap();
