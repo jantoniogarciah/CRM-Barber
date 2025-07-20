@@ -33,58 +33,95 @@ import {
   WhatsApp as WhatsAppIcon,
 } from '@mui/icons-material';
 import { format, parseISO, isToday, isTomorrow } from 'date-fns';
+import { es } from 'date-fns/locale';
 import axios from 'axios';
+import { Appointment } from '../../types';
 
-const AppointmentDetails = ({ appointment, onClose, onEdit }) => {
+interface AppointmentDetailsProps {
+  appointment: Appointment | null;
+  onClose: () => void;
+  onEdit: (appointment: Appointment) => void;
+  open: boolean;
+}
+
+const AppointmentDetails: React.FC<AppointmentDetailsProps> = ({ 
+  appointment, 
+  onClose, 
+  onEdit,
+  open 
+}) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const getStatusColor = (status) => {
+  if (!appointment) {
+    return null;
+  }
+
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case 'scheduled':
+      case 'pending':
+        return 'warning';
+      case 'confirmed':
         return 'info';
       case 'completed':
         return 'success';
       case 'cancelled':
         return 'error';
-      case 'no-show':
-        return 'warning';
       default:
         return 'default';
     }
   };
 
-  const getStatusIcon = (status) => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
-        return <CompletedIcon />;
+        return <CompletedIcon fontSize="small" />;
       case 'cancelled':
-        return <CancelledIcon />;
-      case 'no-show':
-        return <NoShowIcon />;
+        return <CancelledIcon fontSize="small" />;
+      case 'pending':
+        return <NoShowIcon fontSize="small" />;
       default:
-        return null;
+        return undefined;
     }
   };
 
-  const getDateLabel = (date) => {
-    const parsedDate = parseISO(date);
-    if (isToday(parsedDate)) {
-      return 'Today';
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'Pendiente';
+      case 'confirmed':
+        return 'Confirmada';
+      case 'completed':
+        return 'Completada';
+      case 'cancelled':
+        return 'Cancelada';
+      default:
+        return status;
     }
-    if (isTomorrow(parsedDate)) {
-      return 'Tomorrow';
-    }
-    return format(parsedDate, 'MMMM d, yyyy');
   };
 
-  const formatPhoneForWhatsApp = (phone) => {
-    // Remove any non-numeric characters
+  const formatDate = (dateStr: string) => {
+    try {
+      const date = parseISO(dateStr);
+      if (isToday(date)) {
+        return 'Hoy';
+      }
+      if (isTomorrow(date)) {
+        return 'Mañana';
+      }
+      return format(date, "d 'de' MMMM 'de' yyyy", { locale: es });
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return dateStr;
+    }
+  };
+
+  const formatPhoneForWhatsApp = (phone: string) => {
     return phone.replace(/\D/g, '');
   };
 
-  const handleStatusChange = async (newStatus) => {
+  const handleStatusChange = async (newStatus: string) => {
     setLoading(true);
     setError('');
 
@@ -94,8 +131,8 @@ const AppointmentDetails = ({ appointment, onClose, onEdit }) => {
         status: newStatus,
       });
       onClose();
-    } catch (error) {
-      setError(error.response?.data?.message || 'Failed to update appointment status');
+    } catch (error: any) {
+      setError(error.response?.data?.message || 'Error al actualizar el estado de la cita');
     } finally {
       setLoading(false);
     }
@@ -108,8 +145,8 @@ const AppointmentDetails = ({ appointment, onClose, onEdit }) => {
     try {
       await axios.delete(`/api/appointments/${appointment.id}`);
       onClose();
-    } catch (error) {
-      setError(error.response?.data?.message || 'Failed to delete appointment');
+    } catch (error: any) {
+      setError(error.response?.data?.message || 'Error al eliminar la cita');
     } finally {
       setLoading(false);
       setShowDeleteConfirm(false);
@@ -117,12 +154,12 @@ const AppointmentDetails = ({ appointment, onClose, onEdit }) => {
   };
 
   return (
-    <>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
         <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Typography variant="h6">Appointment Details</Typography>
+          <Typography variant="h6">Detalles de la Cita</Typography>
           <Chip
-            label={appointment.status}
+            label={getStatusLabel(appointment.status)}
             color={getStatusColor(appointment.status)}
             icon={getStatusIcon(appointment.status)}
           />
@@ -139,7 +176,7 @@ const AppointmentDetails = ({ appointment, onClose, onEdit }) => {
           <Grid item xs={12}>
             <Paper sx={{ p: 2 }}>
               <Typography variant="subtitle1" gutterBottom>
-                Client Information
+                Información del Cliente
               </Typography>
               <List>
                 <ListItem>
@@ -147,8 +184,8 @@ const AppointmentDetails = ({ appointment, onClose, onEdit }) => {
                     <PersonIcon />
                   </ListItemIcon>
                   <ListItemText
-                    primary={`${appointment.client.firstName} ${appointment.client.lastName}`}
-                    secondary={appointment.client.email}
+                    primary={`${appointment.client?.firstName || ''} ${appointment.client?.lastName || ''}`}
+                    secondary={appointment.client?.email}
                   />
                 </ListItem>
                 <ListItem>
@@ -158,20 +195,22 @@ const AppointmentDetails = ({ appointment, onClose, onEdit }) => {
                   <ListItemText 
                     primary="Teléfono" 
                     secondary={
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        {appointment.client.phone}
-                        <Tooltip title="Enviar mensaje por WhatsApp">
-                          <Link
-                            href={`https://wa.me/${formatPhoneForWhatsApp(appointment.client.phone)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            <IconButton size="small" color="success">
-                              <WhatsAppIcon />
-                            </IconButton>
-                          </Link>
-                        </Tooltip>
-                      </Box>
+                      appointment.client?.phone && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          {appointment.client.phone}
+                          <Tooltip title="Enviar mensaje por WhatsApp">
+                            <Link
+                              href={`https://wa.me/${formatPhoneForWhatsApp(appointment.client.phone)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <IconButton size="small" color="success">
+                                <WhatsAppIcon />
+                              </IconButton>
+                            </Link>
+                          </Tooltip>
+                        </Box>
+                      )
                     }
                   />
                 </ListItem>
@@ -182,7 +221,7 @@ const AppointmentDetails = ({ appointment, onClose, onEdit }) => {
           <Grid item xs={12}>
             <Paper sx={{ p: 2 }}>
               <Typography variant="subtitle1" gutterBottom>
-                Service Details
+                Detalles del Servicio
               </Typography>
               <List>
                 <ListItem>
@@ -190,8 +229,8 @@ const AppointmentDetails = ({ appointment, onClose, onEdit }) => {
                     <ServiceIcon />
                   </ListItemIcon>
                   <ListItemText
-                    primary={appointment.service.name}
-                    secondary={`Duration: ${appointment.service.duration} minutes`}
+                    primary={appointment.service?.name}
+                    secondary={appointment.service?.duration ? `Duración: ${appointment.service.duration} minutos` : null}
                   />
                 </ListItem>
                 <ListItem>
@@ -199,8 +238,8 @@ const AppointmentDetails = ({ appointment, onClose, onEdit }) => {
                     <PersonIcon />
                   </ListItemIcon>
                   <ListItemText
-                    primary="Barber"
-                    secondary={`${appointment.barber.firstName} ${appointment.barber.lastName}`}
+                    primary="Barbero"
+                    secondary={`${appointment.barber?.firstName || ''} ${appointment.barber?.lastName || ''}`}
                   />
                 </ListItem>
               </List>
@@ -210,7 +249,7 @@ const AppointmentDetails = ({ appointment, onClose, onEdit }) => {
           <Grid item xs={12}>
             <Paper sx={{ p: 2 }}>
               <Typography variant="subtitle1" gutterBottom>
-                Appointment Details
+                Detalles de la Cita
               </Typography>
               <List>
                 <ListItem>
@@ -218,13 +257,13 @@ const AppointmentDetails = ({ appointment, onClose, onEdit }) => {
                     <DateIcon />
                   </ListItemIcon>
                   <ListItemText
-                    primary={getDateLabel(appointment.date)}
-                    secondary={format(parseISO(`2000-01-01T${appointment.time}`), 'h:mm a')}
+                    primary={formatDate(appointment.date)}
+                    secondary={appointment.time}
                   />
                 </ListItem>
                 {appointment.notes && (
                   <ListItem>
-                    <ListItemText primary="Notes" secondary={appointment.notes} />
+                    <ListItemText primary="Notas" secondary={appointment.notes} />
                   </ListItem>
                 )}
               </List>
@@ -234,7 +273,7 @@ const AppointmentDetails = ({ appointment, onClose, onEdit }) => {
       </DialogContent>
       <DialogActions>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          {appointment.status === 'scheduled' && (
+          {appointment.status === 'pending' && (
             <>
               <Button
                 variant="contained"
@@ -242,15 +281,7 @@ const AppointmentDetails = ({ appointment, onClose, onEdit }) => {
                 onClick={() => handleStatusChange('completed')}
                 disabled={loading}
               >
-                Mark as Completed
-              </Button>
-              <Button
-                variant="outlined"
-                color="warning"
-                onClick={() => handleStatusChange('no-show')}
-                disabled={loading}
-              >
-                Mark as No-Show
+                Marcar como Completada
               </Button>
               <Button
                 variant="outlined"
@@ -258,12 +289,16 @@ const AppointmentDetails = ({ appointment, onClose, onEdit }) => {
                 onClick={() => handleStatusChange('cancelled')}
                 disabled={loading}
               >
-                Cancel Appointment
+                Cancelar Cita
               </Button>
             </>
           )}
-          <Button startIcon={<EditIcon />} onClick={onEdit} disabled={loading}>
-            Edit
+          <Button 
+            startIcon={<EditIcon />} 
+            onClick={() => onEdit(appointment)} 
+            disabled={loading}
+          >
+            Editar
           </Button>
           <Button
             startIcon={<DeleteIcon />}
@@ -271,28 +306,28 @@ const AppointmentDetails = ({ appointment, onClose, onEdit }) => {
             onClick={() => setShowDeleteConfirm(true)}
             disabled={loading}
           >
-            Delete
+            Eliminar
           </Button>
-          <Button onClick={onClose}>Close</Button>
+          <Button onClick={onClose}>Cerrar</Button>
         </Box>
       </DialogActions>
 
       <Dialog open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)}>
-        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogTitle>Confirmar Eliminación</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete this appointment? This action cannot be undone.
+            ¿Estás seguro de que deseas eliminar esta cita? Esta acción no se puede deshacer.
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setShowDeleteConfirm(false)}>Cancel</Button>
+          <Button onClick={() => setShowDeleteConfirm(false)}>Cancelar</Button>
           <Button onClick={handleDelete} color="error" disabled={loading}>
-            Delete
+            Eliminar
           </Button>
         </DialogActions>
       </Dialog>
-    </>
+    </Dialog>
   );
 };
 
-export default AppointmentDetails;
+export default AppointmentDetails; 

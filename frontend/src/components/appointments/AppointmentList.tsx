@@ -33,8 +33,8 @@ import {
 import { format, parseISO, startOfToday, endOfToday } from 'date-fns';
 import axios from 'axios';
 import AppointmentForm from '../AppointmentForm';
-import AppointmentDetails from './AppointmentDetails';
-import AppointmentCalendar from './AppointmentCalendar';
+import AppointmentDetails from '../AppointmentDetails';
+import AppointmentCalendar from '../AppointmentCalendar';
 import { Appointment } from '../../types';
 
 interface AppointmentListProps {
@@ -330,9 +330,15 @@ const AppointmentList: React.FC<AppointmentListProps> = ({
       ) : (
         <AppointmentCalendar
           appointments={appointments}
-          onViewClick={handleViewClick}
-          onEditClick={onEdit}
-          onDeleteClick={onDelete}
+          selectedDate={parseISO(startDate)}
+          onDateChange={(date: Date | null) => {
+            if (date) {
+              handleDateChange('start', format(date, 'yyyy-MM-dd'));
+              handleDateChange('end', format(date, 'yyyy-MM-dd'));
+            }
+          }}
+          onEditAppointment={onEdit}
+          onDeleteAppointment={onDelete}
         />
       )}
 
@@ -340,6 +346,7 @@ const AppointmentList: React.FC<AppointmentListProps> = ({
         appointment={selectedAppointment}
         onClose={handleDetailsClose}
         onEdit={onEdit}
+        open={openDetails}
       />
     </Box>
   );
