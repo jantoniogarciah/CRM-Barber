@@ -15,40 +15,43 @@ import {
   Chip,
   CircularProgress,
   Alert,
-  Button,
-  Dialog,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
-  Tabs,
-  Tab,
   Grid,
   SelectChangeEvent,
 } from '@mui/material';
 import {
   Search as SearchIcon,
-  Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Visibility as ViewIcon,
-  CalendarMonth as CalendarIcon,
-  ViewList as ListIcon,
   Phone as PhoneIcon,
   Person as PersonIcon,
 } from '@mui/icons-material';
-import { format, parseISO, isToday, isTomorrow, isPast, startOfToday, endOfToday } from 'date-fns';
+import { format, parseISO, startOfToday, endOfToday } from 'date-fns';
 import axios from 'axios';
-import AppointmentForm from '../../components/AppointmentForm';
+import AppointmentForm from '../AppointmentForm';
 import AppointmentDetails from './AppointmentDetails';
 import AppointmentCalendar from './AppointmentCalendar';
 import { Appointment } from '../../types';
 
 interface AppointmentListProps {
   barberId?: string;
+  viewMode: 'list' | 'calendar';
+  onEdit: (appointment: Appointment) => void;
+  onDelete: (appointment: Appointment) => void;
+  onAdd: () => void;
 }
 
-const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
+const AppointmentList: React.FC<AppointmentListProps> = ({
+  barberId,
+  viewMode,
+  onEdit,
+  onDelete,
+  onAdd
+}) => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -61,10 +64,7 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
-  const [openForm, setOpenForm] = useState(false);
   const [openDetails, setOpenDetails] = useState(false);
-  const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
-  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
 
   const fetchAppointments = async () => {
     try {
@@ -137,52 +137,14 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
     setPage(0);
   };
 
-  const handleAddClick = () => {
-    setFormMode('add');
-    setSelectedAppointment(null);
-    setOpenForm(true);
-  };
-
-  const handleEditClick = (appointment: Appointment) => {
-    setFormMode('edit');
-    setSelectedAppointment(appointment);
-    setOpenForm(true);
-  };
-
   const handleViewClick = (appointment: Appointment) => {
     setSelectedAppointment(appointment);
     setOpenDetails(true);
   };
 
-  const handleDeleteClick = async (appointment: Appointment) => {
-    if (window.confirm('Are you sure you want to delete this appointment?')) {
-      try {
-        const token = localStorage.getItem('token');
-        await axios.delete(`/api/appointments/${appointment.id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        fetchAppointments();
-      } catch (error: any) {
-        setError(
-          error.response?.data?.message || 'An error occurred while deleting the appointment'
-        );
-      }
-    }
-  };
-
-  const handleFormClose = () => {
-    setOpenForm(false);
-    setSelectedAppointment(null);
-  };
-
   const handleDetailsClose = () => {
     setOpenDetails(false);
     setSelectedAppointment(null);
-  };
-
-  const handleFormSubmit = async () => {
-    await fetchAppointments();
-    handleFormClose();
   };
 
   const getStatusColor = (status: string) => {
@@ -213,17 +175,6 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
       default:
         return status;
     }
-  };
-
-  const getDateLabel = (date: string) => {
-    const parsedDate = parseISO(date);
-    if (isToday(parsedDate)) {
-      return 'Today';
-    }
-    if (isTomorrow(parsedDate)) {
-      return 'Tomorrow';
-    }
-    return format(parsedDate, 'MMM d, yyyy');
   };
 
   return (
@@ -308,33 +259,6 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
         </Grid>
       </Box>
 
-      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<AddIcon />}
-          onClick={handleAddClick}
-        >
-          Nueva Cita
-        </Button>
-        <Box>
-          <IconButton 
-            onClick={() => setViewMode('list')}
-            color={viewMode === 'list' ? 'primary' : 'default'}
-            title="Vista de Lista"
-          >
-            <ListIcon />
-          </IconButton>
-          <IconButton
-            onClick={() => setViewMode('calendar')}
-            color={viewMode === 'calendar' ? 'primary' : 'default'}
-            title="Vista de Calendario"
-          >
-            <CalendarIcon />
-          </IconButton>
-        </Box>
-      </Box>
-
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
           <CircularProgress />
@@ -378,10 +302,10 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
                     <IconButton size="small" onClick={() => handleViewClick(appointment)} title="Ver Detalles">
                       <ViewIcon />
                     </IconButton>
-                    <IconButton size="small" onClick={() => handleEditClick(appointment)} title="Editar">
+                    <IconButton size="small" onClick={() => onEdit(appointment)} title="Editar">
                       <EditIcon />
                     </IconButton>
-                    <IconButton size="small" onClick={() => handleDeleteClick(appointment)} title="Eliminar">
+                    <IconButton size="small" onClick={() => onDelete(appointment)} title="Eliminar">
                       <DeleteIcon />
                     </IconButton>
                   </TableCell>
@@ -406,22 +330,16 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
       ) : (
         <AppointmentCalendar
           appointments={appointments}
-          onAppointmentClick={handleViewClick}
+          onViewClick={handleViewClick}
+          onEditClick={onEdit}
+          onDeleteClick={onDelete}
         />
       )}
 
-      <AppointmentForm
-        open={openForm}
-        onClose={handleFormClose}
-        onSubmit={handleFormSubmit}
-        appointment={selectedAppointment}
-        mode={formMode}
-      />
-
       <AppointmentDetails
-        open={openDetails}
-        onClose={handleDetailsClose}
         appointment={selectedAppointment}
+        onClose={handleDetailsClose}
+        onEdit={onEdit}
       />
     </Box>
   );
