@@ -31,11 +31,11 @@ import {
   Person as PersonIcon,
 } from '@mui/icons-material';
 import { format, parseISO, startOfToday, endOfToday } from 'date-fns';
-import axios from 'axios';
 import AppointmentForm from '../AppointmentForm';
-import AppointmentDetails from '../AppointmentDetails';
+import AppointmentDetails from './AppointmentDetails';
 import AppointmentCalendar from '../AppointmentCalendar';
 import { Appointment } from '../../types';
+import api from '../../services/api';
 
 interface AppointmentListProps {
   barberId?: string;
@@ -70,9 +70,8 @@ const AppointmentList: React.FC<AppointmentListProps> = ({
     try {
       setLoading(true);
       setError('');
-      const token = localStorage.getItem('token');
-      const response = await axios.get('/api/appointments', {
-        headers: { Authorization: `Bearer ${token}` },
+
+      const response = await api.get('/api/appointments', {
         params: {
           barberId,
           clientName: nameFilter,
@@ -82,7 +81,7 @@ const AppointmentList: React.FC<AppointmentListProps> = ({
           endDate,
           page: page + 1,
           limit: rowsPerPage,
-        },
+        }
       });
 
       if (response.data && Array.isArray(response.data.appointments)) {
@@ -90,11 +89,27 @@ const AppointmentList: React.FC<AppointmentListProps> = ({
         setTotalCount(response.data.pagination?.total || 0);
       } else {
         console.error('Invalid response format:', response.data);
-        setError('Invalid response format from server');
+        setError('Formato de respuesta inválido del servidor');
       }
     } catch (error: any) {
       console.error('Error fetching appointments:', error);
-      setError(error.response?.data?.message || 'Error al cargar las citas');
+      
+      if (error.response) {
+        // Error de respuesta del servidor
+        if (error.response.status === 401) {
+          setError('Sesión expirada. Por favor, inicia sesión nuevamente.');
+        } else if (error.response.status === 404) {
+          setError('No se encontró el recurso solicitado');
+        } else {
+          setError(error.response.data?.message || 'Error al cargar las citas');
+        }
+      } else if (error.request) {
+        // Error de red
+        setError('Error de conexión con el servidor. Por favor, verifica tu conexión a internet.');
+      } else {
+        // Otros errores
+        setError(error.message || 'Error al cargar las citas');
+      }
     } finally {
       setLoading(false);
     }
