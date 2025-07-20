@@ -87,14 +87,14 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
 
       if (response.data && Array.isArray(response.data.appointments)) {
         setAppointments(response.data.appointments);
-        setTotalCount(response.data.total || response.data.appointments.length);
+        setTotalCount(response.data.pagination?.total || 0);
       } else {
         console.error('Invalid response format:', response.data);
         setError('Invalid response format from server');
       }
     } catch (error: any) {
       console.error('Error fetching appointments:', error);
-      setError(error.response?.data?.message || 'An error occurred while fetching appointments');
+      setError(error.response?.data?.message || 'Error al cargar las citas');
     } finally {
       setLoading(false);
     }
@@ -200,6 +200,21 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
     }
   };
 
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'Pendiente';
+      case 'confirmed':
+        return 'Confirmada';
+      case 'completed':
+        return 'Completada';
+      case 'cancelled':
+        return 'Cancelada';
+      default:
+        return status;
+    }
+  };
+
   const getDateLabel = (date: string) => {
     const parsedDate = parseISO(date);
     if (isToday(parsedDate)) {
@@ -225,7 +240,8 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
           <Grid item xs={12} md={3}>
             <TextField
               fullWidth
-              placeholder="Buscar por nombre..."
+              label="Buscar por nombre"
+              placeholder="Nombre del cliente..."
               value={nameFilter}
               onChange={handleNameFilterChange}
               InputProps={{
@@ -235,12 +251,14 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
                   </InputAdornment>
                 ),
               }}
+              size="small"
             />
           </Grid>
           <Grid item xs={12} md={3}>
             <TextField
               fullWidth
-              placeholder="Buscar por teléfono..."
+              label="Buscar por teléfono"
+              placeholder="Teléfono del cliente..."
               value={phoneFilter}
               onChange={handlePhoneFilterChange}
               InputProps={{
@@ -250,10 +268,11 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
                   </InputAdornment>
                 ),
               }}
+              size="small"
             />
           </Grid>
           <Grid item xs={12} md={2}>
-            <FormControl fullWidth>
+            <FormControl fullWidth size="small">
               <InputLabel>Estado</InputLabel>
               <Select value={status} onChange={handleStatusChange} label="Estado">
                 <MenuItem value="">Todos</MenuItem>
@@ -272,6 +291,7 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
               value={startDate}
               onChange={(e) => handleDateChange('start', e.target.value)}
               InputLabelProps={{ shrink: true }}
+              size="small"
             />
           </Grid>
           <Grid item xs={12} md={2}>
@@ -282,6 +302,7 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
               value={endDate}
               onChange={(e) => handleDateChange('end', e.target.value)}
               InputLabelProps={{ shrink: true }}
+              size="small"
             />
           </Grid>
         </Grid>
@@ -300,12 +321,14 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
           <IconButton 
             onClick={() => setViewMode('list')}
             color={viewMode === 'list' ? 'primary' : 'default'}
+            title="Vista de Lista"
           >
             <ListIcon />
           </IconButton>
           <IconButton
             onClick={() => setViewMode('calendar')}
             color={viewMode === 'calendar' ? 'primary' : 'default'}
+            title="Vista de Calendario"
           >
             <CalendarIcon />
           </IconButton>
@@ -316,6 +339,10 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
         <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
           <CircularProgress />
         </Box>
+      ) : appointments.length === 0 ? (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          No se encontraron citas con los filtros seleccionados
+        </Alert>
       ) : viewMode === 'list' ? (
         <TableContainer component={Paper}>
           <Table>
@@ -334,27 +361,27 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
             <TableBody>
               {appointments.map((appointment) => (
                 <TableRow key={appointment.id}>
-                  <TableCell>{`${appointment.barber.firstName} ${appointment.barber.lastName}`}</TableCell>
-                  <TableCell>{`${appointment.client.firstName} ${appointment.client.lastName}`}</TableCell>
-                  <TableCell>{appointment.service.name}</TableCell>
+                  <TableCell>{`${appointment.barber?.firstName || ''} ${appointment.barber?.lastName || ''}`}</TableCell>
+                  <TableCell>{`${appointment.client?.firstName || ''} ${appointment.client?.lastName || ''}`}</TableCell>
+                  <TableCell>{appointment.service?.name || ''}</TableCell>
                   <TableCell>{format(parseISO(appointment.date), 'dd/MM/yyyy')}</TableCell>
                   <TableCell>{appointment.time}</TableCell>
                   <TableCell>
                     <Chip
-                      label={appointment.status}
+                      label={getStatusLabel(appointment.status)}
                       color={getStatusColor(appointment.status)}
                       size="small"
                     />
                   </TableCell>
                   <TableCell>{appointment.notes}</TableCell>
                   <TableCell align="right">
-                    <IconButton size="small" onClick={() => handleViewClick(appointment)}>
+                    <IconButton size="small" onClick={() => handleViewClick(appointment)} title="Ver Detalles">
                       <ViewIcon />
                     </IconButton>
-                    <IconButton size="small" onClick={() => handleEditClick(appointment)}>
+                    <IconButton size="small" onClick={() => handleEditClick(appointment)} title="Editar">
                       <EditIcon />
                     </IconButton>
-                    <IconButton size="small" onClick={() => handleDeleteClick(appointment)}>
+                    <IconButton size="small" onClick={() => handleDeleteClick(appointment)} title="Eliminar">
                       <DeleteIcon />
                     </IconButton>
                   </TableCell>
@@ -370,6 +397,10 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
             rowsPerPage={rowsPerPage}
             onRowsPerPageChange={handleChangeRowsPerPage}
             rowsPerPageOptions={[5, 10, 25]}
+            labelRowsPerPage="Citas por página"
+            labelDisplayedRows={({ from, to, count }) => 
+              `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`
+            }
           />
         </TableContainer>
       ) : (

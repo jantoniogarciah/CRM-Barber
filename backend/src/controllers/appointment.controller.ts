@@ -8,32 +8,99 @@ const prisma = new PrismaClient();
 // Get all appointments
 export const getAppointments = async (req: Request, res: Response) => {
   try {
+    const {
+      clientName,
+      clientPhone,
+      status,
+      startDate,
+      endDate,
+      page = 1,
+      limit = 10,
+      barberId
+    } = req.query;
+
+    console.log('Fetching appointments with filters:', {
+      clientName,
+      clientPhone,
+      status,
+      startDate,
+      endDate,
+      page,
+      limit,
+      barberId
+    });
+
+    // Build where clause
+    const where: any = {};
+
+    // Filter by barber if provided
+    if (barberId) {
+      where.barberId = barberId;
+    }
+
+    // Filter by status if provided
+    if (status) {
+      where.status = status;
+    }
+
+    // Filter by date range
+    if (startDate || endDate) {
+      where.date = {};
+      if (startDate) {
+        where.date.gte = new Date(startDate as string);
+      }
+      if (endDate) {
+        where.date.lte = new Date(endDate as string);
+      }
+    }
+
+    // Filter by client name or phone
+    if (clientName || clientPhone) {
+      where.client = {};
+      if (clientName) {
+        where.client.OR = [
+          { firstName: { contains: clientName as string, mode: 'insensitive' } },
+          { lastName: { contains: clientName as string, mode: 'insensitive' } }
+        ];
+      }
+      if (clientPhone) {
+        where.client.phone = { contains: clientPhone as string };
+      }
+    }
+
+    // Calculate pagination
+    const skip = ((Number(page) || 1) - 1) * (Number(limit) || 10);
+    const take = Number(limit) || 10;
+
+    // Get total count for pagination
+    const totalCount = await prisma.appointment.count({ where });
+
+    // Get appointments with filters and pagination
     const appointments = await prisma.appointment.findMany({
+      where,
       include: {
         client: true,
         service: true,
         barber: true,
       },
       orderBy: [
-        {
-          barber: {
-            firstName: "asc",
-          },
-        },
-        {
-          date: "asc",
-        },
-        {
-          time: "asc",
-        },
+        { date: 'asc' },
+        { time: 'asc' }
       ],
+      skip,
+      take,
     });
 
-    console.log('Found appointments:', appointments.length);
+    console.log(`Found ${appointments.length} appointments out of ${totalCount} total`);
 
     res.json({
       appointments,
-      total: appointments.length
+      pagination: {
+        total: totalCount,
+        page: Number(page) || 1,
+        pageSize: Number(limit) || 10,
+        totalPages: Math.ceil(totalCount / (Number(limit) || 10))
+      }
     });
   } catch (error) {
     console.error("Error getting appointments:", error);
