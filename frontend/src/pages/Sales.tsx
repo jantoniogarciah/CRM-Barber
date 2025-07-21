@@ -26,12 +26,16 @@ import {
   Tooltip,
   DialogContentText,
   TablePagination,
+  InputAdornment,
+  SelectChangeEvent,
 } from '@mui/material';
 import { 
   Add as AddIcon, 
   Search as SearchIcon, 
   Delete as DeleteIcon,
-  Edit as EditIcon 
+  Edit as EditIcon,
+  Person as PersonIcon,
+  Phone as PhoneIcon,
 } from '@mui/icons-material';
 import { 
   useGetServicesQuery, 
@@ -82,6 +86,13 @@ const Sales: React.FC = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [filters, setFilters] = useState({
+    name: '',
+    phone: '',
+    status: '',
+    startDate: format(new Date(), 'yyyy-MM-dd'),
+    endDate: format(new Date(), 'yyyy-MM-dd'),
+  });
 
   const { 
     data: services = [], 
@@ -355,6 +366,16 @@ const Sales: React.FC = () => {
     setPage(0);
   };
 
+  // Función para manejar cambios en los filtros
+  const handleFilterChange = (field: string) => (
+    event: React.ChangeEvent<HTMLInputElement> | SelectChangeEvent
+  ) => {
+    setFilters(prev => ({
+      ...prev,
+      [field]: event.target.value
+    }));
+  };
+
   if (isLoadingSales) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
@@ -390,31 +411,78 @@ const Sales: React.FC = () => {
         </Button>
       </Box>
 
-      <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center' }}>
-        <TextField
-          type="date"
-          label="Fecha inicial"
-          value={startDate}
-          onChange={(e) => setStartDate(e.target.value)}
-          InputLabelProps={{ shrink: true }}
-        />
-        <TextField
-          type="date"
-          label="Fecha final"
-          value={endDate}
-          onChange={(e) => setEndDate(e.target.value)}
-          InputLabelProps={{ shrink: true }}
-        />
-        <Button
-          variant="outlined"
-          onClick={() => {
-            setStartDate('');
-            setEndDate('');
-          }}
-        >
-          Limpiar filtros
-        </Button>
-      </Box>
+      {/* Filtros de búsqueda */}
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} sm={6} md={3}>
+            <TextField
+              fullWidth
+              label="Buscar por nombre"
+              value={filters.name}
+              onChange={handleFilterChange('name')}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <PersonIcon />
+                  </InputAdornment>
+                ),
+              }}
+              placeholder="Nombre del cliente..."
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <TextField
+              fullWidth
+              label="Buscar por teléfono"
+              value={filters.phone}
+              onChange={handleFilterChange('phone')}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <PhoneIcon />
+                  </InputAdornment>
+                ),
+              }}
+              placeholder="Teléfono del cliente..."
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={2}>
+            <FormControl fullWidth>
+              <InputLabel>Estado</InputLabel>
+              <Select
+                value={filters.status}
+                onChange={handleFilterChange('status')}
+                label="Estado"
+              >
+                <MenuItem value="">Todos</MenuItem>
+                <MenuItem value="completed">Completada</MenuItem>
+                <MenuItem value="cancelled">Cancelada</MenuItem>
+                <MenuItem value="refunded">Reembolsada</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={6} md={2}>
+            <TextField
+              fullWidth
+              label="Fecha Inicio"
+              type="date"
+              value={filters.startDate}
+              onChange={handleFilterChange('startDate')}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={2}>
+            <TextField
+              fullWidth
+              label="Fecha Fin"
+              type="date"
+              value={filters.endDate}
+              onChange={handleFilterChange('endDate')}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+        </Grid>
+      </Paper>
 
       {sales.length === 0 ? (
         <Alert severity="info">No hay ventas registradas.</Alert>
@@ -436,6 +504,27 @@ const Sales: React.FC = () => {
             </TableHead>
             <TableBody>
               {[...sales]
+                .filter(sale => {
+                  const nameMatch = filters.name ? 
+                    (sale.client?.firstName + ' ' + sale.client?.lastName)
+                      .toLowerCase()
+                      .includes(filters.name.toLowerCase()) : true;
+
+                  const phoneMatch = filters.phone ?
+                    sale.client?.phone.includes(filters.phone) : true;
+
+                  const statusMatch = filters.status ?
+                    sale.status === filters.status : true;
+
+                  const saleDate = new Date(sale.saleDate || sale.createdAt);
+                  const startDate = new Date(filters.startDate);
+                  const endDate = new Date(filters.endDate);
+                  startDate.setHours(0, 0, 0, 0);
+                  endDate.setHours(23, 59, 59, 999);
+                  const dateMatch = saleDate >= startDate && saleDate <= endDate;
+
+                  return nameMatch && phoneMatch && statusMatch && dateMatch;
+                })
                 .sort((a, b) => new Date(b.saleDate || b.createdAt).getTime() - new Date(a.saleDate || a.createdAt).getTime())
                 .map((sale: Sale) => (
                 <TableRow key={sale.id}>
