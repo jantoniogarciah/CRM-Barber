@@ -50,7 +50,7 @@ import {
   useSearchClientsQuery,
 } from '../services/api';
 import { toast } from 'react-hot-toast';
-import { format } from 'date-fns';
+import { format, startOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { zonedTimeToUtc, utcToZonedTime } from 'date-fns-tz';
 import { Sale, Service, Barber, Client } from '../types';
@@ -65,6 +65,10 @@ interface SalesResponse {
 }
 
 const Sales: React.FC = () => {
+  // Obtener la fecha actual y el primer día del mes
+  const today = new Date();
+  const firstDayOfMonth = startOfMonth(today);
+
   const [openNewSale, setOpenNewSale] = useState(false);
   const [openEditSale, setOpenEditSale] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -88,14 +92,12 @@ const Sales: React.FC = () => {
   const [foundClient, setFoundClient] = useState<Client | null>(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
   const [filters, setFilters] = useState({
     name: '',
     phone: '',
     status: '',
-    startDate: format(new Date(), 'yyyy-MM-dd'),
-    endDate: format(new Date(), 'yyyy-MM-dd'),
+    startDate: format(firstDayOfMonth, 'yyyy-MM-dd'),
+    endDate: format(today, 'yyyy-MM-dd'),
   });
 
   const { 

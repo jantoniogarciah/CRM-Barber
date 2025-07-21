@@ -35,7 +35,7 @@ import {
   Person as PersonIcon,
   Phone as PhoneIcon,
 } from '@mui/icons-material';
-import { format } from 'date-fns';
+import { format, startOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { zonedTimeToUtc, utcToZonedTime } from 'date-fns-tz';
 import {
@@ -63,6 +63,10 @@ interface BarbersResponse {
 }
 
 export const Appointments = () => {
+  // Obtener la fecha actual y el primer día del mes
+  const today = new Date();
+  const firstDayOfMonth = startOfMonth(today);
+
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [openForm, setOpenForm] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | undefined>(undefined);
@@ -74,8 +78,8 @@ export const Appointments = () => {
     name: '',
     phone: '',
     status: '',
-    startDate: format(new Date(), 'yyyy-MM-dd'),
-    endDate: format(new Date(), 'yyyy-MM-dd'),
+    startDate: format(firstDayOfMonth, 'yyyy-MM-dd'),
+    endDate: format(today, 'yyyy-MM-dd'),
   });
 
   const { data: appointmentsData, isLoading: isLoadingAppointments, refetch: refetchAppointments } = useGetAppointmentsQuery();
