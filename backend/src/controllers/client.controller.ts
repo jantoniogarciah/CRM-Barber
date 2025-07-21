@@ -372,39 +372,49 @@ export const searchClients = async (req: Request, res: Response) => {
     }
 
     const searchTerm = search as string;
+    const searchWords = searchTerm.trim().split(/\s+/);
     
-    console.log('Searching clients:', { searchTerm });
+    console.log('Searching clients:', { searchTerm, searchWords });
+
+    // Si el término parece ser un teléfono (solo contiene números)
+    const isPhoneSearch = /^\d+$/.test(searchTerm.replace(/\D/g, ''));
+    
+    let whereClause: any = {
+      status: "ACTIVE"
+    };
+
+    if (isPhoneSearch) {
+      whereClause.phone = {
+        contains: searchTerm.replace(/\D/g, '')
+      };
+    } else {
+      // Búsqueda por nombre usando cada palabra del término de búsqueda
+      whereClause.OR = searchWords.flatMap(word => [
+        {
+          firstName: {
+            contains: word,
+            mode: 'insensitive'
+          }
+        },
+        {
+          lastName: {
+            contains: word,
+            mode: 'insensitive'
+          }
+        }
+      ]);
+    }
 
     const clients = await prisma.client.findMany({
-      where: {
-        OR: [
-          {
-            firstName: {
-              contains: searchTerm,
-              mode: 'insensitive'
-            }
-          },
-          {
-            lastName: {
-              contains: searchTerm,
-              mode: 'insensitive'
-            }
-          },
-          {
-            phone: {
-              contains: searchTerm.replace(/\D/g, '')
-            }
-          }
-        ],
-        status: "ACTIVE"
-      },
+      where: whereClause,
       take: 10,
-      orderBy: {
-        firstName: 'asc'
-      }
+      orderBy: [
+        { firstName: 'asc' },
+        { lastName: 'asc' }
+      ]
     });
 
-    console.log(`Found ${clients.length} clients`);
+    console.log(`Found ${clients.length} clients with search criteria:`, whereClause);
 
     return res.json(clients);
   } catch (error) {
