@@ -23,6 +23,8 @@ import {
   FormControl,
   InputLabel,
   Select,
+  InputAdornment,
+  SelectChangeEvent,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -30,6 +32,8 @@ import {
   Delete as DeleteIcon,
   ViewList as ViewListIcon,
   CalendarMonth as CalendarIcon,
+  Person as PersonIcon,
+  Phone as PhoneIcon,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -66,6 +70,13 @@ export const Appointments = () => {
   const [selectedBarber, setSelectedBarber] = useState<string>('');
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [appointmentToDelete, setAppointmentToDelete] = useState<Appointment | null>(null);
+  const [filters, setFilters] = useState({
+    name: '',
+    phone: '',
+    status: '',
+    startDate: format(new Date(), 'yyyy-MM-dd'),
+    endDate: format(new Date(), 'yyyy-MM-dd'),
+  });
 
   const { data: appointmentsData, isLoading: isLoadingAppointments, refetch: refetchAppointments } = useGetAppointmentsQuery();
   const { data: barbersData, isLoading: isLoadingBarbers } = useGetBarbersQuery({ showInactive: false });
@@ -154,16 +165,60 @@ export const Appointments = () => {
     }
   };
 
+  // Manejadores de eventos para los diferentes tipos de campos
+  const handleTextChange = (field: string) => (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setFilters(prev => ({
+      ...prev,
+      [field]: event.target.value
+    }));
+  };
+
+  const handleSelectChange = (field: string) => (
+    event: SelectChangeEvent
+  ) => {
+    setFilters(prev => ({
+      ...prev,
+      [field]: event.target.value
+    }));
+  };
+
+  // Modificar la función de filtrado de citas
   const filteredAppointments = appointments.filter((appointment: Appointment) => {
     if (!appointment || !appointment.date) return false;
     
     try {
-      const appointmentDate = utcToZonedTime(new Date(appointment.date), 'America/Mexico_City');
-      const compareDate = utcToZonedTime(selectedDate, 'America/Mexico_City');
+      // Filtro por nombre
+      const nameMatch = filters.name ? 
+        (appointment.client?.firstName + ' ' + appointment.client?.lastName)
+          .toLowerCase()
+          .includes(filters.name.toLowerCase()) : true;
 
-      const isDateMatch = format(appointmentDate, 'yyyy-MM-dd') === format(compareDate, 'yyyy-MM-dd');
-      const isBarberMatch = !selectedBarber || appointment.barberId === selectedBarber;
-      return isDateMatch && isBarberMatch;
+      // Filtro por teléfono
+      const phoneMatch = filters.phone ?
+        appointment.client?.phone.includes(filters.phone) : true;
+
+      // Filtro por estado
+      const statusMatch = filters.status ?
+        appointment.status === filters.status : true;
+
+      // Filtro por rango de fechas
+      const appointmentDate = utcToZonedTime(new Date(appointment.date), 'America/Mexico_City');
+      const startDate = new Date(filters.startDate);
+      const endDate = new Date(filters.endDate);
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
+      const dateMatch = appointmentDate >= startDate && appointmentDate <= endDate;
+
+      // Filtros existentes
+      const isDateMatch = viewMode === 'calendar' ? 
+        format(appointmentDate, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd') : true;
+      const isBarberMatch = selectedBarber ? 
+        appointment.barberId === selectedBarber : true;
+
+      return nameMatch && phoneMatch && statusMatch && dateMatch && 
+             (viewMode === 'calendar' ? (isDateMatch && isBarberMatch) : true);
     } catch (error) {
       console.error('Error filtering appointment:', error);
       return false;
@@ -226,6 +281,80 @@ export const Appointments = () => {
         </Grid>
       </Box>
 
+      {/* Filtros de búsqueda */}
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} sm={6} md={3}>
+            <TextField
+              fullWidth
+              label="Buscar por nombre"
+              value={filters.name}
+              onChange={handleTextChange('name')}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <PersonIcon />
+                  </InputAdornment>
+                ),
+              }}
+              placeholder="Nombre del cliente..."
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <TextField
+              fullWidth
+              label="Buscar por teléfono"
+              value={filters.phone}
+              onChange={handleTextChange('phone')}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <PhoneIcon />
+                  </InputAdornment>
+                ),
+              }}
+              placeholder="Teléfono del cliente..."
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={2}>
+            <FormControl fullWidth>
+              <InputLabel>Estado</InputLabel>
+              <Select
+                value={filters.status}
+                onChange={handleSelectChange('status')}
+                label="Estado"
+              >
+                <MenuItem value="">Todos</MenuItem>
+                <MenuItem value="pending">Pendiente</MenuItem>
+                <MenuItem value="confirmed">Confirmada</MenuItem>
+                <MenuItem value="completed">Completada</MenuItem>
+                <MenuItem value="cancelled">Cancelada</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={6} md={2}>
+            <TextField
+              fullWidth
+              label="Fecha Inicio"
+              type="date"
+              value={filters.startDate}
+              onChange={handleTextChange('startDate')}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={2}>
+            <TextField
+              fullWidth
+              label="Fecha Fin"
+              type="date"
+              value={filters.endDate}
+              onChange={handleTextChange('endDate')}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+        </Grid>
+      </Paper>
+
       {viewMode === 'list' ? (
         <TableContainer component={Paper}>
           <Table>
@@ -242,7 +371,7 @@ export const Appointments = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {appointments.map((appointment: Appointment) => (
+              {filteredAppointments.map((appointment: Appointment) => (
                 <TableRow key={appointment.id}>
                   <TableCell>
                     {`${appointment.barber?.firstName} ${appointment.barber?.lastName}`}
