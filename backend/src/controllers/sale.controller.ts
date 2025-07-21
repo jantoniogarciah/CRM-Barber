@@ -11,6 +11,9 @@ export const getSales = async (req: Request, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 10;
     const startDate = req.query.startDate as string;
     const endDate = req.query.endDate as string;
+    const name = req.query.name as string;
+    const phone = req.query.phone as string;
+    const status = req.query.status as string;
     const skip = (page - 1) * limit;
 
     // Construir el where clause base
@@ -27,6 +30,39 @@ export const getSales = async (req: Request, res: Response) => {
         const endDateTime = new Date(endDate);
         endDateTime.setHours(23, 59, 59, 999);
         whereClause.saleDate.lte = endDateTime;
+      }
+    }
+
+    // Agregar filtro por estado
+    if (status) {
+      whereClause.status = status;
+    }
+
+    // Agregar filtros de cliente (nombre y teléfono)
+    if (name || phone) {
+      whereClause.client = {};
+      
+      if (name) {
+        whereClause.client.OR = [
+          {
+            firstName: {
+              contains: name,
+              mode: 'insensitive'
+            }
+          },
+          {
+            lastName: {
+              contains: name,
+              mode: 'insensitive'
+            }
+          }
+        ];
+      }
+      
+      if (phone) {
+        whereClause.client.phone = {
+          contains: phone
+        };
       }
     }
 
