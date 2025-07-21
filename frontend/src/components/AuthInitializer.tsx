@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { setCredentials, clearCredentials, selectUser } from '../store/slices/authSlice';
-import { useGetCurrentUserQuery } from '../services/authService';
+import { useGetCurrentUserQuery } from '../services/api';
 import { CircularProgress, Box } from '@mui/material';
 import { toast } from 'react-hot-toast';
-import { User } from '../types';
 
 interface AuthInitializerProps {
   children: React.ReactNode;
@@ -74,12 +73,10 @@ const AuthInitializer: React.FC<AuthInitializerProps> = ({ children }) => {
 
       const token = localStorage.getItem('token');
       if (token) {
-        // Asegurarse de que el rol y el status estén en mayúsculas
-        const normalizedUser: User = {
+        // Asegurarse de que el rol esté en mayúsculas
+        const normalizedUser = {
           ...currentUser,
-          role: (currentUser.role?.toUpperCase() || 'CLIENTE') as User['role'],
-          status: (currentUser.status || 'ACTIVE') as 'ACTIVE' | 'INACTIVE',
-          id: currentUser.id.toString(),
+          role: currentUser.role?.toUpperCase(),
         };
         console.log('AuthInitializer - Normalized user:', normalizedUser);
 

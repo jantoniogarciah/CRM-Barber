@@ -1,5 +1,16 @@
 import { api } from './api';
-import { User } from '../types';
+
+export interface User {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: 'admin' | 'barber' | 'client';
+  phone?: string;
+  avatar?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface LoginDto {
   email: string;
@@ -11,7 +22,7 @@ export interface RegisterDto {
   password: string;
   firstName: string;
   lastName: string;
-  role: 'ADMIN' | 'ADMINBARBER' | 'BARBER' | 'CLIENTE';
+  role: 'admin' | 'barber' | 'client';
   phone?: string;
 }
 

@@ -15,101 +15,82 @@ import {
   Chip,
   CircularProgress,
   Alert,
+  Button,
+  Dialog,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
+  Tabs,
+  Tab,
   Grid,
   SelectChangeEvent,
 } from '@mui/material';
 import {
   Search as SearchIcon,
+  Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Visibility as ViewIcon,
-  Phone as PhoneIcon,
-  Person as PersonIcon,
+  CalendarMonth as CalendarIcon,
+  ViewList as ListIcon,
 } from '@mui/icons-material';
-import { format, parseISO, startOfToday, endOfToday } from 'date-fns';
-import AppointmentForm from '../AppointmentForm';
+import { format, parseISO, isToday, isTomorrow, isPast } from 'date-fns';
+import axios from 'axios';
+import AppointmentForm from '../../components/AppointmentForm';
 import AppointmentDetails from './AppointmentDetails';
-import AppointmentCalendar from '../AppointmentCalendar';
+import AppointmentCalendar from './AppointmentCalendar';
 import { Appointment } from '../../types';
-import api from '../../services/api';
 
 interface AppointmentListProps {
   barberId?: string;
-  viewMode: 'list' | 'calendar';
-  onEdit: (appointment: Appointment) => void;
-  onDelete: (appointment: Appointment) => void;
-  onAdd: () => void;
 }
 
-const AppointmentList: React.FC<AppointmentListProps> = ({
-  barberId,
-  viewMode,
-  onEdit,
-  onDelete,
-  onAdd
-}) => {
+const AppointmentList: React.FC<AppointmentListProps> = ({ barberId }) => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [nameFilter, setNameFilter] = useState('');
-  const [phoneFilter, setPhoneFilter] = useState('');
+  const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
-  const [startDate, setStartDate] = useState(format(startOfToday(), 'yyyy-MM-dd'));
-  const [endDate, setEndDate] = useState(format(endOfToday(), 'yyyy-MM-dd'));
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [openForm, setOpenForm] = useState(false);
   const [openDetails, setOpenDetails] = useState(false);
+  const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
 
   const fetchAppointments = async () => {
     try {
       setLoading(true);
       setError('');
-
-      const response = await api.get('/api/appointments', {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('/api/appointments', {
+        headers: { Authorization: `Bearer ${token}` },
         params: {
           barberId,
-          clientName: nameFilter,
-          clientPhone: phoneFilter,
+          search,
           status,
           startDate,
           endDate,
           page: page + 1,
           limit: rowsPerPage,
-        }
+        },
       });
 
       if (response.data && Array.isArray(response.data.appointments)) {
         setAppointments(response.data.appointments);
-        setTotalCount(response.data.pagination?.total || 0);
+        setTotalCount(response.data.total || response.data.appointments.length);
       } else {
         console.error('Invalid response format:', response.data);
-        setError('Formato de respuesta inválido del servidor');
+        setError('Invalid response format from server');
       }
     } catch (error: any) {
       console.error('Error fetching appointments:', error);
-      
-      if (error.response) {
-        // Error de respuesta del servidor
-        if (error.response.status === 401) {
-          setError('Sesión expirada. Por favor, inicia sesión nuevamente.');
-        } else if (error.response.status === 404) {
-          setError('No se encontró el recurso solicitado');
-        } else {
-          setError(error.response.data?.message || 'Error al cargar las citas');
-        }
-      } else if (error.request) {
-        // Error de red
-        setError('Error de conexión con el servidor. Por favor, verifica tu conexión a internet.');
-      } else {
-        // Otros errores
-        setError(error.message || 'Error al cargar las citas');
-      }
+      setError(error.response?.data?.message || 'An error occurred while fetching appointments');
     } finally {
       setLoading(false);
     }
@@ -117,7 +98,7 @@ const AppointmentList: React.FC<AppointmentListProps> = ({
 
   useEffect(() => {
     fetchAppointments();
-  }, [page, rowsPerPage, nameFilter, phoneFilter, status, startDate, endDate, barberId]);
+  }, [page, rowsPerPage, search, status, startDate, endDate, barberId]);
 
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
@@ -128,13 +109,8 @@ const AppointmentList: React.FC<AppointmentListProps> = ({
     setPage(0);
   };
 
-  const handleNameFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setNameFilter(event.target.value);
-    setPage(0);
-  };
-
-  const handlePhoneFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setPhoneFilter(event.target.value);
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(event.target.value);
     setPage(0);
   };
 
@@ -152,14 +128,52 @@ const AppointmentList: React.FC<AppointmentListProps> = ({
     setPage(0);
   };
 
+  const handleAddClick = () => {
+    setFormMode('add');
+    setSelectedAppointment(null);
+    setOpenForm(true);
+  };
+
+  const handleEditClick = (appointment: Appointment) => {
+    setFormMode('edit');
+    setSelectedAppointment(appointment);
+    setOpenForm(true);
+  };
+
   const handleViewClick = (appointment: Appointment) => {
     setSelectedAppointment(appointment);
     setOpenDetails(true);
   };
 
+  const handleDeleteClick = async (appointment: Appointment) => {
+    if (window.confirm('Are you sure you want to delete this appointment?')) {
+      try {
+        const token = localStorage.getItem('token');
+        await axios.delete(`/api/appointments/${appointment.id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        fetchAppointments();
+      } catch (error: any) {
+        setError(
+          error.response?.data?.message || 'An error occurred while deleting the appointment'
+        );
+      }
+    }
+  };
+
+  const handleFormClose = () => {
+    setOpenForm(false);
+    setSelectedAppointment(null);
+  };
+
   const handleDetailsClose = () => {
     setOpenDetails(false);
     setSelectedAppointment(null);
+  };
+
+  const handleFormSubmit = async () => {
+    await fetchAppointments();
+    handleFormClose();
   };
 
   const getStatusColor = (status: string) => {
@@ -177,19 +191,15 @@ const AppointmentList: React.FC<AppointmentListProps> = ({
     }
   };
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'Pendiente';
-      case 'confirmed':
-        return 'Confirmada';
-      case 'completed':
-        return 'Completada';
-      case 'cancelled':
-        return 'Cancelada';
-      default:
-        return status;
+  const getDateLabel = (date: string) => {
+    const parsedDate = parseISO(date);
+    if (isToday(parsedDate)) {
+      return 'Today';
     }
+    if (isTomorrow(parsedDate)) {
+      return 'Tomorrow';
+    }
+    return format(parsedDate, 'MMM d, yyyy');
   };
 
   return (
@@ -200,132 +210,141 @@ const AppointmentList: React.FC<AppointmentListProps> = ({
         </Alert>
       )}
 
-      <Box sx={{ mb: 3 }}>
-        <Grid container spacing={2} alignItems="center">
-          {/* Filtros */}
-          <Grid item xs={12} md={3}>
-            <TextField
-              fullWidth
-              label="Buscar por nombre"
-              placeholder="Nombre del cliente..."
-              value={nameFilter}
-              onChange={handleNameFilterChange}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <PersonIcon />
-                  </InputAdornment>
-                ),
-              }}
-              size="small"
-            />
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <TextField
-              fullWidth
-              label="Buscar por teléfono"
-              placeholder="Teléfono del cliente..."
-              value={phoneFilter}
-              onChange={handlePhoneFilterChange}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <PhoneIcon />
-                  </InputAdornment>
-                ),
-              }}
-              size="small"
-            />
-          </Grid>
-          <Grid item xs={12} md={2}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Estado</InputLabel>
-              <Select value={status} onChange={handleStatusChange} label="Estado">
-                <MenuItem value="">Todos</MenuItem>
-                <MenuItem value="pending">Pendiente</MenuItem>
-                <MenuItem value="confirmed">Confirmada</MenuItem>
-                <MenuItem value="completed">Completada</MenuItem>
-                <MenuItem value="cancelled">Cancelada</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} md={2}>
-            <TextField
-              fullWidth
-              type="date"
-              label="Fecha Inicio"
-              value={startDate}
-              onChange={(e) => handleDateChange('start', e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              size="small"
-            />
-          </Grid>
-          <Grid item xs={12} md={2}>
-            <TextField
-              fullWidth
-              type="date"
-              label="Fecha Fin"
-              value={endDate}
-              onChange={(e) => handleDateChange('end', e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              size="small"
-            />
-          </Grid>
-        </Grid>
+      <Box
+        sx={{
+          mb: 3,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <TextField
+            placeholder="Search appointments..."
+            value={search}
+            onChange={handleSearchChange}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ width: 300 }}
+          />
+          <FormControl sx={{ minWidth: 150 }}>
+            <InputLabel>Status</InputLabel>
+            <Select value={status} onChange={handleStatusChange} label="Status">
+              <MenuItem value="">Todos los estados</MenuItem>
+              <MenuItem value="pending">Pendiente</MenuItem>
+              <MenuItem value="confirmed">Confirmada</MenuItem>
+              <MenuItem value="completed">Completada</MenuItem>
+              <MenuItem value="cancelled">Cancelada</MenuItem>
+            </Select>
+          </FormControl>
+          <TextField
+            type="date"
+            label="Start Date"
+            value={startDate}
+            onChange={(e) => handleDateChange('start', e.target.value)}
+            InputLabelProps={{ shrink: true }}
+          />
+          <TextField
+            type="date"
+            label="End Date"
+            value={endDate}
+            onChange={(e) => handleDateChange('end', e.target.value)}
+            InputLabelProps={{ shrink: true }}
+          />
+        </Box>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={viewMode === 'list' ? <CalendarIcon /> : <ListIcon />}
+            onClick={() => setViewMode(viewMode === 'list' ? 'calendar' : 'list')}
+          >
+            {viewMode === 'list' ? 'Calendar View' : 'List View'}
+          </Button>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={handleAddClick}>
+            Add Appointment
+          </Button>
+        </Box>
       </Box>
 
-      {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-          <CircularProgress />
-        </Box>
-      ) : appointments.length === 0 ? (
-        <Alert severity="info" sx={{ mb: 2 }}>
-          No se encontraron citas con los filtros seleccionados
-        </Alert>
-      ) : viewMode === 'list' ? (
+      {viewMode === 'list' ? (
         <TableContainer component={Paper}>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Barbero</TableCell>
-                <TableCell>Cliente</TableCell>
-                <TableCell>Servicio</TableCell>
-                <TableCell>Fecha</TableCell>
-                <TableCell>Hora</TableCell>
-                <TableCell>Estado</TableCell>
-                <TableCell>Notas</TableCell>
-                <TableCell align="right">Acciones</TableCell>
+                <TableCell>Date</TableCell>
+                <TableCell>Time</TableCell>
+                <TableCell>Client</TableCell>
+                <TableCell>Service</TableCell>
+                <TableCell>Barber</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {appointments.map((appointment) => (
-                <TableRow key={appointment.id}>
-                  <TableCell>{`${appointment.barber?.firstName || ''} ${appointment.barber?.lastName || ''}`}</TableCell>
-                  <TableCell>{`${appointment.client?.firstName || ''} ${appointment.client?.lastName || ''}`}</TableCell>
-                  <TableCell>{appointment.service?.name || ''}</TableCell>
-                  <TableCell>{format(parseISO(appointment.date), 'dd/MM/yyyy')}</TableCell>
-                  <TableCell>{appointment.time}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={getStatusLabel(appointment.status)}
-                      color={getStatusColor(appointment.status)}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>{appointment.notes}</TableCell>
-                  <TableCell align="right">
-                    <IconButton size="small" onClick={() => handleViewClick(appointment)} title="Ver Detalles">
-                      <ViewIcon />
-                    </IconButton>
-                    <IconButton size="small" onClick={() => onEdit(appointment)} title="Editar">
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton size="small" onClick={() => onDelete(appointment)} title="Eliminar">
-                      <DeleteIcon />
-                    </IconButton>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={7} align="center">
+                    <CircularProgress />
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : appointments.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} align="center">
+                    No appointments found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                appointments.map((appointment) => (
+                  <TableRow key={appointment.id}>
+                    <TableCell>{getDateLabel(appointment.date)}</TableCell>
+                    <TableCell>
+                      {format(parseISO(`2000-01-01T${appointment.time}`), 'h:mm a')}
+                    </TableCell>
+                    <TableCell>
+                      {appointment.client?.firstName} {appointment.client?.lastName}
+                    </TableCell>
+                    <TableCell>{appointment.service?.name}</TableCell>
+                    <TableCell>
+                      {appointment.barber?.firstName} {appointment.barber?.lastName}
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={appointment.status}
+                        color={getStatusColor(appointment.status)}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell align="right">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleViewClick(appointment)}
+                        title="View Details"
+                      >
+                        <ViewIcon />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleEditClick(appointment)}
+                        title="Edit Appointment"
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDeleteClick(appointment)}
+                        title="Delete Appointment"
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
           <TablePagination
@@ -335,34 +354,41 @@ const AppointmentList: React.FC<AppointmentListProps> = ({
             onPageChange={handleChangePage}
             rowsPerPage={rowsPerPage}
             onRowsPerPageChange={handleChangeRowsPerPage}
-            rowsPerPageOptions={[5, 10, 25]}
-            labelRowsPerPage="Citas por página"
-            labelDisplayedRows={({ from, to, count }) => 
-              `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`
-            }
+            rowsPerPageOptions={[5, 10, 25, 50]}
           />
         </TableContainer>
       ) : (
         <AppointmentCalendar
           appointments={appointments}
-          selectedDate={parseISO(startDate)}
-          onDateChange={(date: Date | null) => {
-            if (date) {
-              handleDateChange('start', format(date, 'yyyy-MM-dd'));
-              handleDateChange('end', format(date, 'yyyy-MM-dd'));
-            }
-          }}
-          onEditAppointment={onEdit}
-          onDeleteAppointment={onDelete}
+          onViewClick={handleViewClick}
+          onEditClick={handleEditClick}
+          onDeleteClick={handleDeleteClick}
         />
       )}
 
-      <AppointmentDetails
-        appointment={selectedAppointment}
-        onClose={handleDetailsClose}
-        onEdit={onEdit}
-        open={openDetails}
-      />
+      <Dialog open={openForm} onClose={handleFormClose} maxWidth="md" fullWidth>
+        <AppointmentForm
+          open={openForm}
+          onClose={handleFormClose}
+          onSuccess={handleFormSubmit}
+          appointment={selectedAppointment || undefined}
+        />
+      </Dialog>
+
+      {openDetails && selectedAppointment && (
+        <Dialog open={openDetails} onClose={handleDetailsClose} maxWidth="lg" fullWidth>
+          <AppointmentDetails
+            appointment={selectedAppointment}
+            onClose={handleDetailsClose}
+            onEdit={() => {
+              handleDetailsClose();
+              if (selectedAppointment) {
+                handleEditClick(selectedAppointment);
+              }
+            }}
+          />
+        </Dialog>
+      )}
     </Box>
   );
 };

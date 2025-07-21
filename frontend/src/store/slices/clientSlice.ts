@@ -18,18 +18,11 @@ const initialState: ClientState = {
 // Extend the API with client endpoints
 export const clientApi = api.injectEndpoints({
   endpoints: (builder) => ({
-    getClients: builder.query<Client[], { showInactive?: boolean }>({
-      query: (params) => ({
-        url: '/clients',
-        params: params,
-      }),
+    getClients: builder.query<Client[], void>({
+      query: () => '/clients',
       providesTags: ['Client'],
     }),
-    getClientByPhone: builder.query<Client | null, string>({
-      query: (phone) => `/clients/search?phone=${phone}`,
-      providesTags: ['Client'],
-    }),
-    createClient: builder.mutation<Client, Partial<Client>>({
+    createClient: builder.mutation<Client, Omit<Client, 'id'>>({
       query: (client) => ({
         url: '/clients',
         method: 'POST',
@@ -68,7 +61,6 @@ export const clientApi = api.injectEndpoints({
 
 export const {
   useGetClientsQuery,
-  useGetClientByPhoneQuery,
   useCreateClientMutation,
   useUpdateClientMutation,
   useDeleteClientMutation,
