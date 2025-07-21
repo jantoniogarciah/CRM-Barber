@@ -5,6 +5,16 @@ import { toast } from 'react-hot-toast';
 import { clearCredentials } from '../store/slices/authSlice';
 import { API_CONFIG } from '../config';
 
+interface GetSalesParams {
+  page?: number;
+  limit?: number;
+  startDate?: string;
+  endDate?: string;
+  name?: string;
+  phone?: string;
+  status?: string;
+}
+
 const baseQuery = fetchBaseQuery(API_CONFIG);
 
 const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
@@ -385,19 +395,17 @@ export const api = createApi({
       totalPages: number;
       hasNextPage: boolean;
       hasPrevPage: boolean;
-    }, { 
-      page?: number; 
-      limit?: number;
-      startDate?: string;
-      endDate?: string;
-    }>({
+    }, GetSalesParams>({
       query: (params) => ({
         url: '/sales',
         params: {
           page: params?.page || 1,
           limit: params?.limit || 10,
           startDate: params?.startDate,
-          endDate: params?.endDate
+          endDate: params?.endDate,
+          name: params?.name,
+          phone: params?.phone,
+          status: params?.status
         }
       }),
       providesTags: ['Sales'],

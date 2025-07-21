@@ -124,9 +124,18 @@ const Sales: React.FC = () => {
   } = useGetSalesQuery({
     page: page + 1,
     limit: rowsPerPage,
-    startDate,
-    endDate
+    startDate: filters.startDate,
+    endDate: filters.endDate,
+    name: filters.name,
+    phone: filters.phone,
+    status: filters.status
   });
+
+  // Efecto para refrescar los datos cuando cambien los filtros
+  useEffect(() => {
+    refetchSales();
+  }, [filters, page, rowsPerPage]);
+
   const [createClient] = useCreateClientMutation();
   const [deleteSale] = useDeleteSaleMutation();
 
@@ -366,14 +375,27 @@ const Sales: React.FC = () => {
     setPage(0);
   };
 
-  // Función para manejar cambios en los filtros
-  const handleFilterChange = (field: string) => (
-    event: React.ChangeEvent<HTMLInputElement> | SelectChangeEvent
+  // Manejadores de eventos para los diferentes tipos de campos
+  const handleTextChange = (field: string) => (
+    event: React.ChangeEvent<HTMLInputElement>
   ) => {
     setFilters(prev => ({
       ...prev,
       [field]: event.target.value
     }));
+    // Resetear la página al cambiar los filtros
+    setPage(0);
+  };
+
+  const handleSelectChange = (field: string) => (
+    event: SelectChangeEvent<string>
+  ) => {
+    setFilters(prev => ({
+      ...prev,
+      [field]: event.target.value
+    }));
+    // Resetear la página al cambiar los filtros
+    setPage(0);
   };
 
   if (isLoadingSales) {
@@ -419,7 +441,7 @@ const Sales: React.FC = () => {
               fullWidth
               label="Buscar por nombre"
               value={filters.name}
-              onChange={handleFilterChange('name')}
+              onChange={handleTextChange('name')}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -435,7 +457,7 @@ const Sales: React.FC = () => {
               fullWidth
               label="Buscar por teléfono"
               value={filters.phone}
-              onChange={handleFilterChange('phone')}
+              onChange={handleTextChange('phone')}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -451,7 +473,7 @@ const Sales: React.FC = () => {
               <InputLabel>Estado</InputLabel>
               <Select
                 value={filters.status}
-                onChange={handleFilterChange('status')}
+                onChange={handleSelectChange('status')}
                 label="Estado"
               >
                 <MenuItem value="">Todos</MenuItem>
@@ -467,7 +489,7 @@ const Sales: React.FC = () => {
               label="Fecha Inicio"
               type="date"
               value={filters.startDate}
-              onChange={handleFilterChange('startDate')}
+              onChange={handleTextChange('startDate')}
               InputLabelProps={{ shrink: true }}
             />
           </Grid>
@@ -477,7 +499,7 @@ const Sales: React.FC = () => {
               label="Fecha Fin"
               type="date"
               value={filters.endDate}
-              onChange={handleFilterChange('endDate')}
+              onChange={handleTextChange('endDate')}
               InputLabelProps={{ shrink: true }}
             />
           </Grid>
@@ -503,30 +525,7 @@ const Sales: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {[...sales]
-                .filter(sale => {
-                  const nameMatch = filters.name ? 
-                    (sale.client?.firstName + ' ' + sale.client?.lastName)
-                      .toLowerCase()
-                      .includes(filters.name.toLowerCase()) : true;
-
-                  const phoneMatch = filters.phone ?
-                    sale.client?.phone.includes(filters.phone) : true;
-
-                  const statusMatch = filters.status ?
-                    sale.status === filters.status : true;
-
-                  const saleDate = new Date(sale.saleDate || sale.createdAt);
-                  const startDate = new Date(filters.startDate);
-                  const endDate = new Date(filters.endDate);
-                  startDate.setHours(0, 0, 0, 0);
-                  endDate.setHours(23, 59, 59, 999);
-                  const dateMatch = saleDate >= startDate && saleDate <= endDate;
-
-                  return nameMatch && phoneMatch && statusMatch && dateMatch;
-                })
-                .sort((a, b) => new Date(b.saleDate || b.createdAt).getTime() - new Date(a.saleDate || a.createdAt).getTime())
-                .map((sale: Sale) => (
+              {sales.map((sale: Sale) => (
                 <TableRow key={sale.id}>
                   <TableCell>
                     {format(new Date(sale.saleDate || sale.createdAt), "d 'de' MMMM 'de' yyyy", { 
