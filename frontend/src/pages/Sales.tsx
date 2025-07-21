@@ -28,6 +28,7 @@ import {
   TablePagination,
   InputAdornment,
   SelectChangeEvent,
+  Autocomplete,
 } from '@mui/material';
 import { 
   Add as AddIcon, 
@@ -46,6 +47,7 @@ import {
   useGetSalesQuery,
   useCreateClientMutation,
   useDeleteSaleMutation,
+  useSearchClientsQuery,
 } from '../services/api';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
@@ -78,6 +80,8 @@ const Sales: React.FC = () => {
     email: '',
     phone: '',
   });
+  const [clientSearch, setClientSearch] = useState('');
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [saleToDelete, setSaleToDelete] = useState<string | null>(null);
   const [saleToEdit, setSaleToEdit] = useState<Sale | null>(null);
@@ -112,6 +116,13 @@ const Sales: React.FC = () => {
     error: searchError 
   } = useGetClientByPhoneQuery(phoneNumber, {
     skip: !phoneNumber || phoneNumber.length < 10,
+  });
+
+  const { 
+    data: searchResults = [], 
+    isFetching: isSearching 
+  } = useSearchClientsQuery(clientSearch, {
+    skip: !clientSearch || clientSearch.length < 2
   });
 
   const [createSale] = useCreateSaleMutation();
@@ -224,6 +235,18 @@ const Sales: React.FC = () => {
     setOpenNewSale(false);
   };
 
+  const handleClientSelect = (client: Client | null) => {
+    setSelectedClient(client);
+    if (client) {
+      setPhoneNumber(client.phone);
+      setFoundClient(client);
+      setShowNewClientForm(false);
+    } else {
+      setPhoneNumber('');
+      setFoundClient(null);
+    }
+  };
+
   const resetForm = () => {
     setPhoneNumber('');
     setSelectedService('');
@@ -233,6 +256,8 @@ const Sales: React.FC = () => {
     setSaleDate(format(new Date(), 'yyyy-MM-dd'));
     setShowNewClientForm(false);
     setFoundClient(null);
+    setSelectedClient(null);
+    setClientSearch('');
     setNewClient({
       firstName: '',
       lastName: '',
@@ -601,37 +626,58 @@ const Sales: React.FC = () => {
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
-              <TextField
+              <Autocomplete
                 fullWidth
-                label="Teléfono del cliente"
-                value={phoneNumber}
-                onChange={handlePhoneChange}
-                disabled={showNewClientForm}
+                options={searchResults}
+                loading={isSearching}
+                getOptionLabel={(option) => `${option.firstName} ${option.lastName} - ${option.phone}`}
+                filterOptions={(x) => x}
+                value={selectedClient}
+                onChange={(event, newValue) => handleClientSelect(newValue)}
+                onInputChange={(event, newValue) => setClientSearch(newValue)}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Buscar cliente"
+                    placeholder="Nombre o teléfono..."
+                    InputProps={{
+                      ...params.InputProps,
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchIcon />
+                        </InputAdornment>
+                      ),
+                      endAdornment: (
+                        <>
+                          {isSearching ? <CircularProgress color="inherit" size={20} /> : null}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
+                    }}
+                  />
+                )}
               />
             </Grid>
 
-            {phoneNumber.length === 10 && !isSearchingClient && (
+            {!selectedClient && clientSearch.length >= 10 && !isSearching && searchResults.length === 0 && (
               <Grid item xs={12}>
-                {foundClient ? (
-                  <Alert severity="success">
-                    Cliente encontrado: {foundClient.firstName} {foundClient.lastName}
-                  </Alert>
-                ) : (
-                  <Alert 
-                    severity="warning"
-                    action={
-                      <Button 
-                        color="inherit" 
-                        size="small"
-                        onClick={() => setShowNewClientForm(true)}
-                      >
-                        Registrar
-                      </Button>
-                    }
-                  >
-                    Cliente no encontrado
-                  </Alert>
-                )}
+                <Alert 
+                  severity="warning"
+                  action={
+                    <Button 
+                      color="inherit" 
+                      size="small"
+                      onClick={() => {
+                        setShowNewClientForm(true);
+                        setNewClient(prev => ({ ...prev, phone: clientSearch.replace(/\D/g, '') }));
+                      }}
+                    >
+                      Registrar
+                    </Button>
+                  }
+                >
+                  Cliente no encontrado
+                </Alert>
               </Grid>
             )}
 

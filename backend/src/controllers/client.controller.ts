@@ -361,3 +361,54 @@ export const searchClientByPhone = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Error al buscar el cliente" });
   }
 };
+
+// Search clients by name or phone
+export const searchClients = async (req: Request, res: Response) => {
+  try {
+    const { search } = req.query;
+
+    if (!search) {
+      return res.status(400).json({ message: "El término de búsqueda es requerido" });
+    }
+
+    const searchTerm = search as string;
+    
+    console.log('Searching clients:', { searchTerm });
+
+    const clients = await prisma.client.findMany({
+      where: {
+        OR: [
+          {
+            firstName: {
+              contains: searchTerm,
+              mode: 'insensitive'
+            }
+          },
+          {
+            lastName: {
+              contains: searchTerm,
+              mode: 'insensitive'
+            }
+          },
+          {
+            phone: {
+              contains: searchTerm.replace(/\D/g, '')
+            }
+          }
+        ],
+        status: "ACTIVE"
+      },
+      take: 10,
+      orderBy: {
+        firstName: 'asc'
+      }
+    });
+
+    console.log(`Found ${clients.length} clients`);
+
+    return res.json(clients);
+  } catch (error) {
+    console.error("Error searching clients:", error);
+    return res.status(500).json({ message: "Error al buscar clientes" });
+  }
+};

@@ -196,6 +196,15 @@ export const api = createApi({
       providesTags: ['Clients'],
     }),
 
+    // Search clients by name or phone
+    searchClients: builder.query<Client[], string>({
+      query: (search) => ({
+        url: '/clients/search',
+        params: { search },
+      }),
+      providesTags: ['Clients'],
+    }),
+
     // Service endpoints
     getServices: builder.query<Service[], { showInactive?: boolean }>({
       query: (params) => ({
@@ -488,6 +497,8 @@ export const {
   useUpdateClientMutation,
   useDeleteClientMutation,
   useToggleClientStatusMutation,
+  useSearchClientByPhoneQuery,
+  useSearchClientsQuery,
   useGetServicesQuery,
   useGetServiceQuery,
   useCreateServiceMutation,
@@ -519,7 +530,6 @@ export const {
   useCreateSaleMutation,
   useUpdateSaleMutation,
   useDeleteSaleMutation,
-  useSearchClientByPhoneQuery,
   useGetUsersQuery,
   useGetUserByIdQuery,
   useCreateUserMutation,
