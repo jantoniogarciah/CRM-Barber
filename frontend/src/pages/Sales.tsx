@@ -636,7 +636,14 @@ const Sales: React.FC = () => {
                 filterOptions={(x) => x}
                 value={selectedClient}
                 onChange={(event, newValue) => handleClientSelect(newValue)}
-                onInputChange={(event, newValue) => setClientSearch(newValue)}
+                onInputChange={(event, newValue) => {
+                  setClientSearch(newValue);
+                  // Si parece un número de teléfono, actualizar el estado del nuevo cliente
+                  const cleanPhone = newValue.replace(/\D/g, '');
+                  if (cleanPhone.length === 10) {
+                    setNewClient(prev => ({ ...prev, phone: cleanPhone }));
+                  }
+                }}
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -661,7 +668,7 @@ const Sales: React.FC = () => {
               />
             </Grid>
 
-            {!selectedClient && clientSearch.length >= 10 && !isSearching && searchResults.length === 0 && (
+            {!selectedClient && !isSearching && (
               <Grid item xs={12}>
                 <Alert 
                   severity="warning"
@@ -671,14 +678,18 @@ const Sales: React.FC = () => {
                       size="small"
                       onClick={() => {
                         setShowNewClientForm(true);
-                        setNewClient(prev => ({ ...prev, phone: clientSearch.replace(/\D/g, '') }));
+                        // Mantener el número de teléfono si ya está ingresado
+                        const cleanPhone = clientSearch.replace(/\D/g, '');
+                        if (cleanPhone.length === 10) {
+                          setNewClient(prev => ({ ...prev, phone: cleanPhone }));
+                        }
                       }}
                     >
-                      Registrar
+                      Registrar Nuevo Cliente
                     </Button>
                   }
                 >
-                  Cliente no encontrado
+                  Cliente no encontrado. ¿Deseas registrar uno nuevo?
                 </Alert>
               </Grid>
             )}
@@ -688,6 +699,7 @@ const Sales: React.FC = () => {
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
+                    required
                     label="Nombre"
                     value={newClient.firstName}
                     onChange={(e) => setNewClient(prev => ({ ...prev, firstName: e.target.value }))}
@@ -696,6 +708,7 @@ const Sales: React.FC = () => {
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
+                    required
                     label="Apellido"
                     value={newClient.lastName}
                     onChange={(e) => setNewClient(prev => ({ ...prev, lastName: e.target.value }))}
@@ -711,10 +724,25 @@ const Sales: React.FC = () => {
                   />
                 </Grid>
                 <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    required
+                    label="Teléfono"
+                    value={newClient.phone}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      setNewClient(prev => ({ ...prev, phone: value }));
+                    }}
+                    inputProps={{ maxLength: 10 }}
+                    helperText="El teléfono debe tener 10 dígitos"
+                  />
+                </Grid>
+                <Grid item xs={12}>
                   <Button
                     fullWidth
                     variant="contained"
                     onClick={handleCreateClient}
+                    disabled={!newClient.firstName || !newClient.lastName || newClient.phone.length !== 10}
                   >
                     Registrar Cliente
                   </Button>
