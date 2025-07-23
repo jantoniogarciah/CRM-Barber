@@ -143,18 +143,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const drawer = useMemo(
     () => (
-      <div>
-        <Toolbar>
-          <Typography variant="h6" noWrap component="div">
-            Clipper Cut CRM
-          </Typography>
-        </Toolbar>
-        <Divider />
+      <Box sx={{ mt: { xs: '56px', sm: 0 } }}>
         <List>
           {menuItems.map((item) => (
             <ListItem key={item.text} disablePadding>
               <ListItemButton
-                onClick={() => navigate(item.path)}
+                onClick={() => {
+                  navigate(item.path);
+                  setMobileOpen(false); // Cerrar el menú al seleccionar una opción
+                }}
                 selected={location.pathname === item.path}
                 sx={{
                   '& .MuiListItemIcon-root': {
@@ -174,7 +171,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </ListItem>
           ))}
         </List>
-      </div>
+      </Box>
     ),
     [menuItems, location.pathname, navigate]
   );
@@ -192,12 +189,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             position="fixed"
             color="primary"
             sx={{
-              width: { sm: `calc(100% - ${drawerWidth}px)` },
-              ml: { sm: `${drawerWidth}px` },
+              width: '100%',
               zIndex: (theme) => theme.zIndex.drawer + 1,
             }}
           >
-            <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }}>
+            <Toolbar sx={{ minHeight: { xs: '56px', sm: '64px' } }}>
               <IconButton
                 color="inherit"
                 aria-label="open drawer"
@@ -242,7 +238,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 id="menu-appbar"
                 anchorEl={anchorEl}
                 anchorOrigin={{
-                  vertical: 'top',
+                  vertical: 'bottom',
                   horizontal: 'right',
                 }}
                 keepMounted
@@ -252,6 +248,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 }}
                 open={Boolean(anchorEl)}
                 onClose={handleClose}
+                sx={{
+                  '& .MuiPaper-root': {
+                    mt: 1,
+                  },
+                }}
               >
                 <MenuItem
                   onClick={() => {
@@ -259,60 +260,53 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     navigate('/profile');
                   }}
                 >
-                  Profile
+                  Mi Perfil
                 </MenuItem>
-                <MenuItem onClick={handleLogout}>Logout</MenuItem>
+                <MenuItem onClick={handleLogout}>Cerrar Sesión</MenuItem>
               </Menu>
             </Toolbar>
           </AppBar>
-          <Box
-            component="nav"
+
+          <Drawer
+            variant="temporary"
+            open={mobileOpen}
+            onClose={handleDrawerToggle}
+            ModalProps={{
+              keepMounted: true,
+            }}
             sx={{
-              width: { sm: drawerWidth },
-              flexShrink: { sm: 0 },
+              display: { xs: 'block', sm: 'none' },
+              '& .MuiDrawer-paper': {
+                width: drawerWidth,
+                backgroundColor: (theme) => theme.palette.background.default,
+              },
             }}
           >
-            <Drawer
-              variant="temporary"
-              open={mobileOpen}
-              onClose={handleDrawerToggle}
-              ModalProps={{
-                keepMounted: true,
-              }}
-              sx={{
-                display: { xs: 'block', sm: 'none' },
-                '& .MuiDrawer-paper': {
-                  boxSizing: 'border-box',
-                  width: drawerWidth,
-                  top: { xs: 0 },
-                  height: '100%',
-                },
-              }}
-            >
-              {drawer}
-            </Drawer>
-            <Drawer
-              variant="permanent"
-              sx={{
-                display: { xs: 'none', sm: 'block' },
-                '& .MuiDrawer-paper': {
-                  boxSizing: 'border-box',
-                  width: drawerWidth,
-                  borderRight: '1px solid rgba(0, 0, 0, 0.12)',
-                },
-              }}
-              open
-            >
-              {drawer}
-            </Drawer>
-          </Box>
+            {drawer}
+          </Drawer>
+
+          <Drawer
+            variant="permanent"
+            sx={{
+              display: { xs: 'none', sm: 'block' },
+              '& .MuiDrawer-paper': {
+                width: drawerWidth,
+                borderRight: '1px solid rgba(0, 0, 0, 0.12)',
+                height: '100%',
+                top: 0,
+              },
+            }}
+            open
+          >
+            {drawer}
+          </Drawer>
         </>
       )}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          width: { xs: '100%', sm: `calc(100% - ${drawerWidth}px)` },
+          width: '100%',
           ml: { sm: `${drawerWidth}px` },
           display: 'flex',
           flexDirection: 'column',
