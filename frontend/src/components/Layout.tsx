@@ -143,17 +143,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const drawer = useMemo(
     () => (
-      <Box sx={{ mt: { xs: '56px', sm: 0 } }}>
+      <Box sx={{ mt: { xs: '112px', sm: 0 } }}> {/* Doubled the mobile top margin */}
         <List>
           {menuItems.map((item) => (
             <ListItem key={item.text} disablePadding>
               <ListItemButton
                 onClick={() => {
                   navigate(item.path);
-                  setMobileOpen(false); // Cerrar el menú al seleccionar una opción
+                  setMobileOpen(false);
                 }}
                 selected={location.pathname === item.path}
                 sx={{
+                  py: { xs: 1.5, sm: 1 }, // Increased padding for better touch targets
                   '& .MuiListItemIcon-root': {
                     minWidth: 56,
                     display: 'flex',
@@ -191,15 +192,27 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             sx={{
               width: '100%',
               zIndex: (theme) => theme.zIndex.drawer + 1,
+              height: { xs: '112px', sm: '64px' }, // Doubled the mobile height
             }}
           >
-            <Toolbar sx={{ minHeight: { xs: '56px', sm: '64px' } }}>
+            <Toolbar 
+              sx={{ 
+                minHeight: { xs: '112px', sm: '64px' },
+                display: 'flex',
+                alignItems: 'center',
+                px: { xs: 2, sm: 3 },
+              }}
+            >
               <IconButton
                 color="inherit"
                 aria-label="open drawer"
                 edge="start"
                 onClick={handleDrawerToggle}
-                sx={{ mr: 2, display: { sm: 'none' } }}
+                sx={{ 
+                  mr: 2, 
+                  display: { sm: 'none' },
+                  transform: { xs: 'scale(1.2)', sm: 'none' }, // Slightly larger icon on mobile
+                }}
               >
                 <MenuIcon />
               </IconButton>
@@ -208,7 +221,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 src={logo}
                 alt="Clipper Cut Logo"
                 sx={{
-                  height: { xs: 32, sm: 40 },
+                  height: { xs: 40, sm: 40 }, // Increased logo size on mobile
                   mr: 2,
                   display: 'block',
                 }}
@@ -219,7 +232,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 component="div"
                 sx={{
                   flexGrow: 1,
-                  fontSize: { xs: '1rem', sm: '1.25rem' },
+                  fontSize: { xs: '1.2rem', sm: '1.25rem' }, // Slightly larger text on mobile
                 }}
               >
                 {user?.firstName} {user?.lastName}
@@ -231,6 +244,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 aria-haspopup="true"
                 onClick={handleMenu}
                 color="inherit"
+                sx={{
+                  transform: { xs: 'scale(1.2)', sm: 'none' }, // Slightly larger icon on mobile
+                }}
               >
                 <AccountCircle />
               </IconButton>
@@ -250,7 +266,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 onClose={handleClose}
                 sx={{
                   '& .MuiPaper-root': {
-                    mt: 1,
+                    mt: { xs: 7, sm: 1 }, // Increased margin top on mobile
+                  },
+                  '& .MuiMenuItem-root': {
+                    py: { xs: 1.5, sm: 1 }, // Increased padding for better touch targets
                   },
                 }}
               >
@@ -279,6 +298,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               '& .MuiDrawer-paper': {
                 width: drawerWidth,
                 backgroundColor: (theme) => theme.palette.background.default,
+                pt: { xs: '112px', sm: 0 }, // Added top padding for mobile
               },
             }}
           >
@@ -312,7 +332,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           flexDirection: 'column',
           minHeight: '100vh',
           bgcolor: 'background.default',
-          pt: { xs: '56px', sm: '64px' },
+          pt: { xs: '112px', sm: '64px' }, // Doubled the mobile top padding
           pb: { xs: 2, sm: 3 },
           px: { xs: 1, sm: 2 },
         }}
