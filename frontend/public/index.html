@@ -3,13 +3,12 @@
   <head>
     <meta charset="utf-8" />
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#000000" />
     <meta name="description" content="Clipper Cut Barber Sports" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="orientation" content="portrait-primary" />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/ClipperCut.jpeg" />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
     <!-- Material UI Fonts -->
@@ -25,8 +24,7 @@
         padding: 0;
         height: 100%;
         width: 100%;
-        overflow-x: hidden;
-        position: fixed;
+        overflow: hidden;
       }
       #root {
         height: 100%;
@@ -37,6 +35,23 @@
       @media screen and (orientation: landscape) {
         body {
           position: relative;
+          height: 100vh;
+          /* Ajuste para la barra de navegación móvil */
+          height: -webkit-fill-available;
+        }
+        #root {
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+        }
+      }
+      /* Ajustes para notch y bordes redondeados */
+      @supports (padding: max(0px)) {
+        body {
+          padding-left: min(0vmin, env(safe-area-inset-left));
+          padding-right: min(0vmin, env(safe-area-inset-right));
+          padding-top: min(0vmin, env(safe-area-inset-top));
+          padding-bottom: min(0vmin, env(safe-area-inset-bottom));
         }
       }
     </style>

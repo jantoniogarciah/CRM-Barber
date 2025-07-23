@@ -184,7 +184,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', flexDirection: 'column' }}>
       <CssBaseline />
       {user && (
         <>
@@ -194,9 +194,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             sx={{
               width: { sm: `calc(100% - ${drawerWidth}px)` },
               ml: { sm: `${drawerWidth}px` },
+              zIndex: (theme) => theme.zIndex.drawer + 1,
             }}
           >
-            <Toolbar>
+            <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }}>
               <IconButton
                 color="inherit"
                 aria-label="open drawer"
@@ -206,8 +207,25 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               >
                 <MenuIcon />
               </IconButton>
-              <img src={logo} alt="Clipper Cut Logo" style={{ height: 40, marginRight: 16 }} />
-              <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+              <Box
+                component="img"
+                src={logo}
+                alt="Clipper Cut Logo"
+                sx={{
+                  height: { xs: 32, sm: 40 },
+                  mr: 2,
+                  display: 'block',
+                }}
+              />
+              <Typography
+                variant="h6"
+                noWrap
+                component="div"
+                sx={{
+                  flexGrow: 1,
+                  fontSize: { xs: '1rem', sm: '1.25rem' },
+                }}
+              >
                 {user?.firstName} {user?.lastName}
               </Typography>
               <IconButton
@@ -247,7 +265,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               </Menu>
             </Toolbar>
           </AppBar>
-          <Box component="nav" sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}>
+          <Box
+            component="nav"
+            sx={{
+              width: { sm: drawerWidth },
+              flexShrink: { sm: 0 },
+            }}
+          >
             <Drawer
               variant="temporary"
               open={mobileOpen}
@@ -260,6 +284,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 '& .MuiDrawer-paper': {
                   boxSizing: 'border-box',
                   width: drawerWidth,
+                  top: { xs: 0 },
+                  height: '100%',
                 },
               }}
             >
@@ -272,6 +298,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 '& .MuiDrawer-paper': {
                   boxSizing: 'border-box',
                   width: drawerWidth,
+                  borderRight: '1px solid rgba(0, 0, 0, 0.12)',
                 },
               }}
               open
@@ -285,14 +312,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         component="main"
         sx={{
           flexGrow: 1,
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          height: '100vh',
-          overflow: 'auto',
+          width: { xs: '100%', sm: `calc(100% - ${drawerWidth}px)` },
+          ml: { sm: `${drawerWidth}px` },
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: '100vh',
           bgcolor: 'background.default',
+          pt: { xs: '56px', sm: '64px' },
+          pb: { xs: 2, sm: 3 },
+          px: { xs: 1, sm: 2 },
         }}
       >
-        <Toolbar />
-        <Box sx={{ p: 0 }}>{children}</Box>
+        {children}
       </Box>
     </Box>
   );
