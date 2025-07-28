@@ -63,6 +63,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const handleLogout = async () => {
     try {
+      // Primero cerrar el menú
+      handleClose();
+      
+      // Intentar hacer logout en el backend
       await logout().unwrap();
     } catch (error) {
       console.error('Error during logout:', error);
@@ -72,8 +76,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       sessionStorage.clear();
       dispatch(clearCredentials());
 
-      // Navigate to login
-      navigate('/login', { replace: true });
+      // Navigate to login using replace to prevent going back
+      window.location.replace('/login');
     }
   };
 

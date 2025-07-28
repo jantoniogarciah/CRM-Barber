@@ -37,7 +37,8 @@ const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
     if (result.error) {
       const error = result.error as any;
       
-      if (error.status === 401 && !args.url.includes('/auth/login')) {
+      // Si es un error de autenticación y no estamos en login o logout
+      if (error.status === 401 && !args.url.includes('/auth/login') && !args.url.includes('/auth/logout')) {
         console.error('Authentication error:', error);
         localStorage.clear();
         sessionStorage.clear();
@@ -48,7 +49,7 @@ const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
           toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
           window.location.replace('/login');
         }
-      } else {
+      } else if (!args.url.includes('/auth/logout')) { // No mostrar errores durante el logout
         console.error('API Error:', error);
         if (error.data?.message) {
           toast.error(error.data.message);
@@ -61,7 +62,10 @@ const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
     return result;
   } catch (error) {
     console.error('API Request Failed:', error);
-    toast.error('Error en la conexión. Por favor, verifica tu conexión a internet.');
+    // No mostrar error de conexión durante el logout
+    if (!args.url?.includes('/auth/logout')) {
+      toast.error('Error en la conexión. Por favor, verifica tu conexión a internet.');
+    }
     return {
       error: {
         status: 'FETCH_ERROR',

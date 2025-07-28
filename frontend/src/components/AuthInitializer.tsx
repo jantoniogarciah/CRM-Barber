@@ -99,7 +99,7 @@ const AuthInitializer: React.FC<AuthInitializerProps> = ({ children }) => {
     sessionStorage.clear();
     dispatch(clearCredentials());
 
-    // Solo mostrar mensaje y redirigir si no estamos en la página de login y no es un error de getCurrentUser
+    // Solo mostrar mensaje y redirigir si no estamos en la página de login
     const isLoginPage = window.location.pathname === '/login';
     if (!isLoginPage) {
       toast.error(message);
