@@ -50,7 +50,7 @@ const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
           // Asegurarse de que la URL base sea correcta
           const baseUrl = window.location.origin;
           // Navegar a la página de login usando la URL completa
-          window.location.href = `${baseUrl}/login`;
+          window.location.href = `${baseUrl}`;
         }
       } else if (!args.url.includes('/auth/logout')) { // No mostrar errores durante el logout
         console.error('API Error:', error);

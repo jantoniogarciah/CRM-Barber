@@ -100,13 +100,13 @@ const AuthInitializer: React.FC<AuthInitializerProps> = ({ children }) => {
     dispatch(clearCredentials());
 
     // Solo mostrar mensaje y redirigir si no estamos en la página de login
-    const isLoginPage = window.location.pathname === '/login';
+    const isLoginPage = window.location.pathname === '/';
     if (!isLoginPage) {
       toast.error(message);
       // Asegurarse de que la URL base sea correcta
       const baseUrl = window.location.origin;
       // Navegar a la página de login usando la URL completa
-      window.location.href = `${baseUrl}/login`;
+      window.location.href = `${baseUrl}`;
     }
   };
 
