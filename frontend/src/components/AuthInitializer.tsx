@@ -103,7 +103,10 @@ const AuthInitializer: React.FC<AuthInitializerProps> = ({ children }) => {
     const isLoginPage = window.location.pathname === '/login';
     if (!isLoginPage) {
       toast.error(message);
-      window.location.replace('/login');
+      // Asegurarse de que la URL base sea correcta
+      const baseUrl = window.location.origin;
+      // Navegar a la página de login usando la URL completa
+      window.location.href = `${baseUrl}/login`;
     }
   };
 

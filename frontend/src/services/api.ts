@@ -47,7 +47,10 @@ const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
         // Solo redirigir si no estamos ya en la página de login y no es una llamada a getCurrentUser
         if (window.location.pathname !== '/login' && !args.url.includes('/auth/me')) {
           toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
-          window.location.replace('/login');
+          // Asegurarse de que la URL base sea correcta
+          const baseUrl = window.location.origin;
+          // Navegar a la página de login usando la URL completa
+          window.location.href = `${baseUrl}/login`;
         }
       } else if (!args.url.includes('/auth/logout')) { // No mostrar errores durante el logout
         console.error('API Error:', error);

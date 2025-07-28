@@ -76,8 +76,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       sessionStorage.clear();
       dispatch(clearCredentials());
 
-      // Navigate to login using replace to prevent going back
-      window.location.replace('/login');
+      // Asegurarse de que la URL base sea correcta
+      const baseUrl = window.location.origin;
+      // Navegar a la página de login usando la URL completa
+      window.location.href = `${baseUrl}/login`;
     }
   };
 
