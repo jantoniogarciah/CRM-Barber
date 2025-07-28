@@ -37,6 +37,7 @@ import {
   Edit as EditIcon,
   Person as PersonIcon,
   Phone as PhoneIcon,
+  Description as DescriptionIcon,
 } from '@mui/icons-material';
 import { 
   useGetServicesQuery, 
@@ -54,6 +55,7 @@ import { format, startOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { zonedTimeToUtc, utcToZonedTime } from 'date-fns-tz';
 import { Sale, Service, Barber, Client } from '../types';
+import DailyClosingModal from '../components/DailyClosingModal';
 
 interface SalesResponse {
   sales: Sale[];
@@ -99,6 +101,7 @@ const Sales: React.FC = () => {
     startDate: format(firstDayOfMonth, 'yyyy-MM-dd'),
     endDate: format(today, 'yyyy-MM-dd'),
   });
+  const [reportModalOpen, setReportModalOpen] = useState(false);
 
   const { 
     data: services = [], 
@@ -425,6 +428,18 @@ const Sales: React.FC = () => {
     setPage(0);
   };
 
+  // Filtrar ventas por fecha
+  const getDailySales = (date: Date) => {
+    return sales.filter((sale) => {
+      const saleDate = new Date(sale.saleDate || sale.createdAt);
+      return (
+        saleDate.getFullYear() === date.getFullYear() &&
+        saleDate.getMonth() === date.getMonth() &&
+        saleDate.getDate() === date.getDate()
+      );
+    });
+  };
+
   if (isLoadingSales) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
@@ -450,14 +465,24 @@ const Sales: React.FC = () => {
     <Box sx={{ p: 3 }}>
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h4">Ventas</Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<AddIcon />}
-          onClick={handleNewSale}
-        >
-          Nueva Venta
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            color="primary"
+            startIcon={<DescriptionIcon />}
+            onClick={() => setReportModalOpen(true)}
+          >
+            Generar Reporte
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<AddIcon />}
+            onClick={handleNewSale}
+          >
+            Nueva Venta
+          </Button>
+        </Box>
       </Box>
 
       {/* Filtros de búsqueda */}
@@ -937,6 +962,13 @@ const Sales: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <DailyClosingModal
+        open={reportModalOpen}
+        onClose={() => setReportModalOpen(false)}
+        sales={getDailySales(new Date(filters.endDate))}
+        date={new Date(filters.endDate)}
+      />
     </Box>
   );
 };

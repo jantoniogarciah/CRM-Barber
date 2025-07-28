@@ -30,6 +30,8 @@
     "lint:backend": "cd backend && npm run lint"
   },
   "devDependencies": {
+    "@types/cron": "^2.4.3",
+    "@types/pdfkit": "^0.17.2",
     "concurrently": "^8.2.2"
   },
   "engines": {
@@ -38,7 +40,14 @@
   "author": "Jose Garcia",
   "license": "ISC",
   "dependencies": {
+    "@react-pdf/renderer": "^4.3.0",
+    "axios": "^1.11.0",
+    "cron": "^4.3.2",
+    "date-fns": "^4.1.0",
+    "date-fns-tz": "^3.2.0",
     "dotenv": "^16.5.0",
+    "form-data": "^4.0.4",
+    "pdfkit": "^0.17.1",
     "pg": "^8.16.0",
     "prisma": "^5.10.0"
   },
