@@ -51,9 +51,9 @@ import {
   useSearchClientsQuery,
 } from '../services/api';
 import { toast } from 'react-hot-toast';
-import { format, startOfMonth } from 'date-fns';
+import { format, startOfDay, endOfDay, parseISO, startOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { zonedTimeToUtc, utcToZonedTime } from 'date-fns-tz';
+import { toZonedTime } from 'date-fns-tz';
 import { Sale, Service, Barber, Client } from '../types';
 import DailyClosingModal from '../components/DailyClosingModal';
 
@@ -69,7 +69,7 @@ interface SalesResponse {
 const Sales: React.FC = () => {
   // Obtener la fecha actual y el primer día del mes
   const today = new Date();
-  const firstDayOfMonth = startOfMonth(today);
+  const firstDayOfMonth = startOfDay(today);
 
   const [openNewSale, setOpenNewSale] = useState(false);
   const [openEditSale, setOpenEditSale] = useState(false);
@@ -429,14 +429,14 @@ const Sales: React.FC = () => {
   };
 
   // Filtrar ventas por fecha
-  const getDailySales = (date: Date) => {
+  const getDailySales = (dateStr: string) => {
+    const date = parseISO(dateStr);
+    const start = startOfDay(date);
+    const end = endOfDay(date);
+
     return sales.filter((sale) => {
       const saleDate = new Date(sale.saleDate || sale.createdAt);
-      return (
-        saleDate.getFullYear() === date.getFullYear() &&
-        saleDate.getMonth() === date.getMonth() &&
-        saleDate.getDate() === date.getDate()
-      );
+      return saleDate >= start && saleDate <= end;
     });
   };
 
@@ -471,6 +471,7 @@ const Sales: React.FC = () => {
             color="primary"
             startIcon={<DescriptionIcon />}
             onClick={() => setReportModalOpen(true)}
+            disabled={!sales.length}
           >
             Generar Reporte
           </Button>
@@ -966,8 +967,8 @@ const Sales: React.FC = () => {
       <DailyClosingModal
         open={reportModalOpen}
         onClose={() => setReportModalOpen(false)}
-        sales={getDailySales(new Date(filters.endDate))}
-        date={new Date(filters.endDate)}
+        sales={getDailySales(filters.endDate)}
+        date={parseISO(filters.endDate)}
       />
     </Box>
   );

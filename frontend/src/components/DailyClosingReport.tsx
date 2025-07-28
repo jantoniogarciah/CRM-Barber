@@ -8,7 +8,7 @@ import {
   PDFViewer,
 } from '@react-pdf/renderer';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { es } from 'date-fns/locale/es';
 import { Sale } from '../types';
 
 // Estilos para el PDF
@@ -114,6 +114,16 @@ const DailyClosingReport: React.FC<DailyClosingReportProps> = ({ sales, date }) 
     return acc;
   }, {});
 
+  const formatDate = (date: Date | string) => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return format(dateObj, "d 'de' MMMM 'de' yyyy", { locale: es });
+  };
+
+  const formatTime = (date: Date | string) => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return format(dateObj, 'HH:mm');
+  };
+
   return (
     <PDFViewer style={{ width: '100%', height: '80vh' }}>
       <Document>
@@ -122,7 +132,7 @@ const DailyClosingReport: React.FC<DailyClosingReportProps> = ({ sales, date }) 
           <View style={styles.header}>
             <Text style={styles.title}>Clipper Cut - Reporte de Cierre Diario</Text>
             <Text style={styles.subtitle}>
-              {format(date, "d 'de' MMMM 'de' yyyy", { locale: es })}
+              {formatDate(date)}
             </Text>
           </View>
 
@@ -183,7 +193,7 @@ const DailyClosingReport: React.FC<DailyClosingReportProps> = ({ sales, date }) 
               {sales.map((sale) => (
                 <View key={sale.id} style={styles.tableRow}>
                   <Text style={styles.tableCell}>
-                    {format(new Date(sale.saleDate || sale.createdAt), 'HH:mm')}
+                    {formatTime(sale.saleDate || sale.createdAt)}
                   </Text>
                   <Text style={styles.tableCell}>
                     {`${sale.client?.firstName} ${sale.client?.lastName}`}
