@@ -17,6 +17,11 @@ import {
   Link,
   TablePagination,
   TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  SelectChangeEvent,
 } from '@mui/material';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { format, startOfMonth } from 'date-fns';
@@ -124,32 +129,81 @@ const Dashboard = () => {
     setPage(newPage + 1);
   };
 
-  const handleMonthChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMonthChange = (event: SelectChangeEvent<string>) => {
     setSelectedMonth(event.target.value);
   };
 
+  const months = [
+    { value: '2023-01', label: 'Enero 2023' },
+    { value: '2023-02', label: 'Febrero 2023' },
+    { value: '2023-03', label: 'Marzo 2023' },
+    { value: '2023-04', label: 'Abril 2023' },
+    { value: '2023-05', label: 'Mayo 2023' },
+    { value: '2023-06', label: 'Junio 2023' },
+    { value: '2023-07', label: 'Julio 2023' },
+    { value: '2023-08', label: 'Agosto 2023' },
+    { value: '2023-09', label: 'Septiembre 2023' },
+    { value: '2023-10', label: 'Octubre 2023' },
+    { value: '2023-11', label: 'Noviembre 2023' },
+    { value: '2023-12', label: 'Diciembre 2023' },
+  ];
+
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">Dashboard</Typography>
-        <TextField
-          type="month"
-          value={selectedMonth}
-          onChange={handleMonthChange}
-          sx={{ minWidth: 200 }}
-          inputProps={{
-            max: format(new Date(), 'yyyy-MM')
+    <Box sx={{ 
+      width: '100%',
+      maxWidth: '100%',
+      overflow: 'hidden',
+      p: { xs: 2, sm: 3 }
+    }}>
+      <Box sx={{ 
+        mb: 4,
+        display: 'flex',
+        flexDirection: { xs: 'column', sm: 'row' },
+        justifyContent: 'space-between',
+        alignItems: { xs: 'flex-start', sm: 'center' },
+        gap: 2
+      }}>
+        <Typography 
+          variant="h4" 
+          component="h1"
+          sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}
+        >
+          Dashboard
+        </Typography>
+        <FormControl 
+          variant="outlined" 
+          sx={{ 
+            minWidth: { xs: '100%', sm: 200 },
           }}
-          label="Seleccionar Mes"
-        />
+        >
+          <InputLabel>Seleccionar Mes</InputLabel>
+          <Select
+            value={selectedMonth}
+            onChange={handleMonthChange}
+            label="Seleccionar Mes"
+          >
+            {months.map((month) => (
+              <MenuItem key={month.value} value={month.value}>
+                {month.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       </Box>
 
       <Grid container spacing={3}>
-        {/* Gráfica de Ventas por Día */}
-        <Grid item xs={12}>
-          <Paper sx={{ p: 2 }}>
+        {/* Gráficos y estadísticas */}
+        <Grid item xs={12} lg={8}>
+          <Paper 
+            sx={{ 
+              p: 2,
+              overflow: 'hidden',
+              height: '100%',
+              minHeight: 400
+            }}
+          >
             <Typography variant="h6" gutterBottom>
-              Ventas Diarias - {currentMonth}
+              Ventas Diarias - {selectedMonth}
             </Typography>
             {isLoadingSalesByDay ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
@@ -162,7 +216,12 @@ const Dashboard = () => {
                 No hay datos de ventas para el mes seleccionado
               </Alert>
             ) : (
-              <Box sx={{ width: '100%', height: 400 }}>
+              <Box sx={{ 
+                width: '100%',
+                height: 'calc(100% - 40px)',
+                minHeight: 360,
+                overflow: 'hidden'
+              }}>
                 <ResponsiveContainer>
                   <BarChart data={barChartData}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -180,11 +239,17 @@ const Dashboard = () => {
           </Paper>
         </Grid>
 
-        {/* Gráfica de Servicios por Fecha */}
-        <Grid item xs={12}>
-          <Paper sx={{ p: 2 }}>
+        <Grid item xs={12} lg={4}>
+          <Paper 
+            sx={{ 
+              p: 2,
+              overflow: 'hidden',
+              height: '100%',
+              minHeight: 400
+            }}
+          >
             <Typography variant="h6" gutterBottom>
-              Servicios por Fecha - {currentMonth}
+              Servicios por Fecha - {selectedMonth}
             </Typography>
             {isLoadingServicesByDate ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
@@ -199,7 +264,12 @@ const Dashboard = () => {
                 No hay datos de servicios para el mes seleccionado
               </Alert>
             ) : (
-              <Box sx={{ width: '100%', height: 400 }}>
+              <Box sx={{ 
+                width: '100%',
+                height: 'calc(100% - 40px)',
+                minHeight: 360,
+                overflow: 'hidden'
+              }}>
                 <ResponsiveContainer>
                   <BarChart data={serviceChartData}>
                     <CartesianGrid strokeDasharray="3 3" />

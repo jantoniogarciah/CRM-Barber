@@ -16,12 +16,16 @@ import {
   CircularProgress,
   Tooltip,
   Link,
+  Grid,
+  Chip,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   WhatsApp as WhatsAppIcon,
+  Block as BlockIcon,
+  CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import {
@@ -36,6 +40,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import { Barber } from '../types';
 import LoadingScreen from '../components/LoadingScreen';
 import { format } from 'date-fns';
+import { Alert } from '@mui/material';
 
 const BarbersPage: React.FC = () => {
   console.log('BarbersPage - Component rendering');
@@ -146,118 +151,132 @@ const BarbersPage: React.FC = () => {
   console.log('BarbersPage - Rendering with data:', { barbers, showInactive });
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 3,
-        }}
-      >
-        <Typography variant="h4" component="h1">
+    <Box sx={{ 
+      width: '100%',
+      maxWidth: '100%',
+      overflow: 'hidden',
+      p: { xs: 2, sm: 3 }
+    }}>
+      <Box sx={{ 
+        mb: 4,
+        display: 'flex',
+        flexDirection: { xs: 'column', sm: 'row' },
+        justifyContent: 'space-between',
+        alignItems: { xs: 'flex-start', sm: 'center' },
+        gap: 2
+      }}>
+        <Typography 
+          variant="h4" 
+          component="h1"
+          sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}
+        >
           Barberos
         </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={showInactive}
-                onChange={(e) => setShowInactive(e.target.checked)}
-                color="primary"
-              />
-            }
-            label="Mostrar inactivos"
-          />
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => handleOpenForm()}
-            disabled={isCreating}
-          >
-            Nuevo Barbero
-          </Button>
-        </Box>
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<AddIcon />}
+          onClick={handleOpenForm}
+          sx={{ whiteSpace: 'nowrap' }}
+        >
+          Nuevo Barbero
+        </Button>
       </Box>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Nombre</TableCell>
-              <TableCell>Teléfono</TableCell>
-              <TableCell>Email</TableCell>
-              <TableCell>Instagram</TableCell>
-              <TableCell>Fecha de registro</TableCell>
-              <TableCell>Estado</TableCell>
-              <TableCell align="right">Acciones</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {barbers.map((barber) => (
-              <TableRow
-                key={barber.id}
-                sx={{
-                  opacity: barber.isActive ? 1 : 0.6,
-                  backgroundColor: barber.isActive ? 'inherit' : 'action.hover',
-                  transition: 'all 0.3s ease',
-                }}
-              >
-                <TableCell>{`${barber.firstName} ${barber.lastName}`}</TableCell>
-                <TableCell>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    {barber.phone}
-                    <Tooltip title="Enviar mensaje por WhatsApp">
-                      <Link
-                        href={`https://wa.me/${formatPhoneForWhatsApp(barber.phone)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <IconButton size="small" color="success">
-                          <WhatsAppIcon />
-                        </IconButton>
-                      </Link>
-                    </Tooltip>
-                  </Box>
-                </TableCell>
-                <TableCell>{barber.email || '-'}</TableCell>
-                <TableCell>{barber.instagram || '-'}</TableCell>
-                <TableCell>
-                  {barber.createdAt ? format(new Date(barber.createdAt), 'dd/MM/yyyy') : '-'}
-                </TableCell>
-                <TableCell>
-                  <Tooltip title={barber.isActive ? 'Desactivar barbero' : 'Activar barbero'}>
-                    <Switch
-                      checked={barber.isActive}
-                      onChange={() => handleToggleStatus(barber.id)}
-                      color="primary"
-                    />
-                  </Tooltip>
-                </TableCell>
-                <TableCell align="right">
-                  <IconButton
-                    size="small"
-                    onClick={() => handleOpenForm(barber)}
-                    disabled={isUpdating}
-                    color="primary"
-                  >
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleOpenConfirmDialog(barber)}
-                    disabled={isDeleting}
-                    color="error"
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      {/* Filtros */}
+      <Paper sx={{ p: 2, mb: 3, overflow: 'hidden' }}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} sm={6}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={showInactive}
+                  onChange={(e) => setShowInactive(e.target.checked)}
+                />
+              }
+              label="Mostrar inactivos"
+            />
+          </Grid>
+        </Grid>
+      </Paper>
 
+      {isLoading ? (
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+          <CircularProgress />
+        </Box>
+      ) : error ? (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          Error al cargar barberos
+        </Alert>
+      ) : (
+        <TableContainer 
+          component={Paper}
+          sx={{ 
+            overflow: 'auto',
+            maxWidth: '100%',
+            '& .MuiTable-root': {
+              minWidth: 800,
+            }
+          }}
+        >
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Nombre</TableCell>
+                <TableCell>Email</TableCell>
+                <TableCell>Teléfono</TableCell>
+                <TableCell>Estado</TableCell>
+                <TableCell align="right">Acciones</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {barbers?.map((barber) => (
+                <TableRow key={barber.id}>
+                  <TableCell>
+                    {barber.firstName} {barber.lastName}
+                  </TableCell>
+                  <TableCell>{barber.email}</TableCell>
+                  <TableCell>{barber.phone}</TableCell>
+                  <TableCell>
+                    <Chip
+                      label={barber.isActive ? 'Activo' : 'Inactivo'}
+                      color={barber.isActive ? 'success' : 'default'}
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell align="right">
+                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleOpenForm(barber)}
+                        color="primary"
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleToggleStatus(barber.id)}
+                        color="warning"
+                      >
+                        {barber.isActive ? <BlockIcon /> : <CheckCircleIcon />}
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleOpenConfirmDialog(barber)}
+                        color="error"
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+
+      {/* Modales */}
       <BarberForm
         open={openForm}
         onClose={handleCloseForm}

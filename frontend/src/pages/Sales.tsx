@@ -462,16 +462,39 @@ const Sales: React.FC = () => {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h4">Ventas</Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
+    <Box sx={{ 
+      width: '100%',
+      maxWidth: '100%',
+      overflow: 'hidden'
+    }}>
+      <Box sx={{ 
+        mb: 4, 
+        display: 'flex', 
+        flexDirection: { xs: 'column', sm: 'row' },
+        justifyContent: 'space-between', 
+        alignItems: { xs: 'flex-start', sm: 'center' },
+        gap: 2
+      }}>
+        <Typography variant="h4" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
+          Ventas
+        </Typography>
+        <Box sx={{ 
+          display: 'flex', 
+          gap: 2,
+          width: { xs: '100%', sm: 'auto' },
+          flexDirection: { xs: 'column', sm: 'row' }
+        }}>
           <Button
             variant="outlined"
             color="primary"
             startIcon={<DescriptionIcon />}
             onClick={() => setReportModalOpen(true)}
             disabled={!sales.length}
+            fullWidth={false}
+            sx={{ 
+              whiteSpace: 'nowrap',
+              minWidth: 'fit-content'
+            }}
           >
             Generar Reporte
           </Button>
@@ -480,6 +503,11 @@ const Sales: React.FC = () => {
             color="primary"
             startIcon={<AddIcon />}
             onClick={handleNewSale}
+            fullWidth={false}
+            sx={{ 
+              whiteSpace: 'nowrap',
+              minWidth: 'fit-content'
+            }}
           >
             Nueva Venta
           </Button>
@@ -487,7 +515,7 @@ const Sales: React.FC = () => {
       </Box>
 
       {/* Filtros de búsqueda */}
-      <Paper sx={{ p: 2, mb: 3 }}>
+      <Paper sx={{ p: 2, mb: 3, overflow: 'hidden' }}>
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} sm={6} md={3}>
             <TextField
@@ -562,7 +590,17 @@ const Sales: React.FC = () => {
       {sales.length === 0 ? (
         <Alert severity="info">No hay ventas registradas.</Alert>
       ) : (
-        <TableContainer component={Paper} sx={{ mb: 4 }}>
+        <TableContainer 
+          component={Paper} 
+          sx={{ 
+            mb: 4,
+            overflow: 'auto',
+            maxWidth: '100%',
+            '& .MuiTable-root': {
+              minWidth: 800, // Asegura que la tabla tenga un ancho mínimo
+            }
+          }}
+        >
           <Table>
             <TableHead>
               <TableRow>

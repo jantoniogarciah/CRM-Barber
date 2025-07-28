@@ -21,8 +21,10 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  Grid,
+  CircularProgress,
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Block as BlockIcon, CheckCircle as CheckCircleIcon } from '@mui/icons-material';
 import {
   useGetServicesQuery,
   useUpdateServiceMutation,
@@ -32,14 +34,16 @@ import {
 import ServiceForm from '../components/services/ServiceForm';
 import { Service } from '../types';
 import { toast } from 'react-hot-toast';
+import ServiceFormDialog from '../components/modals/ServiceFormDialog';
+import DeleteConfirmDialog from '../components/modals/DeleteConfirmDialog';
 
 const Services = () => {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
-  const [formOpen, setFormOpen] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [showInactive, setShowInactive] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
 
   const { data: services = [], isLoading, error, refetch } = useGetServicesQuery({ showInactive });
@@ -47,22 +51,22 @@ const Services = () => {
   const [deleteService] = useDeleteServiceMutation();
   const [toggleStatus] = useToggleServiceStatusMutation();
 
-  const handleAddClick = () => {
+  const handleOpenCreate = () => {
     setSelectedService(null);
-    setFormOpen(true);
+    setOpenDialog(true);
   };
 
-  const handleEditClick = (service: Service) => {
+  const handleEdit = (service: Service) => {
     setSelectedService(service);
-    setFormOpen(true);
+    setOpenDialog(true);
   };
 
-  const handleDeleteClick = (service: Service) => {
-    setServiceToDelete(service);
-    setDeleteDialogOpen(true);
+  const handleDelete = (id: string) => {
+    setServiceToDelete({ id } as Service);
+    setOpenDeleteDialog(true);
   };
 
-  const handleDeleteConfirm = async () => {
+  const handleConfirmDelete = async () => {
     if (serviceToDelete) {
       try {
         await deleteService(serviceToDelete.id).unwrap();
@@ -72,18 +76,18 @@ const Services = () => {
         toast.error(error.data?.message || 'Error al eliminar el servicio');
       }
     }
-    setDeleteDialogOpen(false);
+    setOpenDeleteDialog(false);
     setServiceToDelete(null);
   };
 
-  const handleFormClose = () => {
-    setFormOpen(false);
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
     setSelectedService(null);
   };
 
-  const handleFormSuccess = async () => {
+  const handleSuccess = async () => {
     await refetch();
-    handleFormClose();
+    handleCloseDialog();
   };
 
   const handleToggleStatus = async (service: Service) => {
@@ -104,168 +108,145 @@ const Services = () => {
     }).format(price);
   };
 
-  if (isLoading) {
-    return (
-      <Container>
-        <Typography>Cargando servicios...</Typography>
-      </Container>
-    );
-  }
-
-  if (error) {
-    return (
-      <Container>
-        <Alert severity="error">Error al cargar los servicios</Alert>
-      </Container>
-    );
-  }
-
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h4">Servicios</Typography>
-        <Box display="flex" alignItems="center" gap={2}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={showInactive}
-                onChange={(e) => setShowInactive(e.target.checked)}
-                color="primary"
-              />
-            }
-            label="Mostrar Servicios Inactivos"
-          />
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<AddIcon />}
-            onClick={handleAddClick}
-          >
-            Agregar Servicio
-          </Button>
-        </Box>
+    <Box sx={{ 
+      width: '100%',
+      maxWidth: '100%',
+      overflow: 'hidden',
+      p: { xs: 2, sm: 3 }
+    }}>
+      <Box sx={{ 
+        mb: 4,
+        display: 'flex',
+        flexDirection: { xs: 'column', sm: 'row' },
+        justifyContent: 'space-between',
+        alignItems: { xs: 'flex-start', sm: 'center' },
+        gap: 2
+      }}>
+        <Typography 
+          variant="h4" 
+          component="h1"
+          sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}
+        >
+          Servicios
+        </Typography>
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<AddIcon />}
+          onClick={handleOpenCreate}
+          sx={{ whiteSpace: 'nowrap' }}
+        >
+          Nuevo Servicio
+        </Button>
       </Box>
 
-      {successMessage && (
-        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage('')}>
-          {successMessage}
-        </Alert>
-      )}
+      {/* Filtros */}
+      <Paper sx={{ p: 2, mb: 3, overflow: 'hidden' }}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} sm={6}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={showInactive}
+                  onChange={(e) => setShowInactive(e.target.checked)}
+                />
+              }
+              label="Mostrar inactivos"
+            />
+          </Grid>
+        </Grid>
+      </Paper>
 
-      {errorMessage && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setErrorMessage('')}>
-          {errorMessage}
+      {isLoading ? (
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+          <CircularProgress />
+        </Box>
+      ) : error ? (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          Error al cargar servicios
         </Alert>
-      )}
-
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Nombre</TableCell>
-              <TableCell>Descripción</TableCell>
-              <TableCell>Precio</TableCell>
-              <TableCell>Duración</TableCell>
-              <TableCell>Categoría</TableCell>
-              <TableCell>Estado</TableCell>
-              <TableCell align="right">Acciones</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {services.map((service) => (
-              <TableRow
-                key={service.id}
-                sx={{
-                  opacity: service.isActive ? 1 : 0.6,
-                  backgroundColor: service.isActive ? 'inherit' : 'action.hover',
-                }}
-              >
-                <TableCell>{service.name}</TableCell>
-                <TableCell>{service.description}</TableCell>
-                <TableCell>{formatPrice(service.price)}</TableCell>
-                <TableCell>{service.duration} min</TableCell>
-                <TableCell>{service.category?.name || 'Sin categoría'}</TableCell>
-                <TableCell>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={service.isActive}
-                        onChange={() => handleToggleStatus(service)}
-                        color="primary"
-                        size="small"
-                      />
-                    }
-                    label={service.isActive ? 'Activo' : 'Inactivo'}
-                  />
-                </TableCell>
-                <TableCell align="right">
-                  <IconButton
-                    size="small"
-                    onClick={() => handleEditClick(service)}
-                    title="Editar servicio"
-                  >
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleDeleteClick(service)}
-                    title="Eliminar servicio"
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </TableCell>
+      ) : (
+        <TableContainer 
+          component={Paper}
+          sx={{ 
+            overflow: 'auto',
+            maxWidth: '100%',
+            '& .MuiTable-root': {
+              minWidth: 800,
+            }
+          }}
+        >
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Nombre</TableCell>
+                <TableCell>Descripción</TableCell>
+                <TableCell>Precio</TableCell>
+                <TableCell>Estado</TableCell>
+                <TableCell align="right">Acciones</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {services?.map((service) => (
+                <TableRow key={service.id}>
+                  <TableCell>{service.name}</TableCell>
+                  <TableCell>{service.description}</TableCell>
+                  <TableCell>${service.price}</TableCell>
+                  <TableCell>
+                    <Chip
+                      label={service.isActive ? 'Activo' : 'Inactivo'}
+                      color={service.isActive ? 'success' : 'default'}
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell align="right">
+                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleEdit(service)}
+                        color="primary"
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleToggleStatus(service)}
+                        color="warning"
+                      >
+                        {service.isActive ? <BlockIcon /> : <CheckCircleIcon />}
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDelete(service.id)}
+                        color="error"
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
 
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={() => {
-          setDeleteDialogOpen(false);
-          setServiceToDelete(null);
-        }}
-      >
-        <DialogTitle>Confirmar eliminación</DialogTitle>
-        <DialogContent>
-          <DialogContentText component="div">
-            <Typography paragraph>
-              ¿Estás seguro de que deseas eliminar el servicio &quot;{serviceToDelete?.name}&quot;?
-              Esta acción no se puede deshacer.
-            </Typography>
-            <Typography paragraph>
-              <strong>Advertencia:</strong> Esta acción eliminará permanentemente el servicio de la
-              base de datos y no se puede deshacer.
-            </Typography>
-            <Typography>
-              Si el servicio tiene citas asociadas, no podrá ser eliminado y deberá ser desactivado
-              en su lugar.
-            </Typography>
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => {
-              setDeleteDialogOpen(false);
-              setServiceToDelete(null);
-            }}
-          >
-            Cancelar
-          </Button>
-          <Button onClick={handleDeleteConfirm} color="error" variant="contained">
-            Eliminar Permanentemente
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Modales */}
+      <ServiceFormDialog
+        open={openDialog}
+        onClose={handleCloseDialog}
+        service={selectedService}
+        onSuccess={handleSuccess}
+      />
 
-      <Dialog open={formOpen} onClose={handleFormClose} maxWidth="md" fullWidth>
-        <ServiceForm
-          service={selectedService}
-          onClose={handleFormClose}
-          onSuccess={handleFormSuccess}
-        />
-      </Dialog>
+      <DeleteConfirmDialog
+        open={openDeleteDialog}
+        onClose={() => setOpenDeleteDialog(false)}
+        onConfirm={handleConfirmDelete}
+        title="Eliminar Servicio"
+        content="¿Estás seguro de que deseas eliminar este servicio? Esta acción no se puede deshacer."
+      />
     </Box>
   );
 };

@@ -251,195 +251,220 @@ export const Appointments = () => {
 
   return (
     <PageContainer>
-      <Box sx={{ mb: 4 }}>
-        <Grid container spacing={2} alignItems="center" justifyContent="space-between">
-          <Grid item>
-            <Typography variant="h5" component="h1">
-              Citas
-            </Typography>
-          </Grid>
-          <Grid item>
-            <Box display="flex" gap={2}>
-              <ToggleButtonGroup
-                value={viewMode}
-                exclusive
-                onChange={(e, newMode) => newMode && setViewMode(newMode)}
-                size="small"
-              >
-                <ToggleButton value="list">
-                  <ViewListIcon />
-                </ToggleButton>
-                <ToggleButton value="calendar">
-                  <CalendarIcon />
-                </ToggleButton>
-              </ToggleButtonGroup>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={handleAdd}
-              >
-                Nueva Cita
-              </Button>
-            </Box>
-          </Grid>
-        </Grid>
-      </Box>
+      <Box sx={{ 
+        width: '100%',
+        maxWidth: '100%',
+        overflow: 'hidden'
+      }}>
+        <Box sx={{ 
+          mb: 4,
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'stretch', sm: 'center' },
+          gap: 2
+        }}>
+          <Typography 
+            variant="h5" 
+            component="h1"
+            sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}
+          >
+            Citas
+          </Typography>
+          <Box sx={{ 
+            display: 'flex',
+            gap: 2,
+            justifyContent: { xs: 'space-between', sm: 'flex-end' }
+          }}>
+            <ToggleButtonGroup
+              value={viewMode}
+              exclusive
+              onChange={(e, newMode) => newMode && setViewMode(newMode)}
+              size="small"
+            >
+              <ToggleButton value="list">
+                <ViewListIcon />
+              </ToggleButton>
+              <ToggleButton value="calendar">
+                <CalendarIcon />
+              </ToggleButton>
+            </ToggleButtonGroup>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleAdd}
+              sx={{ whiteSpace: 'nowrap' }}
+            >
+              Nueva Cita
+            </Button>
+          </Box>
+        </Box>
 
-      {/* Filtros de búsqueda */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={6} md={3}>
-            <TextField
-              fullWidth
-              label="Buscar por nombre"
-              value={filters.name}
-              onChange={handleTextChange('name')}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <PersonIcon />
-                  </InputAdornment>
-                ),
-              }}
-              placeholder="Nombre del cliente..."
-            />
+        {/* Filtros de búsqueda */}
+        <Paper sx={{ p: 2, mb: 3, overflow: 'hidden' }}>
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} sm={6} md={3}>
+              <TextField
+                fullWidth
+                label="Buscar por nombre"
+                value={filters.name}
+                onChange={handleTextChange('name')}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <PersonIcon />
+                    </InputAdornment>
+                  ),
+                }}
+                placeholder="Nombre del cliente..."
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <TextField
+                fullWidth
+                label="Buscar por teléfono"
+                value={filters.phone}
+                onChange={handleTextChange('phone')}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <PhoneIcon />
+                    </InputAdornment>
+                  ),
+                }}
+                placeholder="Teléfono del cliente..."
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={2}>
+              <FormControl fullWidth>
+                <InputLabel>Estado</InputLabel>
+                <Select
+                  value={filters.status}
+                  onChange={handleSelectChange('status')}
+                  label="Estado"
+                >
+                  <MenuItem value="">Todos</MenuItem>
+                  <MenuItem value="pending">Pendiente</MenuItem>
+                  <MenuItem value="confirmed">Confirmada</MenuItem>
+                  <MenuItem value="completed">Completada</MenuItem>
+                  <MenuItem value="cancelled">Cancelada</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={6} md={2}>
+              <TextField
+                fullWidth
+                label="Fecha Inicio"
+                type="date"
+                value={filters.startDate}
+                onChange={handleTextChange('startDate')}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={2}>
+              <TextField
+                fullWidth
+                label="Fecha Fin"
+                type="date"
+                value={filters.endDate}
+                onChange={handleTextChange('endDate')}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <TextField
-              fullWidth
-              label="Buscar por teléfono"
-              value={filters.phone}
-              onChange={handleTextChange('phone')}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <PhoneIcon />
-                  </InputAdornment>
-                ),
-              }}
-              placeholder="Teléfono del cliente..."
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={2}>
-            <FormControl fullWidth>
-              <InputLabel>Estado</InputLabel>
-              <Select
-                value={filters.status}
-                onChange={handleSelectChange('status')}
-                label="Estado"
-              >
-                <MenuItem value="">Todos</MenuItem>
-                <MenuItem value="pending">Pendiente</MenuItem>
-                <MenuItem value="confirmed">Confirmada</MenuItem>
-                <MenuItem value="completed">Completada</MenuItem>
-                <MenuItem value="cancelled">Cancelada</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} sm={6} md={2}>
-            <TextField
-              fullWidth
-              label="Fecha Inicio"
-              type="date"
-              value={filters.startDate}
-              onChange={handleTextChange('startDate')}
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={2}>
-            <TextField
-              fullWidth
-              label="Fecha Fin"
-              type="date"
-              value={filters.endDate}
-              onChange={handleTextChange('endDate')}
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
-        </Grid>
-      </Paper>
+        </Paper>
 
-      {viewMode === 'list' ? (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Barbero</TableCell>
-                <TableCell>Cliente</TableCell>
-                <TableCell>Servicio</TableCell>
-                <TableCell>Fecha</TableCell>
-                <TableCell>Hora</TableCell>
-                <TableCell>Estado</TableCell>
-                <TableCell>Notas</TableCell>
-                <TableCell align="right">Acciones</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredAppointments.map((appointment: Appointment) => (
-                <TableRow key={appointment.id}>
-                  <TableCell>
-                    {`${appointment.barber?.firstName} ${appointment.barber?.lastName}`}
-                  </TableCell>
-                  <TableCell>
-                    {`${appointment.client?.firstName} ${appointment.client?.lastName}`}
-                  </TableCell>
-                  <TableCell>{appointment.service?.name}</TableCell>
-                  <TableCell>{formatDate(appointment.date)}</TableCell>
-                  <TableCell>{appointment.time}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={getStatusText(appointment.status)}
-                      color={getStatusColor(appointment.status)}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>{appointment.notes}</TableCell>
-                  <TableCell align="right">
-                    <IconButton
-                      size="small"
-                      onClick={() => handleEdit(appointment)}
-                      title="Editar Cita"
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleDelete(appointment)}
-                      title="Eliminar Cita"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
+        {viewMode === 'list' ? (
+          <TableContainer 
+            component={Paper}
+            sx={{ 
+              overflow: 'auto',
+              maxWidth: '100%',
+              '& .MuiTable-root': {
+                minWidth: 800,
+              }
+            }}
+          >
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Barbero</TableCell>
+                  <TableCell>Cliente</TableCell>
+                  <TableCell>Servicio</TableCell>
+                  <TableCell>Fecha</TableCell>
+                  <TableCell>Hora</TableCell>
+                  <TableCell>Estado</TableCell>
+                  <TableCell>Notas</TableCell>
+                  <TableCell align="right">Acciones</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      ) : (
-        <AppointmentCalendar
-          selectedDate={selectedDate}
-          onDateChange={handleDateChange}
-          appointments={filteredAppointments}
-          onEditAppointment={handleEdit}
-          onDeleteAppointment={handleDelete}
-          selectedBarber={selectedBarber}
+              </TableHead>
+              <TableBody>
+                {filteredAppointments.map((appointment: Appointment) => (
+                  <TableRow key={appointment.id}>
+                    <TableCell>
+                      {`${appointment.barber?.firstName} ${appointment.barber?.lastName}`}
+                    </TableCell>
+                    <TableCell>
+                      {`${appointment.client?.firstName} ${appointment.client?.lastName}`}
+                    </TableCell>
+                    <TableCell>{appointment.service?.name}</TableCell>
+                    <TableCell>{formatDate(appointment.date)}</TableCell>
+                    <TableCell>{appointment.time}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={getStatusText(appointment.status)}
+                        color={getStatusColor(appointment.status)}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>{appointment.notes}</TableCell>
+                    <TableCell align="right">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleEdit(appointment)}
+                        title="Editar Cita"
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDelete(appointment)}
+                        title="Eliminar Cita"
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        ) : (
+          <AppointmentCalendar
+            selectedDate={selectedDate}
+            onDateChange={handleDateChange}
+            appointments={filteredAppointments}
+            onEditAppointment={handleEdit}
+            onDeleteAppointment={handleDelete}
+            selectedBarber={selectedBarber}
+          />
+        )}
+
+        <AppointmentForm
+          open={openForm}
+          onClose={handleCloseForm}
+          onSuccess={handleSuccess}
+          appointment={selectedAppointment}
         />
-      )}
 
-      <AppointmentForm
-        open={openForm}
-        onClose={handleCloseForm}
-        onSuccess={handleSuccess}
-        appointment={selectedAppointment}
-      />
-
-      <DeleteConfirmDialog
-        open={openDeleteDialog}
-        onClose={() => setOpenDeleteDialog(false)}
-        onConfirm={handleConfirmDelete}
-        title="Eliminar Cita"
-        content="¿Estás seguro de que deseas eliminar esta cita? Esta acción no se puede deshacer."
-      />
+        <DeleteConfirmDialog
+          open={openDeleteDialog}
+          onClose={() => setOpenDeleteDialog(false)}
+          onConfirm={handleConfirmDelete}
+          title="Eliminar Cita"
+          content="¿Estás seguro de que deseas eliminar esta cita? Esta acción no se puede deshacer."
+        />
+      </Box>
     </PageContainer>
   );
 };

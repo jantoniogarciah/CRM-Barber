@@ -182,7 +182,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', flexDirection: 'column' }}>
+    <Box sx={{ 
+      display: 'flex', 
+      minHeight: '100vh',
+      maxWidth: '100vw',
+      overflow: 'hidden'
+    }}>
       <CssBaseline />
       {user && (
         <>
@@ -190,28 +195,23 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             position="fixed"
             color="primary"
             sx={{
-              width: '100%',
+              width: { xs: '100%', sm: `calc(100% - ${drawerWidth}px)` },
+              ml: { sm: `${drawerWidth}px` },
               zIndex: (theme) => theme.zIndex.drawer + 1,
-              height: { xs: '112px', sm: '64px' }, // Doubled the mobile height
             }}
           >
-            <Toolbar 
-              sx={{ 
-                minHeight: { xs: '112px', sm: '64px' },
-                display: 'flex',
-                alignItems: 'center',
-                px: { xs: 2, sm: 3 },
-              }}
-            >
+            <Toolbar sx={{ 
+              minHeight: { xs: '64px', sm: '64px' },
+              px: { xs: 1, sm: 2 }
+            }}>
               <IconButton
                 color="inherit"
                 aria-label="open drawer"
                 edge="start"
                 onClick={handleDrawerToggle}
                 sx={{ 
-                  mr: 2, 
+                  mr: 1,
                   display: { sm: 'none' },
-                  transform: { xs: 'scale(1.2)', sm: 'none' }, // Slightly larger icon on mobile
                 }}
               >
                 <MenuIcon />
@@ -221,8 +221,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 src={logo}
                 alt="Clipper Cut Logo"
                 sx={{
-                  height: { xs: 40, sm: 40 }, // Increased logo size on mobile
-                  mr: 2,
+                  height: { xs: 40, sm: 40 },
+                  mr: 1,
                   display: 'block',
                 }}
               />
@@ -232,7 +232,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 component="div"
                 sx={{
                   flexGrow: 1,
-                  fontSize: { xs: '1.2rem', sm: '1.25rem' }, // Slightly larger text on mobile
+                  fontSize: { xs: '0.9rem', sm: '1.25rem' },
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
                 }}
               >
                 {user?.firstName} {user?.lastName}
@@ -244,9 +247,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 aria-haspopup="true"
                 onClick={handleMenu}
                 color="inherit"
-                sx={{
-                  transform: { xs: 'scale(1.2)', sm: 'none' }, // Slightly larger icon on mobile
-                }}
+                sx={{ ml: 1 }}
               >
                 <AccountCircle />
               </IconButton>
@@ -266,10 +267,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 onClose={handleClose}
                 sx={{
                   '& .MuiPaper-root': {
-                    mt: { xs: 7, sm: 1 }, // Increased margin top on mobile
-                  },
-                  '& .MuiMenuItem-root': {
-                    py: { xs: 1.5, sm: 1 }, // Increased padding for better touch targets
+                    mt: 1,
+                    minWidth: 150,
                   },
                 }}
               >
@@ -286,40 +285,46 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </Toolbar>
           </AppBar>
 
-          <Drawer
-            variant="temporary"
-            open={mobileOpen}
-            onClose={handleDrawerToggle}
-            ModalProps={{
-              keepMounted: true,
-            }}
+          <Box
+            component="nav"
             sx={{
-              display: { xs: 'block', sm: 'none' },
-              '& .MuiDrawer-paper': {
-                width: drawerWidth,
-                backgroundColor: (theme) => theme.palette.background.default,
-                pt: { xs: '112px', sm: 0 }, // Added top padding for mobile
-              },
+              width: { sm: drawerWidth },
+              flexShrink: { sm: 0 },
             }}
           >
-            {drawer}
-          </Drawer>
-
-          <Drawer
-            variant="permanent"
-            sx={{
-              display: { xs: 'none', sm: 'block' },
-              '& .MuiDrawer-paper': {
-                width: drawerWidth,
-                borderRight: '1px solid rgba(0, 0, 0, 0.12)',
-                height: '100%',
-                top: 0,
-              },
-            }}
-            open
-          >
-            {drawer}
-          </Drawer>
+            <Drawer
+              variant="temporary"
+              open={mobileOpen}
+              onClose={handleDrawerToggle}
+              ModalProps={{
+                keepMounted: true,
+              }}
+              sx={{
+                display: { xs: 'block', sm: 'none' },
+                '& .MuiDrawer-paper': {
+                  boxSizing: 'border-box',
+                  width: drawerWidth,
+                  mt: 0,
+                },
+              }}
+            >
+              {drawer}
+            </Drawer>
+            <Drawer
+              variant="permanent"
+              sx={{
+                display: { xs: 'none', sm: 'block' },
+                '& .MuiDrawer-paper': {
+                  boxSizing: 'border-box',
+                  width: drawerWidth,
+                  borderRight: '1px solid rgba(0, 0, 0, 0.12)',
+                },
+              }}
+              open
+            >
+              {drawer}
+            </Drawer>
+          </Box>
         </>
       )}
       <Box
@@ -327,17 +332,23 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         sx={{
           flexGrow: 1,
           width: '100%',
-          ml: { sm: `${drawerWidth}px` },
+          maxWidth: '100%',
+          overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
-          minHeight: '100vh',
-          bgcolor: 'background.default',
-          pt: { xs: '112px', sm: '64px' }, // Doubled the mobile top padding
+          pt: { xs: '64px', sm: '64px' },
           pb: { xs: 2, sm: 3 },
           px: { xs: 1, sm: 2 },
         }}
       >
-        {children}
+        <Box sx={{ 
+          width: '100%', 
+          maxWidth: '100%',
+          overflowX: 'hidden',
+          overflowY: 'auto'
+        }}>
+          {children}
+        </Box>
       </Box>
     </Box>
   );

@@ -25,6 +25,7 @@ import {
   Alert,
   CircularProgress,
   SelectChangeEvent,
+  Chip,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -228,22 +229,58 @@ const Users = () => {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-        <Typography variant="h5" component="h2">
+    <Box sx={{ 
+      width: '100%',
+      maxWidth: '100%',
+      overflow: 'hidden',
+      p: { xs: 2, sm: 3 }
+    }}>
+      <Box sx={{ 
+        mb: 4,
+        display: 'flex',
+        flexDirection: { xs: 'column', sm: 'row' },
+        justifyContent: 'space-between',
+        alignItems: { xs: 'flex-start', sm: 'center' },
+        gap: 2
+      }}>
+        <Typography 
+          variant="h4" 
+          component="h1"
+          sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}
+        >
           Usuarios
         </Typography>
         <Button
           variant="contained"
+          color="primary"
           startIcon={<AddIcon />}
           onClick={handleOpenNewUser}
+          sx={{ whiteSpace: 'nowrap' }}
         >
           Nuevo Usuario
         </Button>
       </Box>
-      <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-        <TableContainer>
-          <Table stickyHeader>
+
+      {isLoading ? (
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+          <CircularProgress />
+        </Box>
+      ) : error ? (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          Error al cargar usuarios
+        </Alert>
+      ) : (
+        <TableContainer 
+          component={Paper}
+          sx={{ 
+            overflow: 'auto',
+            maxWidth: '100%',
+            '& .MuiTable-root': {
+              minWidth: 800,
+            }
+          }}
+        >
+          <Table>
             <TableHead>
               <TableRow>
                 <TableCell>Nombre</TableCell>
@@ -254,44 +291,44 @@ const Users = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {users
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((user: User) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      {user.firstName} {user.lastName}
-                    </TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>{user.role}</TableCell>
-                    <TableCell>{user.status}</TableCell>
-                    <TableCell align="right">
-                      <Tooltip title="Editar">
-                        <IconButton onClick={() => handleOpenEditUser(user)}>
-                          <EditIcon />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Eliminar">
-                        <IconButton onClick={() => handleOpenDeleteConfirm(user)}>
-                          <DeleteIcon />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                ))}
+              {users?.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell>
+                    {user.firstName} {user.lastName}
+                  </TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>{user.role}</TableCell>
+                  <TableCell>
+                    <Chip
+                      label={user.status === 'ACTIVE' ? 'Activo' : 'Inactivo'}
+                      color={user.status === 'ACTIVE' ? 'success' : 'default'}
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell align="right">
+                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleOpenEditUser(user)}
+                        color="primary"
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleOpenDeleteConfirm(user)}
+                        color="error"
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </TableContainer>
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
-          component="div"
-          count={users.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-          labelRowsPerPage="Filas por página"
-        />
-      </Paper>
+      )}
 
       {/* Diálogo para Nuevo Usuario */}
       <Dialog open={openNewUser} onClose={handleCloseNewUser} maxWidth="sm" fullWidth>
