@@ -8,7 +8,7 @@ import {
   PDFViewer,
 } from '@react-pdf/renderer';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale/es';
+import { es } from 'date-fns/locale';
 import { Sale } from '../types';
 
 // Estilos para el PDF

@@ -53,7 +53,7 @@ import {
 import { toast } from 'react-hot-toast';
 import { format, startOfDay, endOfDay, parseISO, startOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { toZonedTime } from 'date-fns-tz';
+import { utcToZonedTime } from 'date-fns-tz';
 import { Sale, Service, Barber, Client } from '../types';
 import DailyClosingModal from '../components/DailyClosingModal';
 
@@ -69,7 +69,7 @@ interface SalesResponse {
 const Sales: React.FC = () => {
   // Obtener la fecha actual y el primer día del mes
   const today = new Date();
-  const firstDayOfMonth = startOfDay(today);
+  const firstDayOfMonth = startOfMonth(today);
 
   const [openNewSale, setOpenNewSale] = useState(false);
   const [openEditSale, setOpenEditSale] = useState(false);
