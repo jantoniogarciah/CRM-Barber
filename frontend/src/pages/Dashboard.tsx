@@ -54,7 +54,18 @@ interface ServiceData {
 const Dashboard = () => {
   const [page, setPage] = useState(1);
   const pageSize = 5;
-  const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
+  // Obtener el mes actual
+  const currentDate = new Date();
+  const [selectedMonth, setSelectedMonth] = useState(format(currentDate, 'yyyy-MM'));
+
+  // Generar array de meses para el selector (12 meses hacia atrás desde el mes actual)
+  const months = Array.from({ length: 12 }, (_, i) => {
+    const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+    return {
+      value: format(date, 'yyyy-MM'),
+      label: format(date, "MMMM 'de' yyyy", { locale: es })
+    };
+  });
 
   const { 
     data: salesByDay,
@@ -133,21 +144,6 @@ const Dashboard = () => {
     setSelectedMonth(event.target.value);
   };
 
-  const months = [
-    { value: '2023-01', label: 'Enero 2023' },
-    { value: '2023-02', label: 'Febrero 2023' },
-    { value: '2023-03', label: 'Marzo 2023' },
-    { value: '2023-04', label: 'Abril 2023' },
-    { value: '2023-05', label: 'Mayo 2023' },
-    { value: '2023-06', label: 'Junio 2023' },
-    { value: '2023-07', label: 'Julio 2023' },
-    { value: '2023-08', label: 'Agosto 2023' },
-    { value: '2023-09', label: 'Septiembre 2023' },
-    { value: '2023-10', label: 'Octubre 2023' },
-    { value: '2023-11', label: 'Noviembre 2023' },
-    { value: '2023-12', label: 'Diciembre 2023' },
-  ];
-
   return (
     <Box sx={{ 
       width: '100%',
@@ -192,8 +188,8 @@ const Dashboard = () => {
       </Box>
 
       <Grid container spacing={3}>
-        {/* Gráficos y estadísticas */}
-        <Grid item xs={12} lg={8}>
+        {/* Gráfica de Ventas Diarias */}
+        <Grid item xs={12}>
           <Paper 
             sx={{ 
               p: 2,
@@ -239,7 +235,8 @@ const Dashboard = () => {
           </Paper>
         </Grid>
 
-        <Grid item xs={12} lg={4}>
+        {/* Gráfica de Servicios por Fecha */}
+        <Grid item xs={12}>
           <Paper 
             sx={{ 
               p: 2,
@@ -357,7 +354,7 @@ const Dashboard = () => {
                     </TableHead>
                     <TableBody>
                       {[...(inactiveClientsData?.clients || [])]
-                        ?.sort((a: any, b: any) => b.daysSinceLastVisit - a.daysSinceLastVisit) // Sort by days without visits (descending)
+                        ?.sort((a: any, b: any) => b.daysSinceLastVisit - a.daysSinceLastVisit)
                         ?.map((client: any) => (
                         <TableRow 
                           key={client.id}
