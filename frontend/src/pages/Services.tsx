@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   Container,
-  Dialog,
   IconButton,
   Paper,
   Table,
@@ -17,10 +16,6 @@ import {
   Alert,
   Switch,
   FormControlLabel,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
   Grid,
   CircularProgress,
 } from '@mui/material';
@@ -31,7 +26,6 @@ import {
   useDeleteServiceMutation,
   useToggleServiceStatusMutation,
 } from '../services/api';
-import ServiceForm from '../components/services/ServiceForm';
 import { Service } from '../types';
 import { toast } from 'react-hot-toast';
 import ServiceFormDialog from '../components/modals/ServiceFormDialog';
