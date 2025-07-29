@@ -2,9 +2,10 @@ import { Request, Response } from "express";
 import { PrismaClient, Client } from "@prisma/client";
 import { AppError } from "../utils/appError";
 import { parseISO, startOfDay, endOfDay } from "date-fns";
+import { toZonedTime } from 'date-fns-tz';
 
 const prisma = new PrismaClient();
-const timeZone = 'America/Mexico_City';
+const TIMEZONE = 'America/Mexico_City';
 
 // Get all appointments
 export const getAppointments = async (req: Request, res: Response) => {
@@ -27,15 +28,23 @@ export const getAppointments = async (req: Request, res: Response) => {
       whereClause.date = {};
       
       if (startDate) {
-        const parsedStartDate = parseISO(startDate as string);
-        console.log('Parsed start date:', parsedStartDate.toISOString());
-        whereClause.date.gte = parsedStartDate;
+        // Convertir la fecha de inicio considerando la zona horaria
+        const localStartDate = startOfDay(parseISO(startDate as string));
+        console.log('Start date:', {
+          original: startDate,
+          local: localStartDate.toISOString()
+        });
+        whereClause.date.gte = localStartDate;
       }
       
       if (endDate) {
-        const parsedEndDate = parseISO(endDate as string);
-        console.log('Parsed end date:', parsedEndDate.toISOString());
-        whereClause.date.lte = parsedEndDate;
+        // Convertir la fecha de fin considerando la zona horaria
+        const localEndDate = endOfDay(parseISO(endDate as string));
+        console.log('End date:', {
+          original: endDate,
+          local: localEndDate.toISOString()
+        });
+        whereClause.date.lte = localEndDate;
       }
     }
 
@@ -91,16 +100,22 @@ export const getAppointments = async (req: Request, res: Response) => {
       ],
     });
 
+    // Convertir las fechas de las citas a la zona horaria local
+    const appointmentsWithLocalDates = appointments.map(appointment => ({
+      ...appointment,
+      date: toZonedTime(appointment.date, TIMEZONE)
+    }));
+
     console.log('Found appointments:', appointments.length);
     if (appointments.length > 0) {
       console.log('Sample appointment dates:');
-      appointments.slice(0, 3).forEach(app => {
+      appointmentsWithLocalDates.slice(0, 3).forEach(app => {
         console.log(`- ${app.date.toISOString()} (${app.time})`);
       });
     }
 
     res.json({
-      appointments,
+      appointments: appointmentsWithLocalDates,
       total: appointments.length
     });
   } catch (error) {
