@@ -1,8 +1,7 @@
 import { Request, Response } from "express";
 import { PrismaClient, Client } from "@prisma/client";
 import { AppError } from "../utils/appError";
-import { startOfDay, endOfDay } from "date-fns";
-import { toZonedTime } from 'date-fns-tz';
+import { startOfDay, endOfDay, parseISO } from "date-fns";
 
 const prisma = new PrismaClient();
 const timeZone = 'America/Mexico_City';
@@ -18,15 +17,21 @@ export const getAppointments = async (req: Request, res: Response) => {
     // Agregar filtros de fecha si están presentes
     if (startDate || endDate) {
       whereClause.date = {};
+      
       if (startDate) {
-        const start = new Date(startDate as string);
+        // Convertir la fecha de inicio a UTC
+        const start = parseISO(startDate as string);
         start.setUTCHours(0, 0, 0, 0);
         whereClause.date.gte = start;
+        console.log('Start date filter:', start.toISOString());
       }
+      
       if (endDate) {
-        const end = new Date(endDate as string);
+        // Convertir la fecha de fin a UTC
+        const end = parseISO(endDate as string);
         end.setUTCHours(23, 59, 59, 999);
         whereClause.date.lte = end;
+        console.log('End date filter:', end.toISOString());
       }
     }
 
@@ -63,7 +68,7 @@ export const getAppointments = async (req: Request, res: Response) => {
       }
     }
 
-    console.log('Where clause:', whereClause);
+    console.log('Where clause:', JSON.stringify(whereClause, null, 2));
 
     const appointments = await prisma.appointment.findMany({
       where: whereClause,
@@ -83,6 +88,9 @@ export const getAppointments = async (req: Request, res: Response) => {
     });
 
     console.log('Found appointments:', appointments.length);
+    if (appointments.length > 0) {
+      console.log('First appointment date:', appointments[0].date);
+    }
 
     res.json({
       appointments,
