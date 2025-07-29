@@ -1,66 +1,39 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Button,
-  Container,
-  Typography,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  IconButton,
-  Chip,
-  ToggleButtonGroup,
-  ToggleButton,
-  Grid,
+  Typography,
   TextField,
-  MenuItem,
-  CircularProgress,
-  Alert,
+  Grid,
+  InputAdornment,
   FormControl,
   InputLabel,
   Select,
-  InputAdornment,
+  MenuItem,
   SelectChangeEvent,
+  ToggleButtonGroup,
+  ToggleButton,
 } from '@mui/material';
-import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  ViewList as ViewListIcon,
-  CalendarMonth as CalendarIcon,
-  Person as PersonIcon,
-  Phone as PhoneIcon,
-} from '@mui/icons-material';
+import AddIcon from '@mui/icons-material/Add';
+import PersonIcon from '@mui/icons-material/Person';
+import PhoneIcon from '@mui/icons-material/Phone';
+import ViewListIcon from '@mui/icons-material/ViewList';
+import CalendarIcon from '@mui/icons-material/CalendarMonth';
 import { format, startOfMonth } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { zonedTimeToUtc, utcToZonedTime } from 'date-fns-tz';
-import {
-  useGetAppointmentsQuery,
-  useDeleteAppointmentMutation,
-  useGetBarbersQuery,
-} from '../services/api';
-import { Appointment, Barber } from '../types';
-import AppointmentForm from '../components/AppointmentForm';
-import AppointmentCalendar from '../components/AppointmentCalendar';
-import DeleteConfirmDialog from '../components/DeleteConfirmDialog';
+import { utcToZonedTime } from 'date-fns-tz';
 import { toast } from 'react-hot-toast';
+
+import { useGetAppointmentsQuery, useDeleteAppointmentMutation, GetAppointmentsParams } from '../services/api';
+import { useGetBarbersQuery } from '../services/api';
+import { Appointment } from '../types';
+import AppointmentForm from '../components/AppointmentForm';
+import DeleteConfirmDialog from '../components/DeleteConfirmDialog';
+import AppointmentCalendar from '../components/appointments/AppointmentCalendar';
+import AppointmentList from '../components/appointments/AppointmentList';
 import { PageContainer } from '../components/PageContainer';
 
 type ViewMode = 'list' | 'calendar';
-
-interface AppointmentsResponse {
-  appointments: Appointment[];
-  total: number;
-}
-
-interface BarbersResponse {
-  barbers: Barber[];
-  total: number;
-}
 
 export const Appointments = () => {
   // Obtener la fecha actual y el primer día del mes
@@ -74,7 +47,7 @@ export const Appointments = () => {
   const [selectedBarber, setSelectedBarber] = useState<string>('');
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [appointmentToDelete, setAppointmentToDelete] = useState<Appointment | null>(null);
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<GetAppointmentsParams>({
     name: '',
     phone: '',
     status: '',
@@ -82,12 +55,55 @@ export const Appointments = () => {
     endDate: format(today, 'yyyy-MM-dd'),
   });
 
-  const { data: appointmentsData, isLoading: isLoadingAppointments, refetch: refetchAppointments } = useGetAppointmentsQuery();
+  const { data: appointmentsData, isLoading: isLoadingAppointments } = useGetAppointmentsQuery(
+    viewMode === 'list' ? filters : undefined,
+    {
+      // Refetch when filters change
+      refetchOnMountOrArgChange: true
+    }
+  );
   const { data: barbersData, isLoading: isLoadingBarbers } = useGetBarbersQuery({ showInactive: false });
   const [deleteAppointment] = useDeleteAppointmentMutation();
 
   const barbers = barbersData || [];
   const appointments = appointmentsData?.appointments || [];
+
+  // Filtrar citas solo para la vista de calendario
+  const filteredAppointments = viewMode === 'calendar' 
+    ? appointments.filter((appointment: Appointment) => {
+        if (!appointment || !appointment.date) return false;
+        
+        try {
+          const appointmentDate = utcToZonedTime(new Date(appointment.date), 'America/Mexico_City');
+          const isDateMatch = format(appointmentDate, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
+          const isBarberMatch = selectedBarber ? appointment.barberId === selectedBarber : true;
+
+          return isDateMatch && isBarberMatch;
+        } catch (error) {
+          console.error('Error filtering appointment:', error);
+          return false;
+        }
+      })
+    : appointments;
+
+  const handleTextChange = (field: string) => (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const newValue = event.target.value;
+    setFilters(prev => ({
+      ...prev,
+      [field]: newValue
+    }));
+  };
+
+  const handleSelectChange = (field: string) => (
+    event: SelectChangeEvent
+  ) => {
+    setFilters(prev => ({
+      ...prev,
+      [field]: event.target.value
+    }));
+  };
 
   const handleAdd = () => {
     setSelectedAppointment(undefined);
@@ -109,125 +125,14 @@ export const Appointments = () => {
       try {
         await deleteAppointment(appointmentToDelete.id).unwrap();
         toast.success('Cita eliminada exitosamente');
-        refetchAppointments();
+        setOpenDeleteDialog(false);
+        setAppointmentToDelete(null);
       } catch (error: any) {
         console.error('Error al eliminar la cita:', error);
         toast.error(error.data?.message || 'Error al eliminar la cita');
       }
     }
-    setOpenDeleteDialog(false);
-    setAppointmentToDelete(null);
   };
-
-  const handleCloseForm = () => {
-    setOpenForm(false);
-    setSelectedAppointment(undefined);
-  };
-
-  const handleSuccess = () => {
-    handleCloseForm();
-    toast.success(selectedAppointment ? 'Cita actualizada correctamente' : 'Cita creada correctamente');
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'warning';
-      case 'confirmed':
-        return 'info';
-      case 'completed':
-        return 'success';
-      case 'cancelled':
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'Pendiente';
-      case 'confirmed':
-        return 'Confirmada';
-      case 'completed':
-        return 'Completada';
-      case 'cancelled':
-        return 'Cancelada';
-      default:
-        return status;
-    }
-  };
-
-  const formatDate = (dateStr: string) => {
-    try {
-      const date = utcToZonedTime(new Date(dateStr), 'America/Mexico_City');
-      return format(date, "d 'de' MMMM 'de' yyyy", { locale: es });
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return dateStr;
-    }
-  };
-
-  // Manejadores de eventos para los diferentes tipos de campos
-  const handleTextChange = (field: string) => (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    setFilters(prev => ({
-      ...prev,
-      [field]: event.target.value
-    }));
-  };
-
-  const handleSelectChange = (field: string) => (
-    event: SelectChangeEvent
-  ) => {
-    setFilters(prev => ({
-      ...prev,
-      [field]: event.target.value
-    }));
-  };
-
-  // Modificar la función de filtrado de citas
-  const filteredAppointments = appointments.filter((appointment: Appointment) => {
-    if (!appointment || !appointment.date) return false;
-    
-    try {
-      // Filtro por nombre
-      const nameMatch = filters.name ? 
-        (appointment.client?.firstName + ' ' + appointment.client?.lastName)
-          .toLowerCase()
-          .includes(filters.name.toLowerCase()) : true;
-
-      // Filtro por teléfono
-      const phoneMatch = filters.phone ?
-        appointment.client?.phone.includes(filters.phone) : true;
-
-      // Filtro por estado
-      const statusMatch = filters.status ?
-        appointment.status === filters.status : true;
-
-      // Filtro por rango de fechas
-      const appointmentDate = utcToZonedTime(new Date(appointment.date), 'America/Mexico_City');
-      const startDate = new Date(filters.startDate);
-      const endDate = new Date(filters.endDate);
-      startDate.setHours(0, 0, 0, 0);
-      endDate.setHours(23, 59, 59, 999);
-      const dateMatch = appointmentDate >= startDate && appointmentDate <= endDate;
-
-      // Filtros existentes
-      const isDateMatch = viewMode === 'calendar' ? 
-        format(appointmentDate, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd') : true;
-      const isBarberMatch = selectedBarber ? 
-        appointment.barberId === selectedBarber : true;
-
-      return nameMatch && phoneMatch && statusMatch && dateMatch && 
-             (viewMode === 'calendar' ? (isDateMatch && isBarberMatch) : true);
-    } catch (error) {
-      console.error('Error filtering appointment:', error);
-      return false;
-    }
-  });
 
   const handleDateChange = (date: Date | null) => {
     if (date) {
@@ -237,6 +142,11 @@ export const Appointments = () => {
 
   const handleBarberChange = (event: React.ChangeEvent<{ value: unknown }>) => {
     setSelectedBarber(event.target.value as string);
+  };
+
+  const handleFormSuccess = () => {
+    setOpenForm(false);
+    toast.success(selectedAppointment ? 'Cita actualizada correctamente' : 'Cita creada correctamente');
   };
 
   if (isLoadingAppointments || isLoadingBarbers) {
@@ -300,7 +210,6 @@ export const Appointments = () => {
           </Box>
         </Box>
 
-        {/* Filtros de búsqueda */}
         <Paper sx={{ p: 2, mb: 3, overflow: 'hidden' }}>
           <Grid container spacing={2} alignItems="center">
             <Grid item xs={12} sm={6} md={3}>
@@ -375,86 +284,25 @@ export const Appointments = () => {
         </Paper>
 
         {viewMode === 'list' ? (
-          <TableContainer 
-            component={Paper}
-            sx={{ 
-              overflow: 'auto',
-              maxWidth: '100%',
-              '& .MuiTable-root': {
-                minWidth: 800,
-              }
-            }}
-          >
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Barbero</TableCell>
-                  <TableCell>Cliente</TableCell>
-                  <TableCell>Servicio</TableCell>
-                  <TableCell>Fecha</TableCell>
-                  <TableCell>Hora</TableCell>
-                  <TableCell>Estado</TableCell>
-                  <TableCell>Notas</TableCell>
-                  <TableCell align="right">Acciones</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredAppointments.map((appointment: Appointment) => (
-                  <TableRow key={appointment.id}>
-                    <TableCell>
-                      {`${appointment.barber?.firstName} ${appointment.barber?.lastName}`}
-                    </TableCell>
-                    <TableCell>
-                      {`${appointment.client?.firstName} ${appointment.client?.lastName}`}
-                    </TableCell>
-                    <TableCell>{appointment.service?.name}</TableCell>
-                    <TableCell>{formatDate(appointment.date)}</TableCell>
-                    <TableCell>{appointment.time}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={getStatusText(appointment.status)}
-                        color={getStatusColor(appointment.status)}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>{appointment.notes}</TableCell>
-                    <TableCell align="right">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleEdit(appointment)}
-                        title="Editar Cita"
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDelete(appointment)}
-                        title="Eliminar Cita"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          <AppointmentList
+            appointments={filteredAppointments}
+            onEditClick={handleEdit}
+            onDeleteClick={handleDelete}
+          />
         ) : (
           <AppointmentCalendar
-            selectedDate={selectedDate}
-            onDateChange={handleDateChange}
             appointments={filteredAppointments}
-            onEditAppointment={handleEdit}
-            onDeleteAppointment={handleDelete}
-            selectedBarber={selectedBarber}
+            onViewClick={() => {}}
+            onEditClick={handleEdit}
+            onDeleteClick={handleDelete}
           />
         )}
 
         <AppointmentForm
           open={openForm}
-          onClose={handleCloseForm}
-          onSuccess={handleSuccess}
+          onClose={() => setOpenForm(false)}
           appointment={selectedAppointment}
+          onSuccess={handleFormSuccess}
         />
 
         <DeleteConfirmDialog

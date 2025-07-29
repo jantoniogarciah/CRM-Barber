@@ -1,62 +1,45 @@
 import { api } from './api';
+import { Appointment } from '../types';
 
-export interface Appointment {
-  id: number;
-  clientId: number;
-  barberId: number;
-  serviceId: number;
-  date: string;
-  startTime: string;
-  endTime: string;
-  status: 'scheduled' | 'completed' | 'cancelled' | 'no-show';
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
+export interface GetAppointmentsParams {
+  startDate?: string;
+  endDate?: string;
+  name?: string;
+  phone?: string;
+  status?: string;
 }
 
-export interface CreateAppointmentDto {
-  clientId: number;
-  barberId: number;
-  serviceId: number;
-  date: string;
-  startTime: string;
-  endTime: string;
-  notes?: string;
-}
-
-export interface UpdateAppointmentDto {
-  barberId?: number;
-  serviceId?: number;
-  date?: string;
-  startTime?: string;
-  endTime?: string;
-  status?: 'scheduled' | 'completed' | 'cancelled' | 'no-show';
-  notes?: string;
+export interface GetAppointmentsResponse {
+  appointments: Appointment[];
+  total: number;
 }
 
 export const appointmentApi = api.injectEndpoints({
   endpoints: (builder) => ({
-    getAppointments: builder.query<Appointment[], void>({
-      query: () => '/appointments',
+    getAppointments: builder.query<GetAppointmentsResponse, GetAppointmentsParams | void>({
+      query: (params) => ({
+        url: '/appointments',
+        params: params || {},
+      }),
       providesTags: ['Appointment'],
     }),
 
-    getAppointment: builder.query<Appointment, number>({
+    getAppointment: builder.query<Appointment, string>({
       query: (id) => `/appointments/${id}`,
       providesTags: (_result, _error, id) => [{ type: 'Appointment', id }],
     }),
 
-    getBarberAppointments: builder.query<Appointment[], number>({
+    getBarberAppointments: builder.query<Appointment[], string>({
       query: (barberId) => `/appointments/barber/${barberId}`,
       providesTags: ['Appointment'],
     }),
 
-    getClientAppointments: builder.query<Appointment[], number>({
+    getClientAppointments: builder.query<Appointment[], string>({
       query: (clientId) => `/appointments/client/${clientId}`,
       providesTags: ['Appointment'],
     }),
 
-    createAppointment: builder.mutation<Appointment, CreateAppointmentDto>({
+    createAppointment: builder.mutation<Appointment, Partial<Appointment>>({
       query: (appointment) => ({
         url: '/appointments',
         method: 'POST',
@@ -65,10 +48,7 @@ export const appointmentApi = api.injectEndpoints({
       invalidatesTags: ['Appointment'],
     }),
 
-    updateAppointment: builder.mutation<
-      Appointment,
-      { id: number; appointment: UpdateAppointmentDto }
-    >({
+    updateAppointment: builder.mutation<Appointment, { id: string; appointment: Partial<Appointment> }>({
       query: ({ id, appointment }) => ({
         url: `/appointments/${id}`,
         method: 'PUT',
@@ -77,7 +57,7 @@ export const appointmentApi = api.injectEndpoints({
       invalidatesTags: (_result, _error, { id }) => [{ type: 'Appointment', id }],
     }),
 
-    deleteAppointment: builder.mutation<void, number>({
+    deleteAppointment: builder.mutation<void, string>({
       query: (id) => ({
         url: `/appointments/${id}`,
         method: 'DELETE',
@@ -85,7 +65,7 @@ export const appointmentApi = api.injectEndpoints({
       invalidatesTags: ['Appointment'],
     }),
 
-    cancelAppointment: builder.mutation<Appointment, number>({
+    cancelAppointment: builder.mutation<Appointment, string>({
       query: (id) => ({
         url: `/appointments/${id}/cancel`,
         method: 'PATCH',
@@ -93,7 +73,7 @@ export const appointmentApi = api.injectEndpoints({
       invalidatesTags: (_result, _error, id) => [{ type: 'Appointment', id }],
     }),
 
-    completeAppointment: builder.mutation<Appointment, number>({
+    completeAppointment: builder.mutation<Appointment, string>({
       query: (id) => ({
         url: `/appointments/${id}/complete`,
         method: 'PATCH',

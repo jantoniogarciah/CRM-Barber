@@ -2,8 +2,10 @@ import { Request, Response } from "express";
 import { PrismaClient, Client } from "@prisma/client";
 import { AppError } from "../utils/appError";
 import { parseISO, startOfDay, endOfDay } from "date-fns";
+import { toZonedTime } from 'date-fns-tz';
 
 const prisma = new PrismaClient();
+const timeZone = 'America/Mexico_City';
 
 // Get all appointments
 export const getAppointments = async (req: Request, res: Response) => {
@@ -17,10 +19,14 @@ export const getAppointments = async (req: Request, res: Response) => {
     if (startDate || endDate) {
       whereClause.date = {};
       if (startDate) {
-        whereClause.date.gte = startOfDay(new Date(startDate as string));
+        const start = new Date(startDate as string);
+        start.setUTCHours(0, 0, 0, 0);
+        whereClause.date.gte = start;
       }
       if (endDate) {
-        whereClause.date.lte = endOfDay(new Date(endDate as string));
+        const end = new Date(endDate as string);
+        end.setUTCHours(23, 59, 59, 999);
+        whereClause.date.lte = end;
       }
     }
 
