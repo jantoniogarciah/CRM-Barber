@@ -12,9 +12,10 @@ import {
   Select,
   MenuItem,
   InputAdornment,
+  SelectChangeEvent,
 } from '@mui/material';
 import { Service } from '../../types';
-import { useCreateServiceMutation, useUpdateServiceMutation } from '../../services/api';
+import { useCreateServiceMutation, useUpdateServiceMutation, useGetCategoriesQuery } from '../../services/api';
 import { toast } from 'react-hot-toast';
 
 interface ServiceFormDialogProps {
@@ -35,11 +36,13 @@ const ServiceFormDialog: React.FC<ServiceFormDialogProps> = ({
     description: '',
     price: '',
     duration: '30',
+    categoryId: '',
     isActive: true,
   });
 
   const [createService] = useCreateServiceMutation();
   const [updateService] = useUpdateServiceMutation();
+  const { data: categories = [], isLoading: isLoadingCategories } = useGetCategoriesQuery({ showInactive: false });
 
   useEffect(() => {
     if (service) {
@@ -48,6 +51,7 @@ const ServiceFormDialog: React.FC<ServiceFormDialogProps> = ({
         description: service.description || '',
         price: service.price.toString(),
         duration: service.duration?.toString() || '30',
+        categoryId: service.categoryId || '',
         isActive: service.isActive,
       });
     } else {
@@ -56,6 +60,7 @@ const ServiceFormDialog: React.FC<ServiceFormDialogProps> = ({
         description: '',
         price: '',
         duration: '30',
+        categoryId: '',
         isActive: true,
       });
     }
@@ -69,8 +74,21 @@ const ServiceFormDialog: React.FC<ServiceFormDialogProps> = ({
     }));
   };
 
+  const handleSelectChange = (event: SelectChangeEvent) => {
+    const { name, value } = event.target;
+    setFormData(prev => ({
+      ...prev,
+      [name as string]: value
+    }));
+  };
+
   const handleSubmit = async () => {
     try {
+      if (!formData.categoryId) {
+        toast.error('Por favor selecciona una categoría');
+        return;
+      }
+
       const serviceData = {
         ...formData,
         price: parseFloat(formData.price),
@@ -141,6 +159,21 @@ const ServiceFormDialog: React.FC<ServiceFormDialogProps> = ({
               endAdornment: <InputAdornment position="end">min</InputAdornment>,
             }}
           />
+          <FormControl fullWidth required>
+            <InputLabel>Categoría</InputLabel>
+            <Select
+              name="categoryId"
+              value={formData.categoryId}
+              onChange={handleSelectChange}
+              label="Categoría"
+            >
+              {categories.map((category) => (
+                <MenuItem key={category.id} value={category.id}>
+                  {category.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Box>
       </DialogContent>
       <DialogActions>
@@ -148,7 +181,7 @@ const ServiceFormDialog: React.FC<ServiceFormDialogProps> = ({
         <Button 
           onClick={handleSubmit}
           variant="contained"
-          disabled={!formData.name || !formData.price}
+          disabled={!formData.name || !formData.price || !formData.categoryId}
         >
           {service ? 'Guardar' : 'Crear'}
         </Button>
