@@ -1,14 +1,66 @@
 import { Request, Response } from "express";
 import { PrismaClient, Client } from "@prisma/client";
 import { AppError } from "../utils/appError";
-import { parseISO } from "date-fns";
+import { parseISO, startOfDay, endOfDay } from "date-fns";
 
 const prisma = new PrismaClient();
 
 // Get all appointments
 export const getAppointments = async (req: Request, res: Response) => {
   try {
+    const { startDate, endDate, name, phone, status } = req.query;
+
+    // Construir el where clause
+    const whereClause: any = {};
+
+    // Agregar filtros de fecha si están presentes
+    if (startDate || endDate) {
+      whereClause.date = {};
+      if (startDate) {
+        whereClause.date.gte = startOfDay(new Date(startDate as string));
+      }
+      if (endDate) {
+        whereClause.date.lte = endOfDay(new Date(endDate as string));
+      }
+    }
+
+    // Agregar filtro por estado
+    if (status) {
+      whereClause.status = status;
+    }
+
+    // Agregar filtros de cliente (nombre y teléfono)
+    if (name || phone) {
+      whereClause.client = {};
+      
+      if (name) {
+        whereClause.client.OR = [
+          {
+            firstName: {
+              contains: name as string,
+              mode: 'insensitive'
+            }
+          },
+          {
+            lastName: {
+              contains: name as string,
+              mode: 'insensitive'
+            }
+          }
+        ];
+      }
+      
+      if (phone) {
+        whereClause.client.phone = {
+          contains: phone as string
+        };
+      }
+    }
+
+    console.log('Where clause:', whereClause);
+
     const appointments = await prisma.appointment.findMany({
+      where: whereClause,
       include: {
         client: true,
         service: true,
