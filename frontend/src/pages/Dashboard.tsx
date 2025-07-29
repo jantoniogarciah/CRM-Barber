@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+
 import {
   Box,
   Typography,
@@ -29,7 +30,27 @@ import { es } from 'date-fns/locale';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import { useGetDashboardDataQuery } from '../services/api';
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+// Definir colores fijos para cada tipo de servicio
+const SERVICE_COLORS: { [key: string]: string } = {
+  'Aceite para barba': '#0088FE',
+  'Barba + Corte Promocional': '#00C49F',
+  'Barba Hombre Clipper Cut': '#FFBB28',
+  'Barba Promocional': '#FF8042',
+  'Corte Hombre Clipper Cut': '#8884d8',
+  'Corte Hombre Promocional': '#82ca9d',
+  'Corte Mujer Clipper Cut': '#a4de6c',
+  'Corte Mujer Promocional': '#d0ed57',
+  'Corte Niño Promocional': '#ffc658',
+  'Corte y Barba Hombre Clipper Cut': '#8dd1e1',
+  'Diseño Cejas': '#83a6ed',
+  'Minoxidil': '#8884d8',
+  'Polvo Volumen': '#a4de6c',
+  'Pomada 100g': '#d0ed57',
+  'Pomada XL 500g': '#ffc658'
+};
+
+// Colores para el gráfico de pie (barberos)
+const PIE_CHART_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
 interface SaleData {
   originalDate: string;
@@ -294,12 +315,12 @@ const Dashboard = () => {
                         return total > 0 ? value : '';
                       }}
                     />
-                    {serviceTypes.map((service, index) => (
+                    {serviceTypes.map((service) => (
                       <Bar 
                         key={service}
                         dataKey={service}
                         stackId="a"
-                        fill={COLORS[index % COLORS.length]}
+                        fill={SERVICE_COLORS[service] || '#000000'} // Color negro como fallback
                         name={service}
                       />
                     ))}
@@ -320,7 +341,7 @@ const Dashboard = () => {
               </Box>
             ) : salesByBarberError ? (
               <Alert severity="error">Error al cargar los datos de barberos</Alert>
-            ) : !pieChartData || pieChartData.length === 0 || pieChartData.every(data => data.value === 0) ? (
+            ) : !pieChartData || pieChartData.length === 0 || pieChartData.every((data: BarberSaleData) => data.value === 0) ? (
               <Alert severity="info" sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
                 No hay datos de ventas por barbero para el mes seleccionado
               </Alert>
@@ -339,7 +360,7 @@ const Dashboard = () => {
                       label={({ name, value }) => `${name}: $${(value || 0).toLocaleString()}`}
                     >
                       {pieChartData.map((entry: BarberSaleData, index: number) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell key={`cell-${index}`} fill={PIE_CHART_COLORS[index % PIE_CHART_COLORS.length]} />
                       ))}
                     </Pie>
                     <RechartsTooltip formatter={(value: number) => `$${value.toLocaleString()}`} />
