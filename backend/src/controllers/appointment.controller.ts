@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { PrismaClient, Client } from "@prisma/client";
 import { AppError } from "../utils/appError";
-import { startOfDay, endOfDay, parseISO } from "date-fns";
+import { parseISO, startOfDay, endOfDay } from "date-fns";
 
 const prisma = new PrismaClient();
 const timeZone = 'America/Mexico_City';
@@ -11,6 +11,14 @@ export const getAppointments = async (req: Request, res: Response) => {
   try {
     const { startDate, endDate, name, phone, status } = req.query;
 
+    console.log('Received query params:', {
+      startDate,
+      endDate,
+      name,
+      phone,
+      status
+    });
+
     // Construir el where clause
     const whereClause: any = {};
 
@@ -19,19 +27,15 @@ export const getAppointments = async (req: Request, res: Response) => {
       whereClause.date = {};
       
       if (startDate) {
-        // Convertir la fecha de inicio a UTC
-        const start = parseISO(startDate as string);
-        start.setUTCHours(0, 0, 0, 0);
-        whereClause.date.gte = start;
-        console.log('Start date filter:', start.toISOString());
+        const parsedStartDate = parseISO(startDate as string);
+        console.log('Parsed start date:', parsedStartDate.toISOString());
+        whereClause.date.gte = parsedStartDate;
       }
       
       if (endDate) {
-        // Convertir la fecha de fin a UTC
-        const end = parseISO(endDate as string);
-        end.setUTCHours(23, 59, 59, 999);
-        whereClause.date.lte = end;
-        console.log('End date filter:', end.toISOString());
+        const parsedEndDate = parseISO(endDate as string);
+        console.log('Parsed end date:', parsedEndDate.toISOString());
+        whereClause.date.lte = parsedEndDate;
       }
     }
 
@@ -68,7 +72,7 @@ export const getAppointments = async (req: Request, res: Response) => {
       }
     }
 
-    console.log('Where clause:', JSON.stringify(whereClause, null, 2));
+    console.log('Final where clause:', JSON.stringify(whereClause, null, 2));
 
     const appointments = await prisma.appointment.findMany({
       where: whereClause,
@@ -89,7 +93,10 @@ export const getAppointments = async (req: Request, res: Response) => {
 
     console.log('Found appointments:', appointments.length);
     if (appointments.length > 0) {
-      console.log('First appointment date:', appointments[0].date);
+      console.log('Sample appointment dates:');
+      appointments.slice(0, 3).forEach(app => {
+        console.log(`- ${app.date.toISOString()} (${app.time})`);
+      });
     }
 
     res.json({

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -20,7 +20,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import PhoneIcon from '@mui/icons-material/Phone';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import CalendarIcon from '@mui/icons-material/CalendarMonth';
-import { format, startOfMonth } from 'date-fns';
+import { format, startOfMonth, parseISO } from 'date-fns';
 import { toast } from 'react-hot-toast';
 
 import { useGetAppointmentsQuery, useDeleteAppointmentMutation, Filters } from '../services/api';
@@ -52,9 +52,7 @@ export const Appointments = () => {
     endDate: format(today, 'yyyy-MM-dd'),
   });
 
-  const { data: appointmentsData, isLoading: isLoadingAppointments } = useGetAppointmentsQuery(
-    viewMode === 'list' ? filters : undefined
-  );
+  const { data: appointmentsData, isLoading: isLoadingAppointments } = useGetAppointmentsQuery(filters);
   const { data: barbersData, isLoading: isLoadingBarbers } = useGetBarbersQuery({ showInactive: false });
   const [deleteAppointment] = useDeleteAppointmentMutation();
 
@@ -65,6 +63,9 @@ export const Appointments = () => {
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const newValue = event.target.value;
+    if (field === 'startDate' || field === 'endDate') {
+      console.log(`Setting ${field} to:`, newValue);
+    }
     setFilters((prev: Filters) => ({
       ...prev,
       [field]: newValue
@@ -79,6 +80,11 @@ export const Appointments = () => {
       [field]: event.target.value
     }));
   };
+
+  // Efecto para monitorear cambios en los filtros
+  useEffect(() => {
+    console.log('Current filters:', filters);
+  }, [filters]);
 
   const handleAdd = () => {
     setSelectedAppointment(undefined);
@@ -113,6 +119,26 @@ export const Appointments = () => {
     setOpenForm(false);
     toast.success(selectedAppointment ? 'Cita actualizada correctamente' : 'Cita creada correctamente');
   };
+
+  // Función para asegurarse de que las fechas estén en el formato correcto
+  const formatDateForFilter = (dateStr: string) => {
+    try {
+      const date = parseISO(dateStr);
+      return format(date, 'yyyy-MM-dd');
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return dateStr;
+    }
+  };
+
+  // Efecto para formatear las fechas cuando cambien
+  useEffect(() => {
+    setFilters(prev => ({
+      ...prev,
+      startDate: formatDateForFilter(prev.startDate || ''),
+      endDate: formatDateForFilter(prev.endDate || '')
+    }));
+  }, []);
 
   if (isLoadingAppointments || isLoadingBarbers) {
     return (
