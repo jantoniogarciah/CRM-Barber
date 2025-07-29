@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { PrismaClient, Client } from "@prisma/client";
 import { AppError } from "../utils/appError";
-import { parseISO, startOfDay, endOfDay } from "date-fns";
+import { parseISO, startOfDay, addDays } from "date-fns";
 import { toZonedTime } from 'date-fns-tz';
 
 const prisma = new PrismaClient();
@@ -38,13 +38,14 @@ export const getAppointments = async (req: Request, res: Response) => {
       }
       
       if (endDate) {
-        // Convertir la fecha de fin considerando la zona horaria
-        const localEndDate = endOfDay(parseISO(endDate as string));
+        // Convertir la fecha de fin considerando la zona horaria y agregar un día
+        // para incluir todas las citas del día seleccionado
+        const localEndDate = startOfDay(addDays(parseISO(endDate as string), 1));
         console.log('End date:', {
           original: endDate,
           local: localEndDate.toISOString()
         });
-        whereClause.date.lte = localEndDate;
+        whereClause.date.lt = localEndDate;
       }
     }
 
