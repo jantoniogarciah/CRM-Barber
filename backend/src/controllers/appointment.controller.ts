@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { PrismaClient, Client } from "@prisma/client";
 import { AppError } from "../utils/appError";
-import { parseISO, startOfDay, endOfDay } from "date-fns";
+import { startOfDay, endOfDay } from "date-fns";
 import { toZonedTime } from 'date-fns-tz';
 
 const prisma = new PrismaClient();
@@ -73,11 +73,6 @@ export const getAppointments = async (req: Request, res: Response) => {
         barber: true,
       },
       orderBy: [
-        {
-          barber: {
-            firstName: "asc",
-          },
-        },
         {
           date: "asc",
         },

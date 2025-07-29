@@ -21,10 +21,9 @@ import PhoneIcon from '@mui/icons-material/Phone';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import CalendarIcon from '@mui/icons-material/CalendarMonth';
 import { format, startOfMonth } from 'date-fns';
-import { utcToZonedTime } from 'date-fns-tz';
 import { toast } from 'react-hot-toast';
 
-import { useGetAppointmentsQuery, useDeleteAppointmentMutation, GetAppointmentsParams } from '../services/api';
+import { useGetAppointmentsQuery, useDeleteAppointmentMutation, Filters } from '../services/api';
 import { useGetBarbersQuery } from '../services/api';
 import { Appointment } from '../types';
 import AppointmentForm from '../components/AppointmentForm';
@@ -43,11 +42,9 @@ export const Appointments = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [openForm, setOpenForm] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | undefined>(undefined);
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [selectedBarber, setSelectedBarber] = useState<string>('');
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [appointmentToDelete, setAppointmentToDelete] = useState<Appointment | null>(null);
-  const [filters, setFilters] = useState<GetAppointmentsParams>({
+  const [filters, setFilters] = useState<Filters>({
     name: '',
     phone: '',
     status: '',
@@ -56,11 +53,7 @@ export const Appointments = () => {
   });
 
   const { data: appointmentsData, isLoading: isLoadingAppointments } = useGetAppointmentsQuery(
-    viewMode === 'list' ? filters : undefined,
-    {
-      // Refetch when filters change
-      refetchOnMountOrArgChange: true
-    }
+    viewMode === 'list' ? filters : undefined
   );
   const { data: barbersData, isLoading: isLoadingBarbers } = useGetBarbersQuery({ showInactive: false });
   const [deleteAppointment] = useDeleteAppointmentMutation();
@@ -68,29 +61,11 @@ export const Appointments = () => {
   const barbers = barbersData || [];
   const appointments = appointmentsData?.appointments || [];
 
-  // Filtrar citas solo para la vista de calendario
-  const filteredAppointments = viewMode === 'calendar' 
-    ? appointments.filter((appointment: Appointment) => {
-        if (!appointment || !appointment.date) return false;
-        
-        try {
-          const appointmentDate = utcToZonedTime(new Date(appointment.date), 'America/Mexico_City');
-          const isDateMatch = format(appointmentDate, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
-          const isBarberMatch = selectedBarber ? appointment.barberId === selectedBarber : true;
-
-          return isDateMatch && isBarberMatch;
-        } catch (error) {
-          console.error('Error filtering appointment:', error);
-          return false;
-        }
-      })
-    : appointments;
-
   const handleTextChange = (field: string) => (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const newValue = event.target.value;
-    setFilters(prev => ({
+    setFilters((prev: Filters) => ({
       ...prev,
       [field]: newValue
     }));
@@ -99,7 +74,7 @@ export const Appointments = () => {
   const handleSelectChange = (field: string) => (
     event: SelectChangeEvent
   ) => {
-    setFilters(prev => ({
+    setFilters((prev: Filters) => ({
       ...prev,
       [field]: event.target.value
     }));
@@ -132,16 +107,6 @@ export const Appointments = () => {
         toast.error(error.data?.message || 'Error al eliminar la cita');
       }
     }
-  };
-
-  const handleDateChange = (date: Date | null) => {
-    if (date) {
-      setSelectedDate(date);
-    }
-  };
-
-  const handleBarberChange = (event: React.ChangeEvent<{ value: unknown }>) => {
-    setSelectedBarber(event.target.value as string);
   };
 
   const handleFormSuccess = () => {
@@ -285,13 +250,13 @@ export const Appointments = () => {
 
         {viewMode === 'list' ? (
           <AppointmentList
-            appointments={filteredAppointments}
+            appointments={appointments}
             onEditClick={handleEdit}
             onDeleteClick={handleDelete}
           />
         ) : (
           <AppointmentCalendar
-            appointments={filteredAppointments}
+            appointments={appointments}
             onViewClick={() => {}}
             onEditClick={handleEdit}
             onDeleteClick={handleDelete}

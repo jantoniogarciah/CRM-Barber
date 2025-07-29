@@ -5,14 +5,17 @@ import { toast } from 'react-hot-toast';
 import { clearCredentials } from '../store/slices/authSlice';
 import { API_CONFIG } from '../config';
 
-interface GetSalesParams {
-  page?: number;
-  limit?: number;
-  startDate?: string;
-  endDate?: string;
+export interface Filters {
   name?: string;
   phone?: string;
   status?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface AppointmentsResponse {
+  appointments: Appointment[];
+  total: number;
 }
 
 const baseQuery = fetchBaseQuery(API_CONFIG);
@@ -253,8 +256,11 @@ export const api = createApi({
     }),
 
     // Appointment endpoints
-    getAppointments: builder.query<{ appointments: Appointment[]; total: number }, void>({
-      query: () => '/appointments',
+    getAppointments: builder.query<AppointmentsResponse, Filters | void>({
+      query: (filters) => ({
+        url: '/appointments',
+        params: filters || {},
+      }),
       providesTags: ['Appointment'],
     }),
     getAppointment: builder.query<Appointment, string>({
