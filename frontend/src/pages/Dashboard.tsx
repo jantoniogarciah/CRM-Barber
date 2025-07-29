@@ -48,7 +48,7 @@ interface BarberSaleData {
 interface ServiceData {
   originalDate: string;
   date: string;
-  [key: string]: string | number;
+  [key: string]: string | number;  // Allow string or number values for service counts
 }
 
 const Dashboard = () => {
@@ -128,9 +128,18 @@ const Dashboard = () => {
     })
     .sort((a, b) => new Date(a.originalDate).getTime() - new Date(b.originalDate).getTime()) : [];
 
-  // Obtener todos los tipos de servicios únicos
+  // Obtener todos los tipos de servicios únicos y ordenarlos alfabéticamente
   const serviceTypes = serviceChartData.length > 0
-    ? Object.keys(serviceChartData[0]).filter(key => !['originalDate', 'date'].includes(key))
+    ? Object.keys(serviceChartData[0])
+      .filter(key => !['originalDate', 'date'].includes(key))
+      .filter(serviceType => {
+        // Verificar si el servicio tiene al menos un valor mayor que 0
+        return serviceChartData.some(data => {
+          const value = data[serviceType];
+          return typeof value === 'number' && value > 0;
+        });
+      })
+      .sort((a, b) => a.localeCompare(b))
     : [];
 
   // Obtener el mes actual para el título
@@ -254,9 +263,7 @@ const Dashboard = () => {
               </Box>
             ) : servicesByDateError ? (
               <Alert severity="error">Error al cargar los datos de servicios</Alert>
-            ) : !serviceChartData || serviceChartData.length === 0 || serviceChartData.every((data: ServiceData) => 
-              Object.entries(data).every(([key, value]) => key === 'date' || key === 'originalDate' || value === 0)
-            ) ? (
+            ) : !serviceChartData || serviceChartData.length === 0 || !serviceTypes.length ? (
               <Alert severity="info" sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
                 No hay datos de servicios para el mes seleccionado
               </Alert>
@@ -272,8 +279,21 @@ const Dashboard = () => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
                     <YAxis />
-                    <RechartsTooltip />
-                    <Legend />
+                    <RechartsTooltip 
+                      formatter={(value: number, name: string) => {
+                        return value > 0 ? [value, name] : undefined;
+                      }}
+                    />
+                    <Legend 
+                      formatter={(value: string) => {
+                        // Encontrar el valor total para este servicio
+                        const total = serviceChartData.reduce((sum, data) => {
+                          const val = data[value];
+                          return sum + (typeof val === 'number' ? val : 0);
+                        }, 0);
+                        return total > 0 ? value : '';
+                      }}
+                    />
                     {serviceTypes.map((service, index) => (
                       <Bar 
                         key={service}
