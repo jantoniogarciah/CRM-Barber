@@ -19,8 +19,7 @@ import {
 import {
   format,
   parseISO,
-  isEqual,
-  startOfDay,
+  isSameDay,
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Appointment } from '../../types';
@@ -41,11 +40,10 @@ const AppointmentCalendar: React.FC<AppointmentCalendarProps> = ({
   selectedDate,
 }) => {
   const getAppointmentsForDate = (date: Date) => {
-    const targetDate = startOfDay(date);
     return appointments
       .filter((appointment) => {
-        const appointmentDate = startOfDay(parseISO(appointment.date));
-        return isEqual(appointmentDate, targetDate);
+        const appointmentDate = new Date(appointment.date);
+        return isSameDay(appointmentDate, date);
       })
       .sort((a, b) => a.time.localeCompare(b.time));
   };
