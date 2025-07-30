@@ -6,6 +6,7 @@ import {
   View,
   StyleSheet,
   PDFViewer,
+  Font,
 } from '@react-pdf/renderer';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -16,7 +17,7 @@ const styles = StyleSheet.create({
   page: {
     flexDirection: 'column',
     backgroundColor: '#ffffff',
-    padding: 30,
+    padding: 20,
   },
   header: {
     marginBottom: 20,
@@ -31,98 +32,76 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   section: {
-    margin: 10,
-    padding: 10,
+    marginVertical: 5,
+    marginHorizontal: 10,
   },
   table: {
-    display: 'flex',
-    width: 'auto',
-    borderStyle: 'solid',
-    borderWidth: 1,
-    borderRightWidth: 0,
-    borderBottomWidth: 0,
+    width: '100%',
   },
   tableRow: {
-    margin: 'auto',
     flexDirection: 'row',
-    borderBottomWidth: 1,
     borderBottomColor: '#000',
+    borderBottomWidth: 1,
+    alignItems: 'center',
+    minHeight: 20,
   },
   tableRowHeader: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#E4E4E4',
+    borderTopColor: '#000',
+    borderTopWidth: 1,
   },
   tableCellBase: {
-    borderStyle: 'solid',
-    borderWidth: 0,
-    borderRightWidth: 1,
-    borderColor: '#000',
+    fontSize: 8,
+    padding: 3,
   },
   // Celdas para el resumen por servicio
   tableCellServiceName: {
     width: '50%',
-    fontSize: 8,
-    padding: 4,
     textAlign: 'left',
   },
   tableCellServiceCount: {
     width: '25%',
-    fontSize: 8,
-    padding: 4,
     textAlign: 'center',
   },
   tableCellServiceTotal: {
     width: '25%',
-    fontSize: 8,
-    padding: 4,
     textAlign: 'right',
   },
   // Celdas para el detalle de ventas
   tableCellTime: {
     width: '10%',
-    fontSize: 7,
-    padding: 3,
     textAlign: 'center',
   },
   tableCellClient: {
     width: '20%',
-    fontSize: 7,
-    padding: 3,
     textAlign: 'left',
   },
   tableCellService: {
     width: '20%',
-    fontSize: 7,
-    padding: 3,
     textAlign: 'left',
   },
   tableCellBarber: {
     width: '20%',
-    fontSize: 7,
-    padding: 3,
     textAlign: 'left',
   },
   tableCellAmount: {
     width: '15%',
-    fontSize: 7,
-    padding: 3,
     textAlign: 'right',
   },
   tableCellMethod: {
     width: '15%',
-    fontSize: 7,
-    padding: 3,
     textAlign: 'center',
   },
   summaryTitle: {
     fontSize: 10,
     fontWeight: 'bold',
-    marginBottom: 10,
-    marginTop: 20,
+    marginBottom: 5,
+    marginTop: 10,
   },
   summaryRow: {
     flexDirection: 'row',
-    marginBottom: 5,
-    fontSize: 8,
+    marginBottom: 3,
+    fontSize: 9,
   },
   summaryLabel: {
     flex: 2,
