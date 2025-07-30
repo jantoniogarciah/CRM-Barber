@@ -337,6 +337,7 @@ const Sales: React.FC = () => {
     setPaymentMethod(sale.paymentMethod);
     setNotes(sale.notes || '');
     setSaleDate(format(new Date(sale.saleDate || sale.createdAt), 'yyyy-MM-dd'));
+    setSelectedService(sale.service.id); // Establecer el servicio actual
     setOpenEditSale(true);
   };
 
@@ -345,6 +346,7 @@ const Sales: React.FC = () => {
     setSaleToEdit(null);
     setPaymentMethod('EFECTIVO');
     setNotes('');
+    setSelectedService(''); // Limpiar el servicio seleccionado
   };
 
   const handleEditSubmit = async () => {
@@ -361,6 +363,7 @@ const Sales: React.FC = () => {
           paymentMethod,
           notes: notes || undefined,
           saleDate: saleDateTime.toISOString(),
+          serviceId: selectedService || undefined,
         },
       }).unwrap();
 
@@ -947,12 +950,27 @@ const Sales: React.FC = () => {
               <Alert severity="info">
                 Cliente: {saleToEdit?.client.firstName} {saleToEdit?.client.lastName}
                 <br />
-                Servicio: {saleToEdit?.service.name}
-                <br />
                 Barbero: {saleToEdit?.barber.firstName} {saleToEdit?.barber.lastName}
                 <br />
                 Monto: ${saleToEdit?.amount}
               </Alert>
+            </Grid>
+
+            <Grid item xs={12}>
+              <FormControl fullWidth>
+                <InputLabel>Servicio</InputLabel>
+                <Select
+                  value={selectedService}
+                  onChange={(e) => setSelectedService(e.target.value)}
+                  label="Servicio"
+                >
+                  {services.map((service) => (
+                    <MenuItem key={service.id} value={service.id}>
+                      {service.name} - ${service.price}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             </Grid>
 
             <Grid item xs={12}>
@@ -985,9 +1003,10 @@ const Sales: React.FC = () => {
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Notas"
                 multiline
-                rows={4}
+                rows={3}
+                name="notes"
+                label="Notas"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
               />
