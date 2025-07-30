@@ -46,7 +46,8 @@ const SERVICE_COLORS: { [key: string]: string } = {
   'Minoxidil': '#8884d8',
   'Polvo Volumen': '#a4de6c',
   'Pomada 100g': '#d0ed57',
-  'Pomada XL 500g': '#ffc658'
+  'Pomada XL 500g': '#ffc658',
+  'Ritual Barba Clipper Cut': '#000000',
 };
 
 // Colores para el gráfico de pie (barberos)
@@ -153,13 +154,6 @@ const Dashboard = () => {
   const serviceTypes = serviceChartData.length > 0
     ? Object.keys(serviceChartData[0])
       .filter(key => !['originalDate', 'date'].includes(key))
-      .filter(serviceType => {
-        // Verificar si el servicio tiene al menos un valor mayor que 0
-        return serviceChartData.some(data => {
-          const value = data[serviceType];
-          return typeof value === 'number' && value > 0;
-        });
-      })
       .sort((a, b) => a.localeCompare(b))
     : [];
 
@@ -312,18 +306,28 @@ const Dashboard = () => {
                           const val = data[value];
                           return sum + (typeof val === 'number' ? val : 0);
                         }, 0);
+                        // Solo ocultar el servicio si no tiene ventas
                         return total > 0 ? value : '';
                       }}
                     />
-                    {serviceTypes.map((service) => (
-                      <Bar 
-                        key={service}
-                        dataKey={service}
-                        stackId="a"
-                        fill={SERVICE_COLORS[service] || '#000000'} // Color negro como fallback
-                        name={service}
-                      />
-                    ))}
+                    {serviceTypes.map((service) => {
+                      // Calcular el total de ventas para este servicio
+                      const totalSales = serviceChartData.reduce((sum, data) => {
+                        const val = data[service];
+                        return sum + (typeof val === 'number' ? val : 0);
+                      }, 0);
+                      
+                      // Solo renderizar la barra si hay ventas
+                      return totalSales > 0 ? (
+                        <Bar 
+                          key={service}
+                          dataKey={service}
+                          stackId="a"
+                          fill={SERVICE_COLORS[service] || '#000000'} // Color negro como fallback
+                          name={service}
+                        />
+                      ) : null;
+                    })}
                   </BarChart>
                 </ResponsiveContainer>
               </Box>
