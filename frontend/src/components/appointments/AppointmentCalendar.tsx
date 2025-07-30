@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Box,
   Paper,
@@ -6,9 +6,6 @@ import {
   IconButton,
   Tooltip,
   Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
   List,
   ListItem,
   ListItemText,
@@ -16,21 +13,13 @@ import {
   Divider,
 } from '@mui/material';
 import {
-  ChevronLeft as ChevronLeftIcon,
-  ChevronRight as ChevronRightIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
 } from '@mui/icons-material';
 import {
   format,
   parseISO,
-  startOfMonth,
-  endOfMonth,
-  eachDayOfInterval,
-  isSameMonth,
   isSameDay,
-  addMonths,
-  subMonths,
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Appointment } from '../../types';
@@ -40,6 +29,7 @@ interface AppointmentCalendarProps {
   onViewClick: () => void;
   onEditClick: (appointment: Appointment) => void;
   onDeleteClick: (appointment: Appointment) => void;
+  selectedDate: Date;
 }
 
 const AppointmentCalendar: React.FC<AppointmentCalendarProps> = ({
@@ -47,33 +37,12 @@ const AppointmentCalendar: React.FC<AppointmentCalendarProps> = ({
   onViewClick,
   onEditClick,
   onDeleteClick,
+  selectedDate,
 }) => {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [openDayDialog, setOpenDayDialog] = useState(false);
-
-  const handlePrevMonth = () => {
-    setCurrentDate(subMonths(currentDate, 1));
-  };
-
-  const handleNextMonth = () => {
-    setCurrentDate(addMonths(currentDate, 1));
-  };
-
-  const handleDateClick = (date: Date) => {
-    setSelectedDate(date);
-    setOpenDayDialog(true);
-  };
-
-  const handleCloseDialog = () => {
-    setOpenDayDialog(false);
-    setSelectedDate(null);
-  };
-
   const getAppointmentsForDate = (date: Date) => {
     return appointments.filter((appointment) => 
       isSameDay(parseISO(appointment.date), date)
-    );
+    ).sort((a, b) => a.time.localeCompare(b.time));
   };
 
   const getStatusColor = (status: string) => {
@@ -106,150 +75,77 @@ const AppointmentCalendar: React.FC<AppointmentCalendarProps> = ({
     }
   };
 
-  const monthStart = startOfMonth(currentDate);
-  const monthEnd = endOfMonth(currentDate);
-  const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+  const dayAppointments = getAppointmentsForDate(selectedDate);
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 2 }}>
-        <IconButton onClick={handlePrevMonth}>
-          <ChevronLeftIcon />
-        </IconButton>
-        <Typography variant="h6">
-          {format(currentDate, "MMMM yyyy", { locale: es })}
+    <Box sx={{ p: 2 }}>
+      <Paper elevation={3} sx={{ p: 2 }}>
+        <Typography variant="h6" sx={{ mb: 2 }}>
+          {format(selectedDate, "EEEE d 'de' MMMM 'de' yyyy", { locale: es })}
         </Typography>
-        <IconButton onClick={handleNextMonth}>
-          <ChevronRightIcon />
-        </IconButton>
-      </Box>
-
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(7, 1fr)',
-          gap: 1,
-        }}
-      >
-        {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map((day) => (
-          <Box
-            key={day}
-            sx={{
-              p: 1,
-              textAlign: 'center',
-              fontWeight: 'bold',
-            }}
-          >
-            {day}
-          </Box>
-        ))}
-
-        {daysInMonth.map((date) => {
-          const dayAppointments = getAppointmentsForDate(date);
-          const isCurrentMonth = isSameMonth(date, currentDate);
-
-          return (
-            <Paper
-              key={date.toString()}
-              sx={{
-                p: 1,
-                cursor: 'pointer',
-                opacity: isCurrentMonth ? 1 : 0.5,
-                minHeight: 100,
-                display: 'flex',
-                flexDirection: 'column',
-                '&:hover': {
-                  backgroundColor: 'action.hover',
-                },
-              }}
-              onClick={() => handleDateClick(date)}
-            >
-              <Typography
-                variant="body2"
-                sx={{
-                  textAlign: 'right',
-                  mb: 1,
-                }}
-              >
-                {format(date, 'd')}
-              </Typography>
-              <Box sx={{ flex: 1 }}>
-                {dayAppointments.slice(0, 3).map((appointment) => (
-                  <Chip
-                    key={appointment.id}
-                    label={`${appointment.time} - ${appointment.client?.firstName}`}
-                    size="small"
-                    color={getStatusColor(appointment.status)}
-                    sx={{ mb: 0.5, width: '100%' }}
-                  />
-                ))}
-                {dayAppointments.length > 3 && (
-                  <Typography variant="caption" color="text.secondary">
-                    +{dayAppointments.length - 3} más
-                  </Typography>
-                )}
-              </Box>
-            </Paper>
-          );
-        })}
-      </Box>
-
-      <Dialog open={openDayDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {selectedDate && format(selectedDate, "d 'de' MMMM 'de' yyyy", { locale: es })}
-        </DialogTitle>
-        <DialogContent>
+        
+        {dayAppointments.length === 0 ? (
+          <Typography color="textSecondary" align="center" sx={{ py: 4 }}>
+            No hay citas programadas para este día
+          </Typography>
+        ) : (
           <List>
-            {selectedDate &&
-              getAppointmentsForDate(selectedDate).map((appointment) => (
-                <React.Fragment key={appointment.id}>
-                  <ListItem>
-                    <ListItemText
-                      primary={`${appointment.time} - ${appointment.client?.firstName} ${appointment.client?.lastName}`}
-                      secondary={
-                        <>
-                          <Typography variant="body2" color="text.secondary">
-                            {appointment.service?.name}
-                          </Typography>
-                          <Chip
-                            label={getStatusText(appointment.status)}
-                            size="small"
-                            color={getStatusColor(appointment.status)}
-                          />
-                        </>
-                      }
-                    />
-                    <ListItemSecondaryAction>
-                      <Tooltip title="Editar">
-                        <IconButton
-                          edge="end"
-                          onClick={() => {
-                            onEditClick(appointment);
-                            handleCloseDialog();
-                          }}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Eliminar">
-                        <IconButton
-                          edge="end"
-                          onClick={() => {
-                            onDeleteClick(appointment);
-                            handleCloseDialog();
-                          }}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Tooltip>
-                    </ListItemSecondaryAction>
-                  </ListItem>
-                  <Divider />
-                </React.Fragment>
-              ))}
+            {dayAppointments.map((appointment, index) => (
+              <React.Fragment key={appointment.id}>
+                {index > 0 && <Divider />}
+                <ListItem>
+                  <ListItemText
+                    primary={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="subtitle1">
+                          {appointment.time}
+                        </Typography>
+                        <Chip
+                          size="small"
+                          label={getStatusText(appointment.status)}
+                          color={getStatusColor(appointment.status)}
+                        />
+                      </Box>
+                    }
+                    secondary={
+                      <>
+                        <Typography component="span" variant="body2" color="text.primary">
+                          {`${appointment.client.firstName} ${appointment.client.lastName}`}
+                        </Typography>
+                        <br />
+                        <Typography component="span" variant="body2">
+                          {`${appointment.service.name} - ${appointment.barber.firstName} ${appointment.barber.lastName}`}
+                        </Typography>
+                      </>
+                    }
+                  />
+                  <ListItemSecondaryAction>
+                    <Tooltip title="Editar cita">
+                      <IconButton
+                        edge="end"
+                        aria-label="edit"
+                        onClick={() => onEditClick(appointment)}
+                        sx={{ mr: 1 }}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Eliminar cita">
+                      <IconButton
+                        edge="end"
+                        aria-label="delete"
+                        onClick={() => onDeleteClick(appointment)}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </ListItemSecondaryAction>
+                </ListItem>
+              </React.Fragment>
+            ))}
           </List>
-        </DialogContent>
-      </Dialog>
+        )}
+      </Paper>
     </Box>
   );
 };

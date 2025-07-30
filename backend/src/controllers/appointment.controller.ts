@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { PrismaClient, Client } from "@prisma/client";
 import { AppError } from "../utils/appError";
-import { parseISO, startOfDay, addDays } from "date-fns";
+import { parseISO, startOfDay, endOfDay } from "date-fns";
 import { toZonedTime } from 'date-fns-tz';
 
 const prisma = new PrismaClient();
@@ -27,25 +27,27 @@ export const getAppointments = async (req: Request, res: Response) => {
     if (startDate || endDate) {
       whereClause.date = {};
       
-      if (startDate) {
-        // Convertir la fecha de inicio considerando la zona horaria
-        const localStartDate = startOfDay(parseISO(startDate as string));
-        console.log('Start date:', {
-          original: startDate,
-          local: localStartDate.toISOString()
-        });
-        whereClause.date.gte = localStartDate;
-      }
-      
-      if (endDate) {
-        // Convertir la fecha de fin considerando la zona horaria y agregar un día
-        // para incluir todas las citas del día seleccionado
-        const localEndDate = startOfDay(addDays(parseISO(endDate as string), 1));
-        console.log('End date:', {
-          original: endDate,
-          local: localEndDate.toISOString()
-        });
-        whereClause.date.lt = localEndDate;
+      // Si solo hay una fecha (startDate o endDate), usarla como día único
+      if (startDate && !endDate) {
+        const dayStart = startOfDay(parseISO(startDate as string));
+        const dayEnd = endOfDay(parseISO(startDate as string));
+        whereClause.date = {
+          gte: dayStart,
+          lte: dayEnd
+        };
+      } else if (!startDate && endDate) {
+        const dayStart = startOfDay(parseISO(endDate as string));
+        const dayEnd = endOfDay(parseISO(endDate as string));
+        whereClause.date = {
+          gte: dayStart,
+          lte: dayEnd
+        };
+      } else {
+        // Si hay ambas fechas, usar el rango
+        whereClause.date = {
+          gte: startOfDay(parseISO(startDate as string)),
+          lte: endOfDay(parseISO(endDate as string))
+        };
       }
     }
 

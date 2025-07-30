@@ -59,17 +59,25 @@ export const Appointments = () => {
   const barbers = barbersData || [];
   const appointments = appointmentsData?.appointments || [];
 
+  // Modificar el estado de los filtros para usar la misma fecha
   const handleTextChange = (field: string) => (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const newValue = event.target.value;
-    if (field === 'startDate' || field === 'endDate') {
-      console.log(`Setting ${field} to:`, newValue);
-    }
-    setFilters((prev: Filters) => ({
-      ...prev,
-      [field]: newValue
-    }));
+    setFilters(prev => {
+      // Si es un campo de fecha, actualizar ambas fechas
+      if (field === 'startDate' || field === 'endDate') {
+        return {
+          ...prev,
+          startDate: newValue,
+          endDate: newValue
+        };
+      }
+      return {
+        ...prev,
+        [field]: newValue
+      };
+    });
   };
 
   const handleSelectChange = (field: string) => (
@@ -286,6 +294,7 @@ export const Appointments = () => {
             onViewClick={() => {}}
             onEditClick={handleEdit}
             onDeleteClick={handleDelete}
+            selectedDate={parseISO(filters.startDate)}
           />
         )}
 
