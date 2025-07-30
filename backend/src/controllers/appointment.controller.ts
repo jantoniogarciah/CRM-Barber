@@ -27,42 +27,21 @@ export const getAppointments = async (req: Request, res: Response) => {
     if (startDate || endDate) {
       whereClause.date = {};
       
-      // Si solo hay una fecha (startDate o endDate), usarla como día único
-      if (startDate && !endDate) {
-        const dayStart = startOfDay(parseISO(startDate as string));
-        const dayEnd = endOfDay(parseISO(startDate as string));
-        whereClause.date = {
-          gte: dayStart,
-          lte: dayEnd
-        };
-        console.log('Single day filter:', {
-          start: dayStart.toISOString(),
-          end: dayEnd.toISOString()
-        });
-      } else if (!startDate && endDate) {
-        const dayStart = startOfDay(parseISO(endDate as string));
-        const dayEnd = endOfDay(parseISO(endDate as string));
-        whereClause.date = {
-          gte: dayStart,
-          lte: dayEnd
-        };
-        console.log('Single day filter:', {
-          start: dayStart.toISOString(),
-          end: dayEnd.toISOString()
-        });
-      } else {
-        // Si hay ambas fechas, usar el rango
-        const rangeStart = startOfDay(parseISO(startDate as string));
-        const rangeEnd = endOfDay(parseISO(endDate as string));
-        whereClause.date = {
-          gte: rangeStart,
-          lte: rangeEnd
-        };
-        console.log('Date range filter:', {
-          start: rangeStart.toISOString(),
-          end: rangeEnd.toISOString()
-        });
+      // Convertir las fechas a objetos Date y ajustar al inicio/fin del día
+      const start = startDate ? startOfDay(parseISO(startDate as string)) : undefined;
+      const end = endDate ? endOfDay(parseISO(endDate as string)) : undefined;
+
+      if (start) {
+        whereClause.date.gte = start;
       }
+      if (end) {
+        whereClause.date.lte = end;
+      }
+
+      console.log('Date filter:', {
+        start: start?.toISOString(),
+        end: end?.toISOString(),
+      });
     }
 
     // Agregar filtro por estado

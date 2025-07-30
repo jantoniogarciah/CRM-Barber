@@ -19,7 +19,8 @@ import {
 import {
   format,
   parseISO,
-  isSameDay,
+  isEqual,
+  startOfDay,
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Appointment } from '../../types';
@@ -40,9 +41,13 @@ const AppointmentCalendar: React.FC<AppointmentCalendarProps> = ({
   selectedDate,
 }) => {
   const getAppointmentsForDate = (date: Date) => {
-    return appointments.filter((appointment) => 
-      isSameDay(parseISO(appointment.date), date)
-    ).sort((a, b) => a.time.localeCompare(b.time));
+    const targetDate = startOfDay(date);
+    return appointments
+      .filter((appointment) => {
+        const appointmentDate = startOfDay(parseISO(appointment.date));
+        return isEqual(appointmentDate, targetDate);
+      })
+      .sort((a, b) => a.time.localeCompare(b.time));
   };
 
   const getStatusColor = (status: string) => {
@@ -110,11 +115,11 @@ const AppointmentCalendar: React.FC<AppointmentCalendarProps> = ({
                     secondary={
                       <>
                         <Typography component="span" variant="body2" color="text.primary">
-                          {`${appointment.client.firstName} ${appointment.client.lastName}`}
+                          {appointment.client?.firstName} {appointment.client?.lastName}
                         </Typography>
                         <br />
                         <Typography component="span" variant="body2">
-                          {`${appointment.service.name} - ${appointment.barber.firstName} ${appointment.barber.lastName}`}
+                          {appointment.service?.name} - {appointment.barber?.firstName} {appointment.barber?.lastName}
                         </Typography>
                       </>
                     }
