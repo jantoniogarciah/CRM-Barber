@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { PrismaClient, Client } from "@prisma/client";
 import { AppError } from "../utils/appError";
+import { parseISO } from "date-fns";
 
 const prisma = new PrismaClient();
 
@@ -158,12 +159,13 @@ export const createAppointment = async (req: Request, res: Response) => {
       throw new AppError(`Invalid status. Must be one of: ${validStatuses.join(', ')}`, 400);
     }
 
-    // Validate that client, service, and barber exist
+    // Validate that client exists
     const client = await prisma.client.findUnique({ where: { id: clientId } });
     if (!client) {
       throw new AppError("Client not found", 404);
     }
 
+    // Validate service exists
     const service = await prisma.service.findUnique({
       where: { id: serviceId },
     });
@@ -171,19 +173,26 @@ export const createAppointment = async (req: Request, res: Response) => {
       throw new AppError("Service not found", 404);
     }
 
+    // Validate barber exists
     const barber = await prisma.barber.findUnique({ where: { id: barberId } });
     if (!barber) {
       throw new AppError("Barber not found", 404);
     }
+
+    // Crear la fecha manteniendo la fecha seleccionada
+    const appointmentDate = new Date(date);
+    appointmentDate.setHours(12, 0, 0, 0); // Establecer mediodía para evitar problemas de zona horaria
+
+    console.log('Appointment date being saved:', appointmentDate.toISOString());
 
     const appointment = await prisma.appointment.create({
       data: {
         clientId,
         serviceId,
         barberId,
-        date,
+        date: appointmentDate,
         time,
-        status: status || 'pending', // Default to pending if not provided
+        status: status || 'pending',
         notes,
       },
       include: {
