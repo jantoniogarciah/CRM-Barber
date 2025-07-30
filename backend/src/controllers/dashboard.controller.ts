@@ -225,16 +225,19 @@ export const getServicesByDate = async (req: Request, res: Response) => {
     const startDateUTC = new Date(startOfDay(startDate).getTime() - (offset * 60 * 1000));
     const endDateUTC = new Date(endOfDay(endDate).getTime() - (offset * 60 * 1000));
 
-    // Obtener todos los servicios activos primero
+    // Obtener todos los servicios (activos e inactivos)
     const allServices = await prisma.service.findMany({
-      where: {
-        isActive: true
-      },
       select: {
         id: true,
-        name: true
+        name: true,
+        isActive: true
       }
     });
+
+    console.log('Servicios encontrados:', allServices.map(s => ({
+      name: s.name,
+      isActive: s.isActive
+    })));
 
     // Crear un objeto con todas las fechas del mes y todos los servicios inicializados en 0
     const allDates: { [key: string]: { [key: string]: number } } = {};
@@ -267,7 +270,7 @@ export const getServicesByDate = async (req: Request, res: Response) => {
       }
     });
 
-    console.log('Ventas de servicios encontradas:', sales);
+    console.log('Ventas de servicios encontradas:', sales.length);
 
     // Actualizar los conteos de servicios por fecha
     sales.forEach(sale => {
