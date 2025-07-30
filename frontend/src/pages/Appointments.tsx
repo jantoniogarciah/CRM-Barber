@@ -59,20 +59,21 @@ export const Appointments = () => {
   const barbers = barbersData || [];
   const appointments = appointmentsData?.appointments || [];
 
-  // Modificar el estado de los filtros para usar la misma fecha
+  // Modificar el manejo de fechas para soportar tanto día único como rango
   const handleTextChange = (field: string) => (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const newValue = event.target.value;
     setFilters(prev => {
-      // Si es un campo de fecha, actualizar ambas fechas
-      if (field === 'startDate' || field === 'endDate') {
+      // Si estamos en vista calendario y es un campo de fecha, sincronizar ambas fechas
+      if ((field === 'startDate' || field === 'endDate') && viewMode === 'calendar') {
         return {
           ...prev,
           startDate: newValue,
           endDate: newValue
         };
       }
+      // En vista lista o para otros campos, actualizar solo el campo modificado
       return {
         ...prev,
         [field]: newValue
@@ -93,6 +94,16 @@ export const Appointments = () => {
   useEffect(() => {
     console.log('Current filters:', filters);
   }, [filters]);
+
+  // Efecto para sincronizar fechas cuando se cambia a vista calendario
+  useEffect(() => {
+    if (viewMode === 'calendar') {
+      setFilters(prev => ({
+        ...prev,
+        endDate: prev.startDate
+      }));
+    }
+  }, [viewMode]);
 
   const handleAdd = () => {
     setSelectedAppointment(undefined);
@@ -294,7 +305,7 @@ export const Appointments = () => {
             onViewClick={() => {}}
             onEditClick={handleEdit}
             onDeleteClick={handleDelete}
-            selectedDate={parseISO(filters.startDate)}
+            selectedDate={filters.startDate ? parseISO(filters.startDate) : new Date()}
           />
         )}
 

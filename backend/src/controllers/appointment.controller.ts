@@ -35,6 +35,10 @@ export const getAppointments = async (req: Request, res: Response) => {
           gte: dayStart,
           lte: dayEnd
         };
+        console.log('Single day filter:', {
+          start: dayStart.toISOString(),
+          end: dayEnd.toISOString()
+        });
       } else if (!startDate && endDate) {
         const dayStart = startOfDay(parseISO(endDate as string));
         const dayEnd = endOfDay(parseISO(endDate as string));
@@ -42,12 +46,22 @@ export const getAppointments = async (req: Request, res: Response) => {
           gte: dayStart,
           lte: dayEnd
         };
+        console.log('Single day filter:', {
+          start: dayStart.toISOString(),
+          end: dayEnd.toISOString()
+        });
       } else {
         // Si hay ambas fechas, usar el rango
+        const rangeStart = startOfDay(parseISO(startDate as string));
+        const rangeEnd = endOfDay(parseISO(endDate as string));
         whereClause.date = {
-          gte: startOfDay(parseISO(startDate as string)),
-          lte: endOfDay(parseISO(endDate as string))
+          gte: rangeStart,
+          lte: rangeEnd
         };
+        console.log('Date range filter:', {
+          start: rangeStart.toISOString(),
+          end: rangeEnd.toISOString()
+        });
       }
     }
 
