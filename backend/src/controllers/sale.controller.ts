@@ -217,7 +217,7 @@ export const createSale = async (req: Request, res: Response) => {
 export const updateSale = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { status, notes, paymentMethod } = req.body;
+    const { status, notes, paymentMethod, serviceId } = req.body;
 
     // Validate payment method if provided
     if (paymentMethod) {
@@ -227,12 +227,23 @@ export const updateSale = async (req: Request, res: Response) => {
       }
     }
 
+    // Validate service exists if provided
+    if (serviceId) {
+      const service = await prisma.service.findUnique({
+        where: { id: serviceId },
+      });
+      if (!service) {
+        throw new AppError("Servicio no encontrado", 404);
+      }
+    }
+
     const sale = await prisma.sale.update({
       where: { id },
       data: {
         status: status as "completed" | "cancelled" | "refunded",
         paymentMethod,
         notes,
+        serviceId, // Add serviceId to the update data
       },
       include: {
         client: true,

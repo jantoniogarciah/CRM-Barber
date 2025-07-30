@@ -57,7 +57,14 @@ router.put(
       .optional()
       .isIn(["EFECTIVO", "DEBITO", "CREDITO"])
       .withMessage("Método de pago inválido"),
-    body("notes").optional().isString().withMessage("Las notas deben ser texto"),
+    body("notes")
+      .optional()
+      .isString()
+      .withMessage("Las notas deben ser texto"),
+    body("serviceId")
+      .optional()
+      .isString()
+      .withMessage("El ID del servicio debe ser un string"),
     validateRequest,
   ],
   updateSale
