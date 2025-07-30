@@ -23,14 +23,23 @@ export const getAppointments = async (req: Request, res: Response) => {
     // Agregar filtros de fecha si están presentes
     if (startDate || endDate) {
       whereClause.date = {};
+      
       if (startDate) {
-        whereClause.date.gte = new Date(startDate as string);
+        // Establecer la hora a 00:00:00.000 para la fecha de inicio
+        const startDateTime = new Date(startDate as string);
+        startDateTime.setHours(0, 0, 0, 0);
+        whereClause.date.gte = startDateTime;
+        
+        console.log('Start date filter:', startDateTime.toISOString());
       }
+      
       if (endDate) {
-        // Ajustar la fecha final al final del día
+        // Establecer la hora a 23:59:59.999 para la fecha final
         const endDateTime = new Date(endDate as string);
         endDateTime.setHours(23, 59, 59, 999);
         whereClause.date.lte = endDateTime;
+        
+        console.log('End date filter:', endDateTime.toISOString());
       }
     }
 
