@@ -35,60 +35,82 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   table: {
-    width: '100%',
+    display: 'flex',
+    width: 'auto',
+    borderStyle: 'solid',
+    borderWidth: 1,
+    borderRightWidth: 0,
+    borderBottomWidth: 0,
   },
   tableRow: {
+    margin: 'auto',
     flexDirection: 'row',
-    borderBottomColor: '#000',
     borderBottomWidth: 1,
-    minHeight: 25,
-    flexWrap: 'nowrap',
+    borderBottomColor: '#000',
   },
   tableRowHeader: {
     backgroundColor: '#f0f0f0',
-    borderTopColor: '#000',
-    borderTopWidth: 1,
   },
   tableCellBase: {
-    padding: 4,
-    fontSize: 7,
+    borderStyle: 'solid',
+    borderWidth: 0,
+    borderRightWidth: 1,
+    borderColor: '#000',
   },
   // Celdas para el resumen por servicio
   tableCellServiceName: {
     width: '50%',
+    fontSize: 8,
+    padding: 4,
     textAlign: 'left',
   },
   tableCellServiceCount: {
     width: '25%',
+    fontSize: 8,
+    padding: 4,
     textAlign: 'center',
   },
   tableCellServiceTotal: {
     width: '25%',
+    fontSize: 8,
+    padding: 4,
     textAlign: 'right',
   },
   // Celdas para el detalle de ventas
   tableCellTime: {
-    width: '8%',
+    width: '10%',
+    fontSize: 7,
+    padding: 3,
     textAlign: 'center',
   },
   tableCellClient: {
-    width: '22%',
+    width: '20%',
+    fontSize: 7,
+    padding: 3,
     textAlign: 'left',
   },
   tableCellService: {
-    width: '25%',
+    width: '20%',
+    fontSize: 7,
+    padding: 3,
     textAlign: 'left',
   },
   tableCellBarber: {
-    width: '22%',
+    width: '20%',
+    fontSize: 7,
+    padding: 3,
     textAlign: 'left',
   },
   tableCellAmount: {
-    width: '13%',
+    width: '15%',
+    fontSize: 7,
+    padding: 3,
     textAlign: 'right',
   },
   tableCellMethod: {
-    width: '10%',
+    width: '15%',
+    fontSize: 7,
+    padding: 3,
     textAlign: 'center',
   },
   summaryTitle: {
@@ -200,27 +222,15 @@ const DailyClosingReport: React.FC<DailyClosingReportProps> = ({ sales, date }) 
             <Text style={styles.summaryTitle}>Resumen por Servicio</Text>
             <View style={styles.table}>
               <View style={[styles.tableRow, styles.tableRowHeader]}>
-                <Text style={[styles.tableCellBase, styles.tableCellServiceName]}>
-                  Servicio
-                </Text>
-                <Text style={[styles.tableCellBase, styles.tableCellServiceCount]}>
-                  Cantidad
-                </Text>
-                <Text style={[styles.tableCellBase, styles.tableCellServiceTotal]}>
-                  Total
-                </Text>
+                <Text style={[styles.tableCellBase, styles.tableCellServiceName]}>Servicio</Text>
+                <Text style={[styles.tableCellBase, styles.tableCellServiceCount]}>Cantidad</Text>
+                <Text style={[styles.tableCellBase, styles.tableCellServiceTotal]}>Total</Text>
               </View>
               {Object.values(serviceSummary).map((service) => (
                 <View key={service.name} style={styles.tableRow}>
-                  <Text style={[styles.tableCellBase, styles.tableCellServiceName]}>
-                    {service.name}
-                  </Text>
-                  <Text style={[styles.tableCellBase, styles.tableCellServiceCount]}>
-                    {service.count}
-                  </Text>
-                  <Text style={[styles.tableCellBase, styles.tableCellServiceTotal]}>
-                    ${service.total.toLocaleString()}
-                  </Text>
+                  <Text style={[styles.tableCellBase, styles.tableCellServiceName]}>{service.name}</Text>
+                  <Text style={[styles.tableCellBase, styles.tableCellServiceCount]}>{service.count}</Text>
+                  <Text style={[styles.tableCellBase, styles.tableCellServiceTotal]}>${service.total.toLocaleString()}</Text>
                 </View>
               ))}
             </View>
@@ -231,24 +241,12 @@ const DailyClosingReport: React.FC<DailyClosingReportProps> = ({ sales, date }) 
             <Text style={styles.summaryTitle}>Detalle de Ventas</Text>
             <View style={styles.table}>
               <View style={[styles.tableRow, styles.tableRowHeader]}>
-                <Text style={[styles.tableCellBase, styles.tableCellTime]}>
-                  Hora
-                </Text>
-                <Text style={[styles.tableCellBase, styles.tableCellClient]}>
-                  Cliente
-                </Text>
-                <Text style={[styles.tableCellBase, styles.tableCellService]}>
-                  Servicio
-                </Text>
-                <Text style={[styles.tableCellBase, styles.tableCellBarber]}>
-                  Barbero
-                </Text>
-                <Text style={[styles.tableCellBase, styles.tableCellAmount]}>
-                  Monto
-                </Text>
-                <Text style={[styles.tableCellBase, styles.tableCellMethod]}>
-                  Método
-                </Text>
+                <Text style={[styles.tableCellBase, styles.tableCellTime]}>Hora</Text>
+                <Text style={[styles.tableCellBase, styles.tableCellClient]}>Cliente</Text>
+                <Text style={[styles.tableCellBase, styles.tableCellService]}>Servicio</Text>
+                <Text style={[styles.tableCellBase, styles.tableCellBarber]}>Barbero</Text>
+                <Text style={[styles.tableCellBase, styles.tableCellAmount]}>Monto</Text>
+                <Text style={[styles.tableCellBase, styles.tableCellMethod]}>Método</Text>
               </View>
               {sales.map((sale) => (
                 <View key={sale.id} style={styles.tableRow}>
