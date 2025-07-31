@@ -5,6 +5,17 @@ import { parseISO } from "date-fns";
 
 const prisma = new PrismaClient();
 
+// Función auxiliar para ajustar la fecha a la zona horaria correcta
+const adjustDateToUTC = (dateStr: string) => {
+  // Crear una fecha con la zona horaria local del usuario
+  const localDate = new Date(dateStr);
+  
+  // Ajustar 6 horas (zona horaria de México)
+  localDate.setHours(6, 0, 0, 0);
+  
+  return localDate;
+};
+
 // Get all appointments
 export const getAppointments = async (req: Request, res: Response) => {
   try {
@@ -26,20 +37,15 @@ export const getAppointments = async (req: Request, res: Response) => {
       whereClause.date = {};
       
       if (startDate) {
-        // Establecer la hora a 00:00:00.000 para la fecha de inicio
-        const startDateTime = new Date(startDate as string);
-        startDateTime.setHours(0, 0, 0, 0);
+        const startDateTime = adjustDateToUTC(startDate as string);
         whereClause.date.gte = startDateTime;
-        
         console.log('Start date filter:', startDateTime.toISOString());
       }
       
       if (endDate) {
-        // Establecer la hora a 23:59:59.999 para la fecha final
-        const endDateTime = new Date(endDate as string);
-        endDateTime.setHours(23, 59, 59, 999);
+        const endDateTime = adjustDateToUTC(endDate as string);
+        endDateTime.setHours(29, 59, 59, 999); // 29 horas para cubrir todo el día en UTC
         whereClause.date.lte = endDateTime;
-        
         console.log('End date filter:', endDateTime.toISOString());
       }
     }
@@ -179,10 +185,8 @@ export const createAppointment = async (req: Request, res: Response) => {
       throw new AppError("Barber not found", 404);
     }
 
-    // Crear la fecha manteniendo la fecha seleccionada
-    const appointmentDate = new Date(date);
-    appointmentDate.setHours(12, 0, 0, 0); // Establecer mediodía para evitar problemas de zona horaria
-
+    // Ajustar la fecha a UTC
+    const appointmentDate = adjustDateToUTC(date);
     console.log('Appointment date being saved:', appointmentDate.toISOString());
 
     const appointment = await prisma.appointment.create({
@@ -237,16 +241,13 @@ export const updateAppointment = async (req: Request, res: Response) => {
     // Check if appointment exists
     const existingAppointment = await prisma.appointment.findUnique({
       where: { id },
-      include: {
-        service: true,
-      },
     });
 
     if (!existingAppointment) {
       throw new AppError("Appointment not found", 404);
     }
 
-    // If clientId is provided, validate that client exists
+    // Validate client exists if provided
     if (clientId) {
       const client = await prisma.client.findUnique({
         where: { id: clientId },
@@ -256,7 +257,7 @@ export const updateAppointment = async (req: Request, res: Response) => {
       }
     }
 
-    // If serviceId is provided, validate that service exists
+    // Validate service exists if provided
     if (serviceId) {
       const service = await prisma.service.findUnique({
         where: { id: serviceId },
@@ -266,7 +267,7 @@ export const updateAppointment = async (req: Request, res: Response) => {
       }
     }
 
-    // If barberId is provided, validate that barber exists
+    // Validate barber exists if provided
     if (barberId) {
       const barber = await prisma.barber.findUnique({
         where: { id: barberId },
@@ -276,52 +277,36 @@ export const updateAppointment = async (req: Request, res: Response) => {
       }
     }
 
-    // Prepare update data - use the date directly without any manipulation
+    // Ajustar la fecha a UTC si se proporciona
+    let appointmentDate;
+    if (date) {
+      appointmentDate = adjustDateToUTC(date);
+      console.log('Appointment date being updated to:', appointmentDate.toISOString());
+    }
+
     const updateData = {
       ...(clientId && { clientId }),
       ...(serviceId && { serviceId }),
       ...(barberId && { barberId }),
-      ...(date && { date }),
+      ...(date && { date: appointmentDate }),
       ...(time && { time }),
       ...(status && { status }),
       ...(notes !== undefined && { notes }),
     };
 
-    console.log('Update data:', updateData);
-
-    // Start a transaction to handle both appointment update and sale creation
-    const result = await prisma.$transaction(async (prisma) => {
-      const updatedAppointment = await prisma.appointment.update({
-        where: { id },
-        data: updateData,
-        include: {
-          client: true,
-          service: true,
-          barber: true,
-        },
-      });
-
-      // If the appointment is being marked as completed, create a sale
-      if (status === 'completed' && existingAppointment.status !== 'completed') {
-        const serviceToUse = updatedAppointment.service;
-        
-        await prisma.sale.create({
-          data: {
-            clientId: updatedAppointment.clientId,
-            serviceId: updatedAppointment.serviceId,
-            barberId: updatedAppointment.barberId,
-            amount: serviceToUse.price,
-            notes: `Venta generada automáticamente de la cita #${updatedAppointment.id}`,
-          },
-        });
-      }
-
-      return updatedAppointment;
+    const appointment = await prisma.appointment.update({
+      where: { id },
+      data: updateData,
+      include: {
+        client: true,
+        service: true,
+        barber: true,
+      },
     });
 
-    console.log('Updated appointment:', result);
+    console.log('Updated appointment:', appointment);
 
-    res.json(result);
+    res.json(appointment);
   } catch (error) {
     console.error("Error updating appointment:", error);
     if (error instanceof AppError) {
